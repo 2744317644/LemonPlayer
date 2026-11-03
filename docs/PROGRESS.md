@@ -8,14 +8,14 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **M2 · 登录 + 网盘浏览** |
-| 当前阶段目标 | 代码已全部落地；等待 macOS CI 完成 iOS 构建验证 |
-| 整体进度 | M0 ✅ · M1 ✅ · M2 ▓▓▓▓▓▓▓░░░ 75% |
-| 构建状态 | 🟡 逻辑层本地全绿（WSL Swift 6.0.3，36 tests）；iOS 构建 CI 排队中（run `41656721616`） |
-| 单测覆盖率 | 4 个纯逻辑包 36 个用例（1 个 GB18030 用例 Linux skip，macOS 覆盖） |
-| 最新产物 | 本地/远程 `9553f41`：登录 + 目录浏览 + 搜索 + 字幕解析层 |
-| 下一步 | CI 绿后：iPad 分栏（T-209）→ M2 收口 → M3 播放内核接入 |
-| 阻塞项 | macOS runner 容量排队（非代码问题；已建立 WSL 本地验证通道） |
+| 当前里程碑 | **M2 完成 ✅ → M3 播放内核** |
+| 当前阶段目标 | M3：MobileVLCKit 接入（Podfile + PlaybackEngine + 播放器 UI + 直链播放） |
+| 整体进度 | M0 ✅ · M1 ✅ · M2 ✅ · M3 ▓░░░░░░░░░ 10% |
+| 构建状态 | ✅ **CI 全绿**：run `41662857687`（test 41s + build 5m20s），IPA artifact 168KB |
+| 单测覆盖率 | 4 个纯逻辑包 41 个用例（Linux 容器 + 本地 WSL 双跑） |
+| 最新产物 | `LemonPlayer-unsigned-ipa`（登录 + 目录浏览 + 搜索） |
+| 下一步 | M3：Podfile/MobileVLCKit → PlaybackEngine 协议 → 播放器 UI → 直链播放联调 |
+| 阻塞项 | 真机扫码/播放需用户安装 IPA 验证；无代码阻塞 |
 
 ---
 
@@ -25,8 +25,8 @@
 |---|---|---|---|---|
 | M0 | 立项与文档 | ✅ 已完成 | 100% | 2026-11 |
 | M1 | 可编译骨架 + CI 出包 | ✅ 已完成 | 100% | 2026-11 |
-| M2 | 登录 + 网盘浏览 | 🚧 进行中 | 60% | 2026-12 |
-| M3 | 播放内核 + 直链播放 | ⬜ 未开始 | 0% | 2026-12 |
+| M2 | 登录 + 网盘浏览 | ✅ 已完成 | 100% | 2026-12 |
+| M3 | 播放内核 + 直链播放 | 🚧 进行中 | 10% | 2026-12 |
 | M4 | 外挂字幕 | ⬜ 未开始 | 0% | 2027-01 |
 | M5 | 媒体库 + 剧集 | ⬜ 未开始 | 0% | 2027-01 |
 | M6 | 离线缓存 | ⬜ 未开始 | 0% | 2027-02 |
@@ -76,6 +76,9 @@
 | 2026-11-04 00:18 | 基建 | **WSL 安装 Swift 6.0.3**，建立本地纯逻辑测试通道（`scripts/wsl-test.sh`），绕开 macOS 队列 | `scripts/wsl-test.sh` | ✅ |
 | 2026-11-04 00:22 | 基建 | 本地测试暴露并修复 6 个真实问题：Package.swift BOM 导致 SwiftPM 回退 tools 3.1、`waitsForConnectivity` Linux 不可写、regex lookbehind 不支持、`range(of:)` 误用、UTF-16 BOM 未剥离、zh/tw 语言拆分 | 4 个包源码 | ✅ |
 | 2026-11-04 00:25 | 基建 | 4 个纯逻辑包 **36 个测试全绿**（1 skipped），推送 `9553f41`，CI 重新排队 | GitHub | 🟡 |
+| 2026-11-04 00:40 | 基建 | CI 架构调整：**单测跑 Linux 容器（41s），macOS 只做 build+archive**；`macos-latest` arm64 队列不可用后切 `macos-26-intel` | `.github/workflows/build.yml` | ✅ |
+| 2026-11-04 00:45 | M2 | **CI 全绿**：test 41s + build 5m20s，产出 `LemonPlayer-unsigned-ipa`（168KB） | run `41662857687` | ✅ |
+| 2026-11-04 00:50 | M3 | 直链 API 完成：`PlaybackLink`（signedURL→downloadUrl 空串回退、Referer/UA 头）+ 单测 5 个；本地 18 用例通过 | `Packages/LemonGuangya/Sources/Files/PlaybackLink.swift` | ✅ |
 | 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
 
 ---

@@ -37,6 +37,8 @@
 | T-205 | 文件列表 API（code 信封、117 映射、分页/排序）与模型 | M2 | P0 | Lead | `Packages/LemonGuangya/Sources/Files/**` |
 | T-207 | 搜索：本地过滤（FileSearch）+ 浏览页 searchable | M2 | P1 | Lead | `Packages/LemonGuangya/Sources/Files/FileSearch.swift` |
 | T-210 | 单测补齐：认证/文件/搜索/字幕（4 包 36 用例） | M2 | P0 | Lead | `Packages/**/Tests/**` |
+| T-206 | 浏览页：列表、面包屑、排序、下拉刷新、无限滚动 | M2 | P0 | Lead | `Sources/LemonPlayer/Features/Browse/**` |
+| T-303 | 直链获取与解析（signedURL 回退、Referer/UA、117 映射） | M3 | P0 | Lead | `Packages/LemonGuangya/Sources/Files/PlaybackLink.swift` |
 
 ---
 
@@ -44,7 +46,8 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-206 | 浏览页：列表、面包屑、排序、下拉刷新、无限滚动 | M2 | P0 | Lead | iOS CI 验证中（run 41656721616） | `Sources/LemonPlayer/Features/Browse/**` |
+| T-301 | 内核集成（MobileVLCKit 3.7.5，CocoaPods）与资源打包 | M3 | P0 | Lead | 下一步 | `Podfile`、`project.yml`、`.github/workflows/build.yml` |
+| T-302 | `PlaybackEngine` 协议 + 内核适配层（轨道/状态/控制） | M3 | P0 | Lead | T-301 | `Packages/LemonPlayback/**` |
 
 ---
 
@@ -52,7 +55,9 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-209 | iPad 分栏布局（NavigationSplitView） | M2 | P1 | T-206 | `Sources/LemonPlayer/Features/**` |
+| T-304 | 播放器 UI：手势、控制栏、进度条、倍速、轨道切换 | M3 | P0 | T-302 | `Sources/LemonPlayer/Features/Player/**` |
+| T-307 | 后台音频 + 锁屏控制 | M3 | P0 | T-302 | `Packages/LemonPlayback/**`、App |
+| T-209 | iPad 分栏布局（NavigationSplitView） | M2 | P2 | T-206 | `Sources/LemonPlayer/Features/**` |
 
 ---
 

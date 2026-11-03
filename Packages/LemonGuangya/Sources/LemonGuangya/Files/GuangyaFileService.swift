@@ -53,6 +53,28 @@ public struct GuangyaFileService: Sendable {
         return FileListPage(total: envelope.total, items: envelope.items)
     }
 
+    // MARK: - 播放直链
+
+    /// `POST /nd.bizuserres.s/v1/file/get_res_download_url`
+    /// 取值顺序：`data.signedURL` 优先，其次 `data.downloadUrl`（三份实现一致）。
+    public func playbackURL(fileID: String, accessToken: String) async throws -> PlaybackLink {
+        struct Body: Encodable {
+            let fileId: String
+        }
+
+        let request = try HTTPRequest.json(
+            url: Self.apiBaseURL.appendingPathComponent("nd.bizuserres.s/v1/file/get_res_download_url"),
+            headers: headers(accessToken: accessToken),
+            body: Body(fileId: fileID)
+        )
+        let response = try await http.send(request)
+
+        guard response.isSuccess else {
+            throw response.statusCode == 401 ? GuangyaError.tokenExpired : GuangyaError.requestFailed(statusCode: response.statusCode, message: "HTTP \(response.statusCode)")
+        }
+        return try PlaybackLink.decode(from: response.data)
+    }
+
     // MARK: - 响应解析
 
     private struct Envelope: Decodable {
