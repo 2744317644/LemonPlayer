@@ -55,8 +55,8 @@ public actor DiagnosticsCenter {
         entries.removeAll()
     }
 
-    /// 导出为临时 txt 文件（供系统分享）。
-    public func exportFile() -> URL? {
+    /// 导出为临时 txt 文件（供系统分享）。`header` 可放版本/设备等元信息。
+    public func exportFile(header: String = "") -> URL? {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LemonPlayerDiagnostics", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -64,7 +64,11 @@ public actor DiagnosticsCenter {
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        var text = "LemonPlayer Diagnostics\n\n"
+        var text = "LemonPlayer Diagnostics\n"
+        if !header.isEmpty {
+            text += header + "\n"
+        }
+        text += "\n"
         for entry in entries {
             text += "[\(formatter.string(from: entry.timestamp))] [\(entry.level.rawValue.uppercased())] [\(entry.category)] \(entry.message)\n"
         }
@@ -74,6 +78,15 @@ public actor DiagnosticsCenter {
         } catch {
             return nil
         }
+    }
+
+    /// 复制用的纯文本摘要（最近 N 条）。
+    public func summary(limit: Int = 100) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return entries.suffix(limit).map {
+            "[\(formatter.string(from: $0.timestamp))] [\($0.level.rawValue.uppercased())] [\($0.category)] \($0.message)"
+        }.joined(separator: "\n")
     }
 
     private static let formatter: DateFormatter = {

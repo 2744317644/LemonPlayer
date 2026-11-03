@@ -38,12 +38,23 @@ struct DiagnosticsView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     Task {
-                        exportURL = await DiagnosticsCenter.shared.exportFile()
+                        exportURL = await DiagnosticsCenter.shared.exportFile(header: metadataHeader())
                         showShare = exportURL != nil
                     }
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    Task {
+                        let body = await DiagnosticsCenter.shared.summary(limit: 100)
+                        UIPasteboard.general.string = metadataHeader() + "\n\n" + body
+                    }
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                }
+                .accessibilityLabel("复制诊断摘要")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("清空", role: .destructive) {
@@ -60,6 +71,18 @@ struct DiagnosticsView: View {
                 ShareSheet(items: [exportURL])
             }
         }
+    }
+
+    private func metadataHeader() -> String {
+        let device = UIDevice.current
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return """
+        App: LemonPlayer \(LemonCore.version) (\(LemonCore.build))
+        System: \(device.systemName) \(device.systemVersion)
+        Device: \(device.model) / \(device.machineIdentifier)
+        Time: \(formatter.string(from: Date()))
+        """
     }
 
     private func reload() async {
@@ -85,4 +108,14 @@ private struct ShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+private extension UIDevice {
+    var machineIdentifier: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        return withUnsafePointer(to: &systemInfo.machine) { pointer in
+            pointer.withMemoryRebound(to: CChar.self, capacity: 1) { String(cString: $0) }
+        }
+    }
 }
