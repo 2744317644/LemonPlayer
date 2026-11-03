@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-24.04
     container: swift:6.0
     timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
