@@ -14,8 +14,10 @@ final class VLCKitEngine: NSObject, PlaybackEngine {
     private var audioTracksValue: [PlaybackTrack] = []
     private var subtitleTracksValue: [PlaybackTrack] = []
     private var externalSubtitleURLs: [URL] = []
+    private let fontsDirectory: URL?
 
-    override init() {
+    init(fontsDirectory: URL? = nil) {
+        self.fontsDirectory = fontsDirectory
         super.init()
         player.delegate = self
     }
@@ -67,6 +69,11 @@ final class VLCKitEngine: NSObject, PlaybackEngine {
         media.addOption(":http-referrer=\(source.headers["Referer"] ?? "https://www.guangyupan.com/")")
         if let userAgent = source.headers["User-Agent"] {
             media.addOption(":http-user-agent=\(userAgent)")
+        }
+        // 自定义字幕字体（ASS 特效字体族）
+        if let fontsDirectory,
+           FileManager.default.fileExists(atPath: fontsDirectory.path) {
+            media.addOption(":sub-fonts-dir=\(fontsDirectory.path)")
         }
         player.media = media
         player.play()

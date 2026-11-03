@@ -15,7 +15,7 @@ enum PlaybackEngineFactory {
             return AVPlayerEngine()
         }
         #if canImport(MobileVLCKit)
-        return VLCKitEngine()
+        return VLCKitEngine(fontsDirectory: SubtitleFontStore.directory)
         #else
         return MockPlaybackEngine()
         #endif

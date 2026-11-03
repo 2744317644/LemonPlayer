@@ -16,6 +16,7 @@ struct SettingsView: View {
     @State private var probeResult: String?
     @State private var probing = false
     @State private var storageLimitGB = UserDefaults.standard.integer(forKey: "lemonplayer.downloads.limitGB")
+    @State private var fontCount = SubtitleFontStore.count
 
     var body: some View {
         Form {
@@ -67,7 +68,12 @@ struct SettingsView: View {
                 NavigationLink("字幕样式") {
                     SubtitleStyleSettingsPreview()
                 }
-                Text("字幕样式在播放页的字幕按钮中实时调整；这里查看当前默认值。")
+                Button("清除已导入字幕字体（\(fontCount)）", role: .destructive) {
+                    SubtitleFontStore.removeAll()
+                    fontCount = SubtitleFontStore.count
+                }
+                .disabled(fontCount == 0)
+                Text("ASS 特效字幕的自定义字体在播放页「字幕 → 导入 ASS 字体」添加；导入后重播生效。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

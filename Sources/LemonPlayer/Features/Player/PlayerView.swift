@@ -1,4 +1,6 @@
 import SwiftUI
+import AVKit
+import UniformTypeIdentifiers
 import LemonGuangya
 import LemonPlayback
 import LemonSubtitle
@@ -63,6 +65,7 @@ private struct PlayerContent: View {
     let model: PlayerViewModel
     @State private var showControls = true
     @State private var showStyleSheet = false
+    @State private var showFontImporter = false
     @State private var isFullscreen = false
     @State private var hud: String?
     @State private var dragStartBrightness: Double?
@@ -133,6 +136,15 @@ private struct PlayerContent: View {
         .sheet(isPresented: $showStyleSheet) {
             SubtitleStyleSheet(style: model.subtitleStyle) { style in
                 model.updateStyle(style)
+            }
+        }
+        .fileImporter(
+            isPresented: $showFontImporter,
+            allowedContentTypes: [.font],
+            allowsMultipleSelection: true
+        ) { result in
+            if case .success(let urls) = result {
+                model.importSubtitleFonts(urls)
             }
         }
     }
@@ -401,6 +413,13 @@ private struct PlayerContent: View {
             }
             if model.subtitleCandidates.isEmpty {
                 Text("同目录未找到字幕")
+            }
+            Divider()
+            Button("导入 ASS 字体…") {
+                showFontImporter = true
+            }
+            if SubtitleFontStore.count > 0 {
+                Text("已导入 \(SubtitleFontStore.count) 个字体（重播生效）")
             }
         } label: {
             Image(systemName: model.attachedSubtitleName == nil ? "captions.bubble" : "captions.bubble.fill")

@@ -187,6 +187,23 @@ final class PlayerViewModel {
         isRecovering = false
     }
 
+    // MARK: - 字幕字体
+
+    /// 导入 ASS 自定义字体（写入字体库，VLCKit 下次 load 生效）。
+    func importSubtitleFonts(_ urls: [URL]) {
+        var imported = 0
+        for url in urls {
+            if SubtitleFontStore.importFont(from: url) != nil {
+                imported += 1
+            }
+        }
+        if imported > 0 {
+            subtitleNotice = "已导入 \(imported) 个字体，重新播放后生效"
+        } else {
+            subtitleNotice = "字体导入失败（请选择 ttf/otf 文件）"
+        }
+    }
+
     // MARK: - 画中画 / AirPlay（仅 AVPlayer 内核）
 
     var isAVPlayerEngine: Bool { engine is AVPlayerEngine }
