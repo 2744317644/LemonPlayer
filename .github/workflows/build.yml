@@ -11,11 +11,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # 纯逻辑层单测：跑在 Linux 容器里，秒级完成、不占 macOS 额度
+  test:
+    runs-on: ubuntu-24.04
+    container: swift:6.0
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package tests (Linux Swift 6.0)
+        run: |
+          set -euo pipefail
+          for p in LemonCore LemonNetwork LemonGuangya LemonSubtitle; do
+            echo "::group::$p"
+            timeout 300 swift test --package-path "Packages/$p"
+            echo "::endgroup::"
+          done
+
+  # iOS 构建 + 未签名 IPA：只在 macOS 上跑，避免和单测抢时间
   build:
-    # 2026-11 实测：macos-26 (arm64) 高峰排队可达 1 小时甚至被取消；
-    # 切到 Intel 容量池做兜底。若该标签不可用，CI 会立即报 "no runner matching labels"。
     runs-on: macos-26-intel
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -48,13 +64,6 @@ jobs:
         run: |
           xcodegen generate --spec project.yml
           ls -la LemonPlayer.xcodeproj
-
-      - name: Swift package tests
-        run: |
-          swift test --package-path Packages/LemonCore
-          swift test --package-path Packages/LemonSubtitle
-          swift test --package-path Packages/LemonNetwork
-          swift test --package-path Packages/LemonGuangya
 
       - name: Build for simulator (unsigned)
         run: |
