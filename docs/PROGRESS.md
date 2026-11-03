@@ -9,13 +9,13 @@
 | 项目 | 值 |
 |---|---|
 | 当前里程碑 | **M7 · 打磨与发布（75%）** |
-| 当前阶段目标 | rc9：双内核（MP4 原生 PiP/AirPlay）；等真机复测 → v1.0.0 |
+| 当前阶段目标 | rc10：ASS 自定义字体导入；等真机复测 → v1.0.0 |
 | 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ▓▓▓▓▓▓▓▓░░ 75% |
-| 构建状态 | ✅ 常规 CI 全绿；Release rc1~rc9（rc9 首跑因 GitHub API 超时重跑成功） |
+| 构建状态 | ✅ 常规 CI 全绿；Release rc1~rc10 |
 | 单测覆盖率 | 7 个包 75 个用例 + 模拟器 UI 冒烟测试（手动 job） |
-| 最新产物 | Release `v1.0.0-rc9`（双内核：MP4→AVPlayer/PiP/AirPlay；MKV→VLCKit） |
-| 下一步 | 用户复测三通道登录 / 播放字幕 / 后台下载 / MP4 画中画 → v1.0.0 |
-| 阻塞项 | 真机登录待确认；MKV 的 PiP/AirPlay 仍受限（记录 ADR-018） |
+| 最新产物 | Release `v1.0.0-rc10`（双内核 + ASS 字体导入 + 后台下载） |
+| 下一步 | 用户复测登录/播放/字幕/下载/画中画 → v1.0.0 正式版 |
+| 阻塞项 | 真机登录待确认；MKV PiP/AirPlay、iPad 分栏为 P2 |
 
 ---
 
@@ -109,6 +109,7 @@
 | 2026-11-04 05:20 | M7 | 交付文档定稿：`docs/DELIVERY.md`（功能对照/安装/已知限制/验证状态）；ADR-015~017（后台下载/TMDB 兜底/测试分层）；README 与 ARCHITECTURE as-built 更新 | `docs/DELIVERY.md`、`docs/DECISIONS.md`、`README.md` | ✅ |
 | 2026-11-04 21:20 | M7 | **双内核播放**：`AVPlayerEngine`（MP4/MOV/M4V→AVPlayer，原生 PiP + AirPlay 路由）；MKV 仍走 VLCKit；协议加 `supportsNativeASS`（AVPlayer 下 ASS 降级自绘）；播放器新增 PiP/AirPlay 控件 | `AVPlayerEngine.swift`、`PlaybackEngineFactory` | ✅ |
 | 2026-11-04 21:40 | M7 | 发布 `v1.0.0-rc9`（双内核）；首跑 Release 上传因 api.github.com 超时失败，rerun failed 后成功 | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc9 | ✅ |
+| 2026-11-04 22:10 | M4/M7 | **ASS 自定义字体导入**：`SubtitleFontStore` + VLCKit `:sub-fonts-dir`；播放页字幕菜单 fileImporter（ttf/otf 多选），设置页显示/清除；发布 `v1.0.0-rc10` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc10 | ✅ |
 
 ---
 

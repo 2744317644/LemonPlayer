@@ -46,6 +46,7 @@ Swift / SwiftUI 原生 iOS 播放器：扫码登录**光鸭云盘**后直接浏�
 | GBK / UTF-8 编码识别 | ✅ | BOM → UTF-8 → GB18030 → BIG5 → 兜底 |
 | SRT/VTT 自绘样式 | ✅ | 字号/颜色/描边/背景/底边距实时生效 |
 | ASS/SSA 特效渲染 | ✅ | 内核 libass（字体/定位/卡拉OK） |
+| ASS 自定义字体导入 | ✅ | 播放页「字幕 → 导入 ASS 字体」，字体库经 `:sub-fonts-dir` 注入 |
 | 字幕时间轴校准 | ✅ | ±0.1s；ASS 改时间戳保标签，SRT 重新序列化 |
 | 双语字幕 | ✅ | 主/副字幕叠加 |
 | 按文件记忆字幕与偏移 | ✅ | SubtitlePreferenceStore |
