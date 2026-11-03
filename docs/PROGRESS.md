@@ -11,7 +11,7 @@
 | 当前里程碑 | **M5 · 媒体库（Bangumi）** 启动 + M3/M4 收尾 |
 | 当前阶段目标 | M5：Bangumi 海报墙/详情/剧集 + 剧集连播；M3 仅剩 PiP/AirPlay（P2） |
 | 整体进度 | M0 ✅ · M1 ✅ · M2 ✅ · M3 ✅95% · M4 ✅50% · M5 ▓░░░░░░░░░ 15% |
-| 构建状态 | ✅ CI 全绿（手势/全屏那次 run `41676751997`；本轮 Bangumi 客户端待验证） |
+| 构建状态 | ✅ **CI 全绿**：run `41678210911`（test 6 包 + macOS 构建） |
 | 单测覆盖率 | 6 个包 62 个用例（新增文件名解析/季集识别 5 个、Bangumi 解码 4 个） |
 | 最新产物 | IPA 17MB：播放/字幕/手势/全屏 + Bangumi 客户端（未接 UI） |
 | 下一步 | Bangumi 海报墙 + 详情页 + 剧集列表 → 剧集自动连播 → 播放历史 |
@@ -88,7 +88,7 @@
 | 2026-11-04 01:14 | M3/M4 | 断点续播（UserDefaults 进度存储，重进跳转/每 5s 落盘）、字幕延迟 ±0.1s（SRT 重序列化 / ASS 仅改时间戳）、直链失效自动重取（刷新 token + seek 回原位置）；本地 49 用例通过 | `PlaybackProgressStore`、`SubtitleSerializer`、`PlayerViewModel` | ✅ |
 | 2026-11-04 01:35 | M4 | **SRT/VTT 自绘字幕 + 样式面板**：字号/颜色/描边/背景/底边距实时生效；副字幕（双语）叠加；按文件记忆主/副字幕与偏移；SubtitleTimeline 二分查询 + 4 个测试；CI 全绿（run 41675119995） | `SubtitleOverlayView`、`SubtitleStyle`、`SubtitlePreferenceStore` | ✅ |
 | 2026-11-04 01:50 | M3 | 上下滑亮度（左半屏）/系统音量（右半屏，MPVolumeView）+ HUD；全屏按钮（隐藏导航/状态栏 + iOS 16 锁横屏）；CI 全绿（run 41676751997） | `SystemControls.swift`、`PlayerView` | ✅ |
-| 2026-11-04 01:55 | M5 | `MediaNameParser`（字幕组标签/年份/季集/中文季集/分辨率）+ 5 测试；`BangumiClient`（搜索/详情/剧集、可识别 UA、1 req/s 限流）+ 4 解码测试；本地 9 用例通过 | `Packages/LemonMedia/**` | 🟡 CI 验证中 |
+| 2026-11-04 01:55 | M5 | `MediaNameParser`（字幕组标签/年份/季集/中文季集/分辨率）+ 5 测试；`BangumiClient`（搜索/详情/剧集、可识别 UA、1 req/s 限流）+ 4 解码测试；本地 9 用例通过；CI 全绿（run 41678210911） | `Packages/LemonMedia/**` | ✅ |
 | 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
 
 ---
