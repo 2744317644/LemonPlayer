@@ -9,13 +9,13 @@
 | 项目 | 值 |
 |---|---|
 | 当前里程碑 | **M7 · 打磨与发布（55%）** |
-| 当前阶段目标 | 真机联调修复：rc2 已发布（登录循环修复 + 诊断日志 + 字幕预览） |
+| 当前阶段目标 | rc3：登录兜底（Token 直登）+ 轮询状态可视化，等真机复测 |
 | 整体进度 | M0-M5 ✅ · M6 ✅60% · M7 ▓▓▓▓▓▓░░░░ 55% |
-| 构建状态 | ✅ CI 全绿 + Release 工作流实测通过（rc1 / rc2） |
-| 单测覆盖率 | 7 个包 75 个用例（新增诊断日志 4 个） |
-| 最新产物 | Release `v1.0.0-rc2`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc2 |
-| 下一步 | 用户装 rc2 复测扫码 → 若仍失败导出诊断日志定位 → v1.0.0 正式版 |
-| 阻塞项 | 真机登录问题待用户复测确认；PiP/AirPlay 为 P2 |
+| 构建状态 | ✅ CI 全绿 + Release 工作流实测通过（rc1 / rc2 / rc3） |
+| 单测覆盖率 | 7 个包 75 个用例 |
+| 最新产物 | Release `v1.0.0-rc3`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc3 |
+| 下一步 | 用户装 rc3 复测：扫码（自动重试/换码）或 Token 直登 → 导出诊断日志（如仍失败）→ v1.0.0 |
+| 阻塞项 | 真机登录问题待复测确认；PiP/AirPlay 为 P2 |
 
 ---
 
@@ -97,6 +97,8 @@
 | 2026-11-04 03:20 | M2 | **真机联调 bug**：扫码后显示网络异常、刷新又要求重扫（循环）。根因判断：切到光鸭 App 时本 App 挂起，回来后首个请求因 `waitsForConnectivity=false` 立即失败；设备码仅 120s 有效，过期即需重扫 | — | 🟡 |
 | 2026-11-04 03:28 | M2 | 修复：`waitsForConnectivity=true`（Darwin）；轮询网络错误指数退避重试（≥6 次才失败）；设备码过期自动换码（≤3 次）；回前台自动重试；Keychain 写入失败内存兜底；登录全流程写诊断日志 | `LoginViewModel`、`SessionStore`、`HTTPClient` | ✅ |
 | 2026-11-04 03:32 | M7 | 发布 `v1.0.0-rc2`（登录循环修复 + 诊断日志 + 字幕预览） | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc2 | ✅ |
+| 2026-11-04 03:45 | M2 | 登录兜底与可观测：Token 直登（JWT 校验 + `/user/me` 探测）、轮询次数/重试状态展示、失败页显示最近错误；CI 全绿（run 41695454877） | `Features/Login/**`、`SessionStore` | ✅ |
+| 2026-11-04 03:50 | M7 | 发布 `v1.0.0-rc3`（Token 直登 + 轮询可视化） | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc3 | ✅ |
 
 ---
 

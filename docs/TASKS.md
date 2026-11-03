@@ -37,6 +37,8 @@
 | T-205 | 文件列表 API（code 信封、117 映射、分页/排序）与模型 | M2 | P0 | Lead | `Packages/LemonGuangya/Sources/Files/**` |
 | T-207 | 搜索：本地过滤（FileSearch）+ 浏览页 searchable | M2 | P1 | Lead | `Packages/LemonGuangya/Sources/Files/FileSearch.swift` |
 | T-210 | 单测补齐：认证/文件/搜索/字幕（4 包 36 用例） | M2 | P0 | Lead | `Packages/**/Tests/**` |
+| T-211 | Token 直登兜底（JWT 格式校验 + `/user/me` 探测 + Keychain/内存兜底） | M2 | P1 | Lead | `Features/Login/**`、`SessionStore.swift` |
+| T-212 | 登录轮询韧性：网络错误退避重试、设备码过期自动换码、回前台自动恢复 | M2 | P0 | Lead | `LoginViewModel`、`HTTPClient` |
 | T-206 | 浏览页：列表、面包屑、排序、下拉刷新、无限滚动 | M2 | P0 | Lead | `Sources/LemonPlayer/Features/Browse/**` |
 | T-303 | 直链获取与解析（signedURL 回退、Referer/UA、117 映射） | M3 | P0 | Lead | `Packages/LemonGuangya/Sources/Files/PlaybackLink.swift` |
 | T-302 | `PlaybackEngine` 协议 + 轨道/状态模型 + Mock 引擎（Swift Testing 4 用例） | M3 | P0 | Lead | `Packages/LemonPlayback/**` |
