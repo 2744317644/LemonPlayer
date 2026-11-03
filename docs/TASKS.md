@@ -59,6 +59,8 @@
 | T-504 | 首页海报墙（扫描/空态/失败态/海报网格） | M5 | P0 | Lead | `Features/Library/**` |
 | T-505 | 详情页 + 剧集列表（海报/年份/评分/播放） | M5 | P1 | Lead | `Features/Library/LibraryView.swift` |
 | T-506 | 剧集自动连播（播放队列 + didFinish） | M5 | P1 | Lead | `Features/Player/**` |
+| T-507 | 继续观看（媒体库首页横向卡片 + 进度条续播） | M5 | P1 | Lead | `Features/Library/**`、`LemonPersistence/**` |
+| T-602 | 下载状态机（DownloadRecord/State）+ 5 个测试 | M6 | P0 | Lead | `Packages/LemonDownloads/**` |
 
 ---
 
@@ -66,8 +68,8 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-507 | 播放历史 / 继续观看首页（读 PlaybackProgressStore） | M5 | P1 | Lead | M5 下一步 | `Features/Library/**`、`LemonPersistence/**` |
-| — | 详情页手动纠错（换匹配/改季集） | M5 | P2 | Lead | T-503 | `Features/Library/**` |
+| T-601 | DownloadManager：后台 URLSession + 断点续传 + 暂停/恢复/删除 | M6 | P0 | Lead | M6 下一步 | `Packages/LemonDownloads/**` |
+| T-603 | 下载页 UI（列表/进度/速度/批量/容量） | M6 | P0 | Lead | T-601 | `Features/Downloads/**` |
 
 ---
 
@@ -75,7 +77,7 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-601 | 后台下载（URLSession background + 断点续传） | M6 | P0 | M6 启动 | `Packages/LemonDownloads/**` |
+| T-605 | 离线播放：本地文件优先于远程直链 | M6 | P0 | T-601 | `PlayerViewModel`、`LemonDownloads/**` |
 | T-411 | 字幕样式预览页 | M4 | P1 | T-408 | `Features/Player/**` |
 | T-209 | iPad 分栏布局 | M2 | P2 | T-206 | `Sources/LemonPlayer/Features/**` |
 
