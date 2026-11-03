@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import LemonGuangya
 import LemonMedia
+import LemonPersistence
 import LemonPlayback
 
 /// 媒体库：扫描网盘视频 → 文件名解析分组 → Bangumi 匹配 → 缓存与展示。
@@ -16,11 +17,13 @@ final class LibraryViewModel {
     }
 
     private(set) var series: [LibrarySeries] = []
+    private(set) var recent: [PlaybackProgress] = []
     private(set) var phase: Phase = .idle
     private(set) var statusMessage: String?
 
     @ObservationIgnored private let session: SessionStore
     @ObservationIgnored private let store = LibraryStore()
+    @ObservationIgnored private let progressStore = PlaybackProgressStore()
     @ObservationIgnored private let bangumi = BangumiClient()
     @ObservationIgnored private let fileService: GuangyaFileService
 
@@ -31,9 +34,15 @@ final class LibraryViewModel {
 
     func loadCached() async {
         let cached = await store.load()
-        guard !cached.isEmpty else { return }
-        series = cached
-        phase = .loaded
+        if !cached.isEmpty {
+            series = cached
+            phase = .loaded
+        }
+        await loadRecent()
+    }
+
+    func loadRecent() async {
+        recent = await progressStore.recent(limit: 12)
     }
 
     func scan() async {

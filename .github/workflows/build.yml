@@ -25,7 +25,7 @@ jobs:
       - name: Package tests (Linux Swift 6.0)
         run: |
           set -euo pipefail
-          for p in LemonCore LemonNetwork LemonGuangya LemonSubtitle LemonPlayback LemonMedia; do
+          for p in LemonCore LemonNetwork LemonGuangya LemonSubtitle LemonPlayback LemonMedia LemonDownloads; do
             echo "::group::$p"
             timeout 300 swift test --package-path "Packages/$p"
             echo "::endgroup::"

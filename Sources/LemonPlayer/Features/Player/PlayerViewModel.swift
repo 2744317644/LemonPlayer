@@ -144,7 +144,13 @@ final class PlayerViewModel {
 
     private func saveProgress() {
         guard phase == .ready, currentTime > 0 else { return }
-        let snapshot = PlaybackProgress(fileID: file.id, position: currentTime, duration: duration)
+        let snapshot = PlaybackProgress(
+            fileID: file.id,
+            position: currentTime,
+            duration: duration,
+            fileName: file.name,
+            parentID: file.parentID
+        )
         Task { [progressStore] in
             await progressStore.save(snapshot)
         }

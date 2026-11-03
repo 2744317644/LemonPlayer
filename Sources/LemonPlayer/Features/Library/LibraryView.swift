@@ -31,22 +31,16 @@ struct LibraryView: View {
             model = created
             await created.loadCached()
         }
+        .onAppear {
+            Task { await model?.loadRecent() }
+        }
     }
 
     @ViewBuilder
     private func content(_ model: LibraryViewModel) -> some View {
         switch model.phase {
-        case .idle:
-            ContentUnavailableView {
-                Label("还没有媒体库", systemImage: "rectangle.stack.badge.play")
-            } description: {
-                Text("扫描光鸭云盘中的视频，按 Bangumi 自动匹配番剧海报与剧集。")
-            } actions: {
-                Button("扫描网盘") {
-                    Task { await model.scan() }
-                }
-                .buttonStyle(.borderedProminent)
-            }
+        case .idle, .loaded:
+            libraryContent(model)
 
         case .scanning:
             VStack(spacing: 12) {
@@ -66,30 +60,96 @@ struct LibraryView: View {
                     Task { await model.scan() }
                 }
             }
+        }
+    }
 
-        case .loaded:
+    private func libraryContent(_ model: LibraryViewModel) -> some View {
+        ScrollView {
+            if !model.recent.isEmpty {
+                recentSection(model)
+            }
+
             if model.series.isEmpty {
-                ContentUnavailableView("没有可展示的系列", systemImage: "film.stack")
+                VStack(spacing: 14) {
+                    ContentUnavailableView {
+                        Label("还没有媒体库", systemImage: "rectangle.stack.badge.play")
+                    } description: {
+                        Text("扫描光鸭云盘中的视频，按 Bangumi 自动匹配番剧海报与剧集。")
+                    }
+                    Button("扫描网盘") {
+                        Task { await model.scan() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding(.top, 24)
             } else {
-                grid(model)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 108), spacing: 12)], spacing: 16) {
+                    ForEach(model.series) { series in
+                        NavigationLink {
+                            SeriesDetailView(series: series)
+                        } label: {
+                            posterCard(series)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding()
             }
         }
     }
 
-    private func grid(_ model: LibraryViewModel) -> some View {
-        ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 108), spacing: 12)], spacing: 16) {
-                ForEach(model.series) { series in
-                    NavigationLink {
-                        SeriesDetailView(series: series)
-                    } label: {
-                        posterCard(series)
+    private func recentSection(_ model: LibraryViewModel) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("继续观看")
+                .font(.headline)
+                .padding(.horizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(model.recent.filter { $0.fileName != nil }, id: \.fileID) { progress in
+                        NavigationLink {
+                            PlayerView(file: makeFile(from: progress))
+                        } label: {
+                            recentCard(progress)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal)
             }
-            .padding()
         }
+        .padding(.top, 8)
+    }
+
+    private func recentCard(_ progress: PlaybackProgress) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.secondary.opacity(0.15))
+                .frame(width: 160, height: 90)
+                .overlay(
+                    Image(systemName: "play.circle")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                )
+
+            Text(progress.fileName ?? "未知文件")
+                .font(.caption)
+                .lineLimit(1)
+
+            ProgressView(value: progress.progressFraction)
+                .tint(.yellow)
+        }
+        .frame(width: 160)
+    }
+
+    private func makeFile(from progress: PlaybackProgress) -> GuangyaFile {
+        GuangyaFile(
+            id: progress.fileID,
+            parentID: progress.parentID ?? "",
+            name: progress.fileName ?? "",
+            size: 0,
+            kind: .video
+        )
     }
 
     private func posterCard(_ series: LibrarySeries) -> some View {

@@ -7,12 +7,29 @@ public struct PlaybackProgress: Codable, Sendable, Equatable {
     public var position: TimeInterval
     public var duration: TimeInterval
     public var updatedAt: Date
+    /// 展示与"继续观看"需要；旧数据可能缺失（可选字段保证向后兼容）
+    public var fileName: String?
+    public var parentID: String?
 
-    public init(fileID: String, position: TimeInterval, duration: TimeInterval, updatedAt: Date = Date()) {
+    public init(
+        fileID: String,
+        position: TimeInterval,
+        duration: TimeInterval,
+        updatedAt: Date = Date(),
+        fileName: String? = nil,
+        parentID: String? = nil
+    ) {
         self.fileID = fileID
         self.position = position
         self.duration = duration
         self.updatedAt = updatedAt
+        self.fileName = fileName
+        self.parentID = parentID
+    }
+
+    public var progressFraction: Double {
+        guard duration > 0 else { return 0 }
+        return min(max(position / duration, 0), 1)
     }
 }
 
