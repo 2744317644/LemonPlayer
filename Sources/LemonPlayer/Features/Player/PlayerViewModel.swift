@@ -7,7 +7,7 @@ import LemonPersistence
 import LemonPlayback
 import LemonSubtitle
 
-/// 播放页状态：取直链 → 加载内核 → 恢复进度 → 自动匹配字幕 → 进度轮询/上报 → 控制。
+/// 播放页状态：取直链 → 加载内核 → 恢复进度 → 字幕（overlay/libass）→ 进度轮询/上报 → 控制。
 @MainActor
 @Observable
 final class PlayerViewModel {
@@ -26,21 +26,30 @@ final class PlayerViewModel {
     private(set) var duration: Double = 0
     private(set) var subtitleCandidates: [SubtitleCandidate] = []
     private(set) var attachedSubtitleName: String?
+    private(set) var secondarySubtitleName: String?
     private(set) var subtitleNotice: String?
-    private(set) var subtitleOffsetValue: TimeInterval = 0
     private(set) var resumeNotice: String?
+    private(set) var subtitleOffsetValue: TimeInterval = 0
+    var subtitleStyle: SubtitleStyle = .default
     var rate: Float = 1
+
+    /// SRT/VTT 自绘字幕开关（ASS 走内核 libass，不经过这里）
+    private(set) var isOverlaySubtitleActive = false
+    private(set) var activeSubtitleLines: [String] = []
 
     @ObservationIgnored private let session: SessionStore
     @ObservationIgnored private let service: GuangyaFileService
     @ObservationIgnored private let http = HTTPClient()
     @ObservationIgnored private let progressStore = PlaybackProgressStore()
+    @ObservationIgnored private let subtitlePreferenceStore = SubtitlePreferenceStore()
+    @ObservationIgnored private let subtitleStyleStore = SubtitleStyleStore()
     @ObservationIgnored private var progressTask: Task<Void, Never>?
     @ObservationIgnored private var subtitleFiles: [GuangyaFile] = []
-    @ObservationIgnored private var currentSubtitleFile: GuangyaFile?
-    @ObservationIgnored private var subtitleRawText: String?
-    @ObservationIgnored private var subtitleFormat: SubtitleFormat = .unknown
-    @ObservationIgnored private var subtitleOffset: TimeInterval = 0
+    @ObservationIgnored private var primaryCues: [SubtitleCue] = []
+    @ObservationIgnored private var secondaryCues: [SubtitleCue] = []
+    @ObservationIgnored private var kernelSubtitleFile: GuangyaFile?
+    @ObservationIgnored private var kernelSubtitleText: String?
+    @ObservationIgnored private var mergedOffset: TimeInterval = 0
     @ObservationIgnored private var recoveryAttempts = 0
     @ObservationIgnored private var isRecovering = false
     @ObservationIgnored private var tickCount = 0
@@ -56,6 +65,7 @@ final class PlayerViewModel {
 
     func start() async {
         phase = .loading
+        subtitleStyle = await subtitleStyleStore.load()
         configureAudioSession()
         configureRemoteCommands()
         do {
@@ -109,6 +119,7 @@ final class PlayerViewModel {
             guard let self else { return }
             await self.engine.seek(to: value)
             self.currentTime = value
+            self.refreshOverlayLines()
             self.saveProgress()
         }
     }
@@ -123,9 +134,7 @@ final class PlayerViewModel {
     private func applyResumePosition() async {
         guard let saved = await progressStore.progress(for: file.id) else { return }
         guard saved.position > 5 else { return }
-        if saved.duration > 0, saved.position > saved.duration - 15 {
-            return // 已接近结尾，不恢复
-        }
+        if saved.duration > 0, saved.position > saved.duration - 15 { return }
         await engine.seek(to: saved.position)
         currentTime = saved.position
         resumeNotice = "已跳转到上次位置 \(Self.format(saved.position))"
@@ -163,7 +172,7 @@ final class PlayerViewModel {
         isRecovering = false
     }
 
-    // MARK: - 外挂字幕
+    // MARK: - 字幕
 
     func autoAttachSubtitle() async {
         guard file.isPlayable else { return }
@@ -184,9 +193,25 @@ final class PlayerViewModel {
                 subtitleNames: subtitleFiles.map(\.name)
             )
             subtitleCandidates = candidates
+
+            // 优先恢复该文件记住的字幕选择与偏移
+            if let preference = await subtitlePreferenceStore.preference(for: file.id) {
+                mergedOffset = preference.offset
+                subtitleOffsetValue = preference.offset
+                if let name = preference.primaryFileName,
+                   let matched = subtitleFiles.first(where: { $0.name == name }) {
+                    await attach(matched, asSecondary: false)
+                    if let secondaryName = preference.secondaryFileName,
+                       let secondaryMatched = subtitleFiles.first(where: { $0.name == secondaryName }) {
+                        await attach(secondaryMatched, asSecondary: true)
+                    }
+                    return
+                }
+            }
+
             if let best = candidates.first,
                let matched = subtitleFiles.first(where: { $0.name == best.fileName }) {
-                await attach(matched)
+                await attach(matched, asSecondary: false)
             }
         } catch {
             subtitleNotice = "字幕匹配失败（不影响播放）"
@@ -198,11 +223,19 @@ final class PlayerViewModel {
             subtitleNotice = "字幕文件不在当前目录"
             return
         }
-        await attach(matched)
+        await attach(matched, asSecondary: false)
     }
 
-    /// 下载字幕 → 识别编码并转 UTF-8 → 缓存原文 → 按当前偏移注入内核。
-    func attach(_ subtitleFile: GuangyaFile) async {
+    func attachSecondary(_ candidate: SubtitleCandidate) async {
+        guard let matched = subtitleFiles.first(where: { $0.name == candidate.fileName }) else {
+            subtitleNotice = "字幕文件不在当前目录"
+            return
+        }
+        await attach(matched, asSecondary: true)
+    }
+
+    /// 下载字幕 → 识别编码 → SRT/VTT 走自绘 overlay，ASS 走内核 libass。
+    func attach(_ subtitleFile: GuangyaFile, asSecondary: Bool) async {
         do {
             let token = try await session.validAccessToken()
             let link = try await service.playbackURL(fileID: subtitleFile.id, accessToken: token)
@@ -213,54 +246,120 @@ final class PlayerViewModel {
             }
 
             let decoded = SubtitleTextDecoder.decode(response.data)
-            currentSubtitleFile = subtitleFile
-            subtitleRawText = decoded.text
-            subtitleFormat = SubtitleParser.detectFormat(
-                fileExtension: subtitleFile.ext,
-                text: decoded.text
-            )
-            subtitleOffset = 0
-            subtitleOffsetValue = 0
-            await applySubtitleContent()
+            let format = SubtitleParser.detectFormat(fileExtension: subtitleFile.ext, text: decoded.text)
+
+            if !asSecondary, format == .ass {
+                // ASS：内核 libass 渲染（完整特效）
+                kernelSubtitleFile = subtitleFile
+                kernelSubtitleText = decoded.text
+                isOverlaySubtitleActive = false
+                primaryCues = []
+                secondaryCues = []
+                subtitleNotice = nil
+                await applyKernelSubtitle()
+            } else {
+                // SRT/VTT（或作为副字幕的 ASS）：自绘 overlay，样式可控
+                let cues = SubtitleParser.parseCues(text: decoded.text, format: format)
+                if asSecondary {
+                    secondaryCues = cues
+                    secondarySubtitleName = subtitleFile.name
+                } else {
+                    primaryCues = cues
+                    attachedSubtitleName = subtitleFile.name
+                    isOverlaySubtitleActive = true
+                    kernelSubtitleFile = nil
+                    kernelSubtitleText = nil
+                    engine.selectSubtitleTrack(id: nil)
+                }
+                refreshOverlayLines()
+                subtitleNotice = nil
+            }
+            await persistPreference()
         } catch {
             subtitleNotice = "字幕加载失败：\(error.localizedDescription)"
         }
     }
 
     func adjustSubtitleOffset(_ delta: TimeInterval) async {
-        subtitleOffset = ((subtitleOffset + delta) * 10).rounded() / 10
-        subtitleOffsetValue = subtitleOffset
-        await applySubtitleContent()
+        mergedOffset = ((mergedOffset + delta) * 10).rounded() / 10
+        subtitleOffsetValue = mergedOffset
+        if isOverlaySubtitleActive {
+            refreshOverlayLines()
+        } else {
+            await applyKernelSubtitle()
+        }
+        await persistPreference()
     }
 
     func resetSubtitleOffset() async {
-        subtitleOffset = 0
+        mergedOffset = 0
         subtitleOffsetValue = 0
-        await applySubtitleContent()
+        if isOverlaySubtitleActive {
+            refreshOverlayLines()
+        } else {
+            await applyKernelSubtitle()
+        }
+        await persistPreference()
     }
 
     func disableSubtitles() {
         engine.selectSubtitleTrack(id: nil)
+        isOverlaySubtitleActive = false
+        primaryCues = []
+        secondaryCues = []
         attachedSubtitleName = nil
+        secondarySubtitleName = nil
+        activeSubtitleLines = []
+        kernelSubtitleFile = nil
+        kernelSubtitleText = nil
+        Task { await persistPreference() }
     }
 
-    private func applySubtitleContent() async {
-        guard let subtitleFile = currentSubtitleFile, let rawText = subtitleRawText else { return }
+    func updateStyle(_ style: SubtitleStyle) {
+        subtitleStyle = style
+        Task { [subtitleStyleStore] in
+            await subtitleStyleStore.save(style)
+        }
+    }
+
+    func refreshOverlayLines() {
+        guard isOverlaySubtitleActive else {
+            activeSubtitleLines = []
+            return
+        }
+        let time = currentTime - mergedOffset
+        var lines = SubtitleTimeline.activeTexts(in: primaryCues, at: time)
+        if !secondaryCues.isEmpty {
+            lines += SubtitleTimeline.activeTexts(in: secondaryCues, at: time)
+        }
+        activeSubtitleLines = lines
+    }
+
+    private func applyKernelSubtitle() async {
+        guard let subtitleFile = kernelSubtitleFile, let rawText = kernelSubtitleText else { return }
         do {
-            let transformed: String
-            if subtitleFormat == .ass {
-                transformed = ASSSubtitleShifter.shift(rawText, after: subtitleOffset)
-            } else {
-                let cues = SubtitleParser.parseCues(text: rawText, format: subtitleFormat)
-                transformed = SubtitleSerializer.srt(from: cues, offset: subtitleOffset)
-            }
-            let tempURL = try writeTemporarySubtitle(text: transformed, fileName: subtitleFile.name)
+            let shifted = ASSSubtitleShifter.shift(rawText, after: mergedOffset)
+            let tempURL = try writeTemporarySubtitle(text: shifted, fileName: subtitleFile.name)
             try await engine.addExternalSubtitle(url: tempURL, encoding: .utf8)
             attachedSubtitleName = subtitleFile.name
-            subtitleNotice = nil
+            activeSubtitleLines = []
         } catch {
             subtitleNotice = "字幕加载失败：\(error.localizedDescription)"
         }
+    }
+
+    private func persistPreference() async {
+        let preference = SubtitlePreference(
+            primaryFileName: assignedPrimaryName,
+            secondaryFileName: secondarySubtitleName,
+            offset: mergedOffset
+        )
+        await subtitlePreferenceStore.save(preference, for: file.id)
+    }
+
+    private var assignedPrimaryName: String? {
+        if isOverlaySubtitleActive { return attachedSubtitleName }
+        return kernelSubtitleFile?.name
     }
 
     private func writeTemporarySubtitle(text: String, fileName: String) throws -> URL {
@@ -305,13 +404,14 @@ final class PlayerViewModel {
         progressTask?.cancel()
         progressTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(500))
+                try? await Task.sleep(for: .milliseconds(300))
                 guard let self else { return }
                 self.currentTime = self.engine.currentTime
                 if self.duration == 0 {
                     self.duration = self.engine.duration
                 }
                 self.isPlaying = (self.engine.state == .playing)
+                self.refreshOverlayLines()
 
                 NowPlayingController.shared.update(
                     title: self.file.name,
@@ -321,13 +421,11 @@ final class PlayerViewModel {
                     isPlaying: self.isPlaying
                 )
 
-                // 每 5 秒落盘一次进度
                 self.tickCount += 1
-                if self.tickCount % 10 == 0 {
+                if self.tickCount % 16 == 0 {
                     self.saveProgress()
                 }
 
-                // 直链过期/断网：自动重取一次
                 if case .failed = self.engine.state, !self.isRecovering {
                     await self.recoverPlayback()
                 }

@@ -7,9 +7,13 @@ let package = Package(
     products: [
         .library(name: "LemonPersistence", targets: ["LemonPersistence"])
     ],
+    dependencies: [
+        .package(path: "../LemonSubtitle")
+    ],
     targets: [
         .target(
             name: "LemonPersistence",
+            dependencies: ["LemonSubtitle"],
             linkerSettings: [.linkedFramework("Security")]
         )
     ]

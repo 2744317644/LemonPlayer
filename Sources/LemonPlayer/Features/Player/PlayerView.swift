@@ -1,6 +1,7 @@
 import SwiftUI
 import LemonGuangya
 import LemonPlayback
+import LemonSubtitle
 
 struct PlayerView: View {
     let file: GuangyaFile
@@ -33,6 +34,7 @@ struct PlayerView: View {
 private struct PlayerContent: View {
     let model: PlayerViewModel
     @State private var showControls = true
+    @State private var showStyleSheet = false
 
     var body: some View {
         ZStack {
@@ -62,6 +64,8 @@ private struct PlayerContent: View {
             }
 
             if model.phase == .ready {
+                subtitleOverlay
+
                 HStack(spacing: 0) {
                     Color.clear
                         .contentShape(Rectangle())
@@ -74,7 +78,6 @@ private struct PlayerContent: View {
                             model.seek(to: min(model.duration, model.currentTime + 10))
                         }
                 }
-                .allowsHitTesting(true)
 
                 controls
                     .opacity(showControls ? 1 : 0)
@@ -84,6 +87,11 @@ private struct PlayerContent: View {
         .contentShape(Rectangle())
         .onTapGesture {
             showControls.toggle()
+        }
+        .sheet(isPresented: $showStyleSheet) {
+            SubtitleStyleSheet(style: model.subtitleStyle) { style in
+                model.updateStyle(style)
+            }
         }
     }
 
@@ -115,6 +123,18 @@ private struct PlayerContent: View {
         .padding()
     }
 
+    @ViewBuilder
+    private var subtitleOverlay: some View {
+        if model.isOverlaySubtitleActive, !model.activeSubtitleLines.isEmpty {
+            VStack {
+                Spacer()
+                SubtitleOverlayView(lines: model.activeSubtitleLines, style: model.subtitleStyle)
+                    .padding(.bottom, model.subtitleStyle.bottomInset)
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
     private var controls: some View {
         VStack {
             Spacer()
@@ -129,7 +149,7 @@ private struct PlayerContent: View {
                 )
                 .tint(.yellow)
 
-                HStack(spacing: 18) {
+                HStack(spacing: 16) {
                     Button {
                         model.seek(to: max(0, model.currentTime - 10))
                     } label: {
@@ -155,6 +175,12 @@ private struct PlayerContent: View {
                         .font(.caption.monospacedDigit())
 
                     subtitleMenu
+
+                    Button {
+                        showStyleSheet = true
+                    } label: {
+                        Image(systemName: "textformat.size")
+                    }
 
                     audioTrackMenu
 
@@ -231,13 +257,12 @@ private struct PlayerContent: View {
             Text("当前延迟 \(String(format: "%+.1f", model.subtitleOffsetValue))s")
             Divider()
             ForEach(model.subtitleCandidates) { candidate in
-                Button {
-                    Task { await model.attachCandidate(candidate) }
-                } label: {
-                    if candidate.fileName == model.attachedSubtitleName {
-                        Label("\(candidate.fileName) · \(candidate.language.displayName)", systemImage: "checkmark")
-                    } else {
-                        Text("\(candidate.fileName) · \(candidate.language.displayName)")
+                Menu("\(candidate.fileName) · \(candidate.language.displayName)") {
+                    Button("设为主字幕") {
+                        Task { await model.attachCandidate(candidate) }
+                    }
+                    Button("设为副字幕") {
+                        Task { await model.attachSecondary(candidate) }
                     }
                 }
             }
@@ -246,6 +271,63 @@ private struct PlayerContent: View {
             }
         } label: {
             Image(systemName: model.attachedSubtitleName == nil ? "captions.bubble" : "captions.bubble.fill")
+        }
+    }
+}
+
+private struct SubtitleStyleSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var style: SubtitleStyle
+    private let onApply: (SubtitleStyle) -> Void
+
+    init(style: SubtitleStyle, onApply: @escaping (SubtitleStyle) -> Void) {
+        _style = State(initialValue: style)
+        self.onApply = onApply
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("字号") {
+                    HStack {
+                        Slider(value: Binding(get: { style.fontSize }, set: { style.fontSize = $0; onApply(style) }), in: 14...40)
+                        Text("\(Int(style.fontSize))")
+                            .monospacedDigit()
+                            .frame(width: 32)
+                    }
+                }
+
+                Section("文字颜色") {
+                    ColorPicker("颜色", selection: Binding(
+                        get: { Color(hex: style.textColorHex) },
+                        set: { style.textColorHex = $0.hexString; onApply(style) }
+                    ))
+                }
+
+                Section("描边宽度") {
+                    Slider(value: Binding(get: { style.outlineWidth }, set: { style.outlineWidth = $0; onApply(style) }), in: 0...5)
+                }
+
+                Section("背景不透明度") {
+                    Slider(value: Binding(get: { style.backgroundOpacity }, set: { style.backgroundOpacity = $0; onApply(style) }), in: 0...0.9)
+                }
+
+                Section("底部边距") {
+                    Slider(value: Binding(get: { style.bottomInset }, set: { style.bottomInset = $0; onApply(style) }), in: 20...240)
+                }
+
+                Section {
+                    Button("恢复默认") {
+                        style = .default
+                        onApply(style)
+                    }
+                }
+            }
+            .navigationTitle("字幕样式")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                Button("完成") { dismiss() }
+            }
         }
     }
 }
