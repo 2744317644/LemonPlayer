@@ -130,12 +130,14 @@
 
 ## ADR-011 · 无本地 Xcode 的验证策略
 
-- **状态**：已接受
+- **状态**：已接受（2026-11-03 补充：WSL 本地验证通道）
 - **决策**：
-  1. CI 是编译的唯一定论；任何"本地能过"的说法不作为依据；
-  2. 纯逻辑包优先做到 `swift test` 可独立运行（不依赖 iOS SDK），便于未来在 Windows/Linux 跑；
-  3. 每次提交小步化，失败日志回写 `docs/PROGRESS.md`；
-  4. 真机行为（后台播放/画中画/安装）通过 TestFlight 或自签包人工验证，记录到 `docs/qa/`。
+  1. CI 是 iOS 编译的唯一定论；任何"本地能过"的说法不作为 iOS 构建依据；
+  2. **纯逻辑包**（LemonCore / LemonNetwork / LemonGuangya / LemonSubtitle）设计为 Foundation-only，可在 **WSL + Swift 6.0.3 (Linux)** 本地跑 `swift test`，绕开 macOS runner 排队（2026-11 实测 macOS arm64 队列可达 1 小时并被取消）；
+  3. Linux 与 Apple 平台差异用 `#if canImport(Darwin)` 显式隔离（CoreFoundation 编码、`waitsForConnectivity` 等），对应测试在 Linux 上 `XCTSkip`；
+  4. 每次提交小步化，失败日志回写 `docs/PROGRESS.md`；
+  5. 真机行为（后台播放/画中画/安装）通过 TestFlight 或自签包人工验证，记录到 `docs/qa/`。
+- **后果**：逻辑层反馈从"等 CI 30–60 分钟"降到 **10 秒内**（本地增量编译）；代价是需维护 Linux 兼容性（已用条件编译解决）。
 
 ---
 

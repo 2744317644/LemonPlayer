@@ -81,7 +81,28 @@ SDK：`iphoneos26.0 / 26.1 / 26.2 / 26.4 / **26.5**`（26.5 供 Xcode 26.5 与 2
 
 ---
 
-## 2. 选择 Xcode（三种写法 + 断言）
+## 2. 本地快速验证（WSL + Swift 6.0.3，绕开 macOS 队列）
+
+> 2026-11 实测：`macos-26` arm64 runner 在高峰时段排队可达 1 小时甚至被取消，因此纯逻辑包必须能在本地验证。
+
+```powershell
+# 一次性：WSL 内安装 Swift（Debian 13 可用 Ubuntu 24.04 工具链）
+wsl -e bash -lc "apt-get update && apt-get install -y libcurl4 libxml2 libncurses6 libtinfo6 libgcc-s1 libstdc++6 zlib1g libsqlite3-0 libedit2"
+# 下载 swift-6.0.3-RELEASE-ubuntu24.04.tar.gz 到 /opt/swift
+
+# 每次：同步源码并逐包跑测试
+wsl -e bash -lc 'bash /mnt/e/Code/LemonPlayer/scripts/wsl-test.sh'
+# 指定包：wsl -e bash -lc 'bash /mnt/e/Code/LemonPlayer/scripts/wsl-test.sh LemonSubtitle'
+```
+
+约束：
+- 只覆盖 **Foundation-only** 包（Core/Network/Guangya/Subtitle）；App、UIKit、Keychain、AVKit 仍需 macOS CI；
+- Apple 专属 API 用 `#if canImport(Darwin)` 隔离；GB18030/BIG5 解码在 Linux 上 `XCTSkip`，由 macOS CI 覆盖；
+- 2026-11-03 实测：4 个包 36 个测试全过（1 skipped）。
+
+---
+
+## 3. 选择 Xcode（三种写法 + 断言）
 
 ```yaml
 # ✅ 写法 A：镜像自带多版本目录（推荐）

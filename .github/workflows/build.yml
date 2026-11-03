@@ -12,10 +12,18 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-26
-    timeout-minutes: 45
+    # 2026-11 实测：macos-26 (arm64) 高峰排队可达 1 小时甚至被取消；
+    # 切到 Intel 容量池做兜底。若该标签不可用，CI 会立即报 "no runner matching labels"。
+    runs-on: macos-26-intel
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      - name: Guard: no UTF-8 BOM in manifests
+        run: |
+          if grep -rl $'\xEF\xBB\xBF' Packages/*/Package.swift project.yml 2>/dev/null; then
+            echo "::error::UTF-8 BOM found in Package.swift/project.yml (SwiftPM cannot parse it)"; exit 1
+          fi
 
       - name: Toolchain info
         run: |

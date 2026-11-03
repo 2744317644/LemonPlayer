@@ -9,13 +9,13 @@
 | 项目 | 值 |
 |---|---|
 | 当前里程碑 | **M2 · 登录 + 网盘浏览** |
-| 当前阶段目标 | 登录 + 目录浏览编码完成，等 CI 验证；随后补搜索/iPad 分栏 |
-| 整体进度 | M0 ✅ · M1 ✅ · M2 ▓▓▓▓▓▓░░░░ 60% |
-| 构建状态 | 🟡 CI 验证中（run `41652447008`），推送阻塞已于 23:52 解除 |
-| 单测覆盖率 | 登录/文件列表解析单测已加（覆盖率统计待补） |
-| 最新产物 | 远程 `d55feb9` 已包含登录 + 目录浏览代码 |
-| 下一步 | CI 绿后：T-207 搜索、T-209 iPad 分栏、T-210 单测补齐 → M2 收口 |
-| 阻塞项 | 无（GitHub 邮箱已验证；推送恢复） |
+| 当前阶段目标 | 代码已全部落地；等待 macOS CI 完成 iOS 构建验证 |
+| 整体进度 | M0 ✅ · M1 ✅ · M2 ▓▓▓▓▓▓▓░░░ 75% |
+| 构建状态 | 🟡 逻辑层本地全绿（WSL Swift 6.0.3，36 tests）；iOS 构建 CI 排队中（run `41656721616`） |
+| 单测覆盖率 | 4 个纯逻辑包 36 个用例（1 个 GB18030 用例 Linux skip，macOS 覆盖） |
+| 最新产物 | 本地/远程 `9553f41`：登录 + 目录浏览 + 搜索 + 字幕解析层 |
+| 下一步 | CI 绿后：iPad 分栏（T-209）→ M2 收口 → M3 播放内核接入 |
+| 阻塞项 | macOS runner 容量排队（非代码问题；已建立 WSL 本地验证通道） |
 
 ---
 
@@ -70,7 +70,12 @@
 | 2026-11-03 23:40 | M2 | Bangumi API 调研完成（1380 行）：20 个端点实测、剧集接口实为 `/v0/episodes?subject_id=`、`sort` 跨季续编号、无 PKCE 等结论 | [`docs/api/BANGUMI_API.md`](api/BANGUMI_API.md) | ✅ |
 | 2026-11-03 23:50 | M2 | 用户验证 GitHub 邮箱，推送恢复 | — | ✅ |
 | 2026-11-03 23:52 | M2 | 积压提交一次性推送成功（`d7fecd3..d55feb9`）：登录 + 目录浏览 | GitHub | ✅ |
-| 2026-11-03 23:55 | M2 | 目录浏览实现：FileModels/FileKind、listFiles（code 信封）、BrowseViewModel（分页/面包屑/排序）、BrowseView（空态/错误/重试/下拉刷新）、列表解码单测 | `Packages/LemonGuangya/Sources/Files/**`、`Features/Browse/**` | 🟡 CI 验证中 |
+| 2026-11-03 23:55 | M2 | 目录浏览实现：FileModels/FileKind、listFiles（code 信封）、BrowseViewModel（分页/面包屑/排序）、BrowseView（空态/错误/重试/下拉刷新）、列表解码单测 | `Packages/LemonGuangya/Sources/Files/**`、`Features/Browse/**` | ✅ |
+| 2026-11-04 00:05 | M2 | 本地搜索（T-207）与安装/回归文档；CI 因 macOS 容量连续排队/取消 | `docs/INSTALL.md`、`docs/qa/REGRESSION.md` | ✅ |
+| 2026-11-04 00:10 | M4 | 字幕解析层落地：SRT/VTT/ASS 解析、GB18030/BIG5 编码识别、同名匹配（集号/语言/格式）+ 单测 | `Packages/LemonSubtitle/**` | ✅ |
+| 2026-11-04 00:18 | 基建 | **WSL 安装 Swift 6.0.3**，建立本地纯逻辑测试通道（`scripts/wsl-test.sh`），绕开 macOS 队列 | `scripts/wsl-test.sh` | ✅ |
+| 2026-11-04 00:22 | 基建 | 本地测试暴露并修复 6 个真实问题：Package.swift BOM 导致 SwiftPM 回退 tools 3.1、`waitsForConnectivity` Linux 不可写、regex lookbehind 不支持、`range(of:)` 误用、UTF-16 BOM 未剥离、zh/tw 语言拆分 | 4 个包源码 | ✅ |
+| 2026-11-04 00:25 | 基建 | 4 个纯逻辑包 **36 个测试全绿**（1 skipped），推送 `9553f41`，CI 重新排队 | GitHub | 🟡 |
 | 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
 
 ---

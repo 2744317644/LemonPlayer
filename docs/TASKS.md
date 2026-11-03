@@ -35,6 +35,8 @@
 | T-203 | 登录页：二维码渲染、倒计时、状态机（等待/成功/过期/失败） | M2 | P0 | Lead | `Sources/LemonPlayer/Features/Login/**` |
 | T-204 | Keychain 凭据存储 + TokenStore actor + SessionStore single-flight 刷新 | M2 | P0 | Lead | `Packages/LemonPersistence/**`、`SessionStore.swift` |
 | T-205 | 文件列表 API（code 信封、117 映射、分页/排序）与模型 | M2 | P0 | Lead | `Packages/LemonGuangya/Sources/Files/**` |
+| T-207 | 搜索：本地过滤（FileSearch）+ 浏览页 searchable | M2 | P1 | Lead | `Packages/LemonGuangya/Sources/Files/FileSearch.swift` |
+| T-210 | 单测补齐：认证/文件/搜索/字幕（4 包 36 用例） | M2 | P0 | Lead | `Packages/**/Tests/**` |
 
 ---
 
@@ -42,7 +44,7 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-206 | 浏览页：列表、面包屑、排序、下拉刷新、无限滚动 | M2 | P0 | Lead | CI run 41652447008 验证中 | `Sources/LemonPlayer/Features/Browse/**` |
+| T-206 | 浏览页：列表、面包屑、排序、下拉刷新、无限滚动 | M2 | P0 | Lead | iOS CI 验证中（run 41656721616） | `Sources/LemonPlayer/Features/Browse/**` |
 
 ---
 
@@ -50,9 +52,7 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-207 | 搜索：本地索引（已浏览目录）+ 当前目录过滤（光鸭无服务端搜索） | M2 | P1 | T-206 | `Features/Browse/**` |
 | T-209 | iPad 分栏布局（NavigationSplitView） | M2 | P1 | T-206 | `Sources/LemonPlayer/Features/**` |
-| T-210 | 单测补齐：登录状态机、错误映射、分页合并 | M2 | P0 | T-202~T-206 | `Packages/**/Tests/**` |
 
 ---
 
