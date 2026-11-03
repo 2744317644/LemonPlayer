@@ -24,6 +24,7 @@ final class LibraryViewModel {
     @ObservationIgnored private let session: SessionStore
     @ObservationIgnored private let store = LibraryStore()
     @ObservationIgnored private let progressStore = PlaybackProgressStore()
+    @ObservationIgnored private let matchCache = LibraryMatchCache()
     @ObservationIgnored private let bangumi = BangumiClient()
     @ObservationIgnored private let fileService: GuangyaFileService
 
@@ -60,27 +61,40 @@ final class LibraryViewModel {
             let client = bangumi
             let tmdbKey = UserDefaults.standard.string(forKey: "lemonplayer.tmdb.key") ?? ""
             let tmdb = TMDBClient(apiKey: tmdbKey)
+            let cache = matchCache
             let built = await LibraryScraper.build(files: inputs) { title in
+                // 命中缓存直接返回，减少 Bangumi 请求（限流 1 req/s）
+                if let cached = await cache.cached(for: title) {
+                    return cached
+                }
+
                 if let subject = try? await client.searchSubjects(keyword: title, limit: 3).first {
-                    return LibraryMatch(
+                    let match = LibraryMatch(
                         bangumiID: subject.id,
                         title: subject.displayName,
                         coverURL: subject.coverURL?.absoluteString,
                         year: Int(String(subject.date?.prefix(4) ?? "")),
                         score: subject.rating?.score
                     )
+                    await cache.store(match, for: title)
+                    return match
                 }
+
                 // Bangumi 未命中：用 TMDB 兜底（需用户在设置中填 Key）
                 if tmdb.isConfigured,
                    let result = try? await tmdb.search(title).first {
-                    return LibraryMatch(
+                    let match = LibraryMatch(
                         bangumiID: nil,
                         title: result.displayTitle,
                         coverURL: result.posterURL?.absoluteString,
                         year: result.year,
                         score: result.voteAverage
                     )
+                    await cache.store(match, for: title)
+                    return match
                 }
+
+                await cache.store(nil, for: title)
                 return nil
             }
 

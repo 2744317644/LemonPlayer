@@ -136,6 +136,28 @@ public actor DownloadManager {
         emit()
     }
 
+    /// 超过容量上限时按"最久未播放"清理已完成任务（只删已下载文件，不动进行中的任务）。
+    public func enforceStorageLimit(maxBytes: Int64) {
+        guard maxBytes > 0 else { return }
+        var total = totalDownloadedBytes()
+        guard total > maxBytes else { return }
+
+        let completed = records.values
+            .filter { $0.state == .completed }
+            .sorted { $0.updatedAt < $1.updatedAt }
+
+        for record in completed {
+            guard total > maxBytes else { break }
+            if let path = record.localPath {
+                try? FileManager.default.removeItem(atPath: path)
+            }
+            total -= record.downloadedBytes
+            records[record.id] = nil
+        }
+        persist()
+        emit()
+    }
+
     public func localURL(for fileID: String) -> URL? {
         guard let record = records[fileID], record.state == .completed,
               let path = record.localPath else { return nil }

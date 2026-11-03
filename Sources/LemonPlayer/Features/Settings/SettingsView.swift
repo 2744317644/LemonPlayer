@@ -15,6 +15,7 @@ struct SettingsView: View {
     @State private var tmdbSaved = false
     @State private var probeResult: String?
     @State private var probing = false
+    @State private var storageLimitGB = UserDefaults.standard.integer(forKey: "lemonplayer.downloads.limitGB")
 
     var body: some View {
         Form {
@@ -34,10 +35,32 @@ struct SettingsView: View {
 
             Section("存储") {
                 LabeledContent("已下载", value: "\(completedCount) 个 · \(Formatters.fileSize(downloadedBytes))")
+
+                Picker("容量上限", selection: $storageLimitGB) {
+                    Text("不限制").tag(0)
+                    Text("2 GB").tag(2)
+                    Text("5 GB").tag(5)
+                    Text("10 GB").tag(10)
+                    Text("20 GB").tag(20)
+                }
+                .onChange(of: storageLimitGB) { _, newValue in
+                    UserDefaults.standard.set(newValue, forKey: "lemonplayer.downloads.limitGB")
+                    Task {
+                        await DownloadManager.shared.enforceStorageLimit(
+                            maxBytes: Int64(newValue) * 1024 * 1024 * 1024
+                        )
+                        await refreshStorage()
+                    }
+                }
+
                 Button("清理全部下载", role: .destructive) {
                     showClearConfirm = true
                 }
                 .disabled(completedCount == 0)
+
+                Text("超出上限时自动清理最久未使用的已下载视频（不影响进行中的任务）。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             Section("播放与字幕") {

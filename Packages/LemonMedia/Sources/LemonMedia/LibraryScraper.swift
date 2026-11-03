@@ -63,7 +63,7 @@ public struct LibrarySeries: Codable, Hashable, Sendable, Identifiable {
 }
 
 /// Bangumi 匹配结果（由客户端填充，便于测试注入）。
-public struct LibraryMatch: Sendable, Equatable {
+public struct LibraryMatch: Sendable, Equatable, Codable {
     public let bangumiID: Int?
     public let title: String
     public let coverURL: String?
@@ -126,6 +126,7 @@ public enum LibraryScraper {
     ) async -> [LibrarySeries] {
         var results: [LibrarySeries] = []
         for group in group(files) {
+            if Task.isCancelled { break }
             let matched = await match(group.title)
             let episodes = group.files
                 .map { file -> SeriesEpisode in

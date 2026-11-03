@@ -13,6 +13,10 @@ final class DownloadsViewModel {
     @ObservationIgnored private var streamTask: Task<Void, Never>?
 
     func start() async {
+        let limitGB = UserDefaults.standard.integer(forKey: "lemonplayer.downloads.limitGB")
+        if limitGB > 0 {
+            await manager.enforceStorageLimit(maxBytes: Int64(limitGB) * 1024 * 1024 * 1024)
+        }
         records = await manager.snapshot()
         updateTotals()
         streamTask?.cancel()
