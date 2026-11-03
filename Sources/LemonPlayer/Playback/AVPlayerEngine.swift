@@ -11,8 +11,9 @@ final class AVPlayerEngine: NSObject, PlaybackEngine {
     let player = AVPlayer()
 
     private(set) var state: PlaybackState = .idle
-    private var timeObserver: Any?
-    private var endObserver: NSObjectProtocol?
+    // Swift 6 的 deinit 是 nonisolated，访问非 Sendable 的观察者 token 需要显式标注
+    nonisolated(unsafe) private var timeObserver: Any?
+    nonisolated(unsafe) private var endObserver: NSObjectProtocol?
     private var playerLayer: AVPlayerLayer?
     private var pipController: AVPictureInPictureController?
 
