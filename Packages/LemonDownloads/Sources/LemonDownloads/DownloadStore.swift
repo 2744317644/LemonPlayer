@@ -1,6 +1,6 @@
 import Foundation
 
-/// 下载记录持久化（JSON）。
+/// 下载记录持久化（JSON + 断点数据文件）。
 public struct DownloadStore: Sendable {
     private let fileURL: URL
 
@@ -17,6 +17,10 @@ public struct DownloadStore: Sendable {
         fileURL.deletingLastPathComponent().appendingPathComponent("Downloads", isDirectory: true)
     }
 
+    public var resumeDataDirectory: URL {
+        fileURL.deletingLastPathComponent().appendingPathComponent("ResumeData", isDirectory: true)
+    }
+
     public func load() -> [DownloadRecord] {
         guard let data = try? Data(contentsOf: fileURL),
               let records = try? JSONDecoder().decode([DownloadRecord].self, from: data) else {
@@ -28,5 +32,24 @@ public struct DownloadStore: Sendable {
     public func save(_ records: [DownloadRecord]) {
         guard let data = try? JSONEncoder().encode(records) else { return }
         try? data.write(to: fileURL, options: .atomic)
+    }
+
+    // MARK: - 断点数据持久化（App 重启后仍可续传）
+
+    public func saveResumeData(_ data: Data, id: String) {
+        try? FileManager.default.createDirectory(at: resumeDataDirectory, withIntermediateDirectories: true)
+        try? data.write(to: resumeDataURL(id: id), options: .atomic)
+    }
+
+    public func resumeData(id: String) -> Data? {
+        try? Data(contentsOf: resumeDataURL(id: id))
+    }
+
+    public func removeResumeData(id: String) {
+        try? FileManager.default.removeItem(at: resumeDataURL(id: id))
+    }
+
+    private func resumeDataURL(id: String) -> URL {
+        resumeDataDirectory.appendingPathComponent("\(id).resume")
     }
 }

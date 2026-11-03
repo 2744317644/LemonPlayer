@@ -7,6 +7,13 @@ import FoundationNetworking
 final class DownloadSessionDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     weak var manager: DownloadManager?
 
+    #if os(iOS)
+    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        guard let identifier = session.configuration.identifier else { return }
+        BackgroundSessionEvents.shared.finish(identifier: identifier)
+    }
+    #endif
+
     func urlSession(
         _ session: URLSession,
         downloadTask: URLSessionDownloadTask,
@@ -35,16 +42,19 @@ final class DownloadSessionDelegate: NSObject, URLSessionDownloadDelegate, @unch
         #else
         let resumeKey = "NSURLSessionDownloadTaskResumeData"
         #endif
-        let resumeData = (error as NSError).userInfo[resumeKey] as? Data
+        let data = (error as NSError).userInfo[resumeKey] as? Data
         let manager = self.manager
-        Task { await manager?.handleError(id: id, message: error.localizedDescription, resumeData: resumeData) }
+        Task {
+            await manager?.handleError(id: id, message: error.localizedDescription, resumeData: data)
+        }
     }
 }
 
-/// 下载管理器：前台 URLSession + 断点续传（resumeData）+ JSON 持久化。
-/// 说明：v1 使用前台会话；切后台/锁屏时下载会被系统挂起（M6 后续可切 background session）。
+/// 下载管理器：后台 URLSession（iOS）+ 断点续传（resumeData 持久化）+ JSON 持久化。
+/// iOS 使用 background session，App 切后台/锁屏时下载继续；被系统终止后重启可恢复任务。
 public actor DownloadManager {
     public static let shared = DownloadManager()
+    public static let sessionIdentifier = "com.lemonplayer.downloads.background"
 
     private let store: DownloadStore
     private var records: [String: DownloadRecord] = [:]
@@ -57,25 +67,42 @@ public actor DownloadManager {
     public init(store: DownloadStore = DownloadStore()) {
         self.store = store
         self.delegate = DownloadSessionDelegate()
+
+        #if os(iOS)
+        let configuration = URLSessionConfiguration.background(withIdentifier: Self.sessionIdentifier)
+        configuration.sessionSendsLaunchEvents = true
+        configuration.isDiscretionary = false
+        #else
         let configuration = URLSessionConfiguration.default
+        #endif
         configuration.timeoutIntervalForRequest = 30
-        configuration.timeoutIntervalForResource = 3600
+        configuration.timeoutIntervalForResource = 86_400
+
         self.session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
 
         try? FileManager.default.createDirectory(
             at: store.downloadsDirectory,
             withIntermediateDirectories: true
         )
+        try? FileManager.default.createDirectory(
+            at: store.resumeDataDirectory,
+            withIntermediateDirectories: true
+        )
 
         var restoredRecords: [String: DownloadRecord] = [:]
+        var restoredResumeData: [String: Data] = [:]
         for record in store.load() {
             var restored = record
             if restored.state == .downloading || restored.state == .queued {
                 restored.state = .paused
             }
             restoredRecords[restored.id] = restored
+            if let data = store.resumeData(id: restored.id) {
+                restoredResumeData[restored.id] = data
+            }
         }
         self.records = restoredRecords
+        self.resumeData = restoredResumeData
         self.delegate.manager = self
     }
 
@@ -98,6 +125,7 @@ public actor DownloadManager {
         for id in records.keys {
             tasks[id]?.cancel()
             tasks[id] = nil
+            store.removeResumeData(id: id)
             if let path = records[id]?.localPath {
                 try? FileManager.default.removeItem(atPath: path)
             }
@@ -172,8 +200,9 @@ public actor DownloadManager {
 
     public func resume(id: String) async {
         guard let record = records[id], record.state == .paused || record.state == .failed else { return }
-        guard let data = resumeData[id] else {
-            // 没有断点数据（例如 App 重启后）→ 明确失败，由用户重新添加
+        let data = resumeData[id] ?? store.resumeData(id: id)
+        guard let data else {
+            // 没有断点数据 → 明确失败，由用户重新添加
             guard var failed = records[id] else { return }
             failed.state = .failed
             failed.errorMessage = "断点信息已失效，请重新下载"
@@ -185,8 +214,8 @@ public actor DownloadManager {
         let task = session.downloadTask(withResumeData: data)
         task.taskDescription = id
         tasks[id] = task
+        resumeData[id] = data
         task.resume()
-        resumeData[id] = nil
         updateState(id: id, to: .downloading)
         emit()
     }
@@ -195,6 +224,7 @@ public actor DownloadManager {
         tasks[id]?.cancel()
         tasks[id] = nil
         resumeData[id] = nil
+        store.removeResumeData(id: id)
         updateState(id: id, to: .cancelled)
         if let path = records[id]?.localPath {
             try? FileManager.default.removeItem(atPath: path)
@@ -206,6 +236,7 @@ public actor DownloadManager {
         tasks[id]?.cancel()
         tasks[id] = nil
         resumeData[id] = nil
+        store.removeResumeData(id: id)
         if let path = records[id]?.localPath {
             try? FileManager.default.removeItem(atPath: path)
         }
@@ -236,6 +267,8 @@ public actor DownloadManager {
             record.downloadedBytes = record.totalBytes
             record.updatedAt = Date()
             records[id] = record
+            resumeData[id] = nil
+            store.removeResumeData(id: id)
             persist()
             emit()
         } catch {
@@ -251,6 +284,7 @@ public actor DownloadManager {
         guard var record = records[id] else { return }
         if let data {
             resumeData[id] = data
+            store.saveResumeData(data, id: id)
             record.state = .paused
         } else if record.state == .downloading {
             record.state = .failed
@@ -282,6 +316,7 @@ public actor DownloadManager {
 
     private func storeResumeData(_ data: Data, id: String) {
         resumeData[id] = data
+        store.saveResumeData(data, id: id)
         updateState(id: id, to: .paused)
         emit()
     }
