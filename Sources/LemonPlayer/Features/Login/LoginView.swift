@@ -126,10 +126,33 @@ private struct LoginStatusView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
-                Button("重试") {
-                    Task { await model.start() }
+                if !model.diagnostics.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("自动自检结果")
+                            .font(.caption.weight(.semibold))
+                        ForEach(model.diagnostics, id: \.self) { line in
+                            Text(line)
+                                .font(.caption2.monospaced())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.secondary.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-                .buttonStyle(.borderedProminent)
+                HStack {
+                    Button("重试") {
+                        Task { await model.start() }
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button("复制诊断信息") {
+                        let text = (model.diagnostics + [message]).joined(separator: "\n")
+                        UIPasteboard.general.string = text
+                    }
+                    .buttonStyle(.bordered)
+                }
 
             case .success:
                 ProgressView("登录成功，正在进入…")
