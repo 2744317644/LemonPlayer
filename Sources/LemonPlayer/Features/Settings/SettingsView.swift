@@ -15,6 +15,7 @@ struct SettingsView: View {
     @State private var tmdbSaved = false
     @State private var probeResult: String?
     @State private var probing = false
+    @State private var deviceCodeProbe: String?
     @State private var storageLimitGB = UserDefaults.standard.integer(forKey: "lemonplayer.downloads.limitGB")
     @State private var fontCount = SubtitleFontStore.count
 
@@ -122,6 +123,15 @@ struct SettingsView: View {
                         .foregroundStyle(probeResult.contains("✅") ? .green : .red)
                 }
 
+                Button("测试扫码授权接口") {
+                    Task { await probeDeviceCode() }
+                }
+                if let deviceCodeProbe {
+                    Text(deviceCodeProbe)
+                        .font(.footnote)
+                        .foregroundStyle(deviceCodeProbe.contains("✅") ? .green : .red)
+                }
+
                 NavigationLink("诊断日志") {
                     DiagnosticsView()
                 }
@@ -177,6 +187,17 @@ struct SettingsView: View {
             } else {
                 probeResult = "❌ 网络异常：\(error.localizedDescription)"
             }
+        }
+    }
+
+    /// 申请一次设备码（不轮询、不展示）：判断扫码登录的入口接口是否正常。
+    private func probeDeviceCode() async {
+        deviceCodeProbe = nil
+        do {
+            let code = try await session.auth.requestDeviceCode()
+            deviceCodeProbe = "✅ 设备码接口正常（有效期 \(code.expiresIn)s / 轮询间隔 \(code.interval)s）"
+        } catch {
+            deviceCodeProbe = "❌ 设备码接口失败：\(error.localizedDescription)"
         }
     }
 }

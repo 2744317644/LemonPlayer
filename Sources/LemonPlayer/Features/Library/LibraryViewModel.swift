@@ -63,9 +63,14 @@ final class LibraryViewModel {
             let tmdb = TMDBClient(apiKey: tmdbKey)
             let cache = matchCache
             let built = await LibraryScraper.build(files: inputs) { title in
-                // 命中缓存直接返回，减少 Bangumi 请求（限流 1 req/s）
-                if let cached = await cache.cached(for: title) {
-                    return cached
+                // 命中缓存直接返回（含"未命中"缓存），减少 Bangumi 请求
+                if let cached = await cache.lookup(for: title) {
+                    switch cached {
+                    case .match(let match):
+                        return match
+                    case .miss:
+                        return nil
+                    }
                 }
 
                 if let subject = try? await client.searchSubjects(keyword: title, limit: 3).first {
