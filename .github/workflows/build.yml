@@ -92,6 +92,16 @@ jobs:
             -derivedDataPath .build/DerivedData \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: UI smoke test (simulator)
+        run: |
+          xcodebuild test \
+            -workspace LemonPlayer.xcworkspace \
+            -scheme LemonPlayer \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -derivedDataPath .build/DerivedData \
+            -only-testing:LemonPlayerUITests \
+            CODE_SIGNING_ALLOWED=NO
+
       - name: Archive (unsigned)
         if: github.ref == 'refs/heads/main'
         run: |

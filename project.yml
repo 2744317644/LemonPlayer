@@ -70,6 +70,19 @@ targets:
       - package: LemonPersistence
       - package: LemonDownloads
 
+  LemonPlayerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: Tests/LemonPlayerUITests
+    dependencies:
+      - target: LemonPlayer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lemonplayer.ios.uitests
+        TEST_TARGET_NAME: LemonPlayer
+
 schemes:
   LemonPlayer:
     build:
@@ -83,3 +96,7 @@ schemes:
       config: Debug
     archive:
       config: Release
+    test:
+      config: Debug
+      targets:
+        - LemonPlayerUITests
