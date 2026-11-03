@@ -9,12 +9,12 @@
 | 项目 | 值 |
 |---|---|
 | 当前里程碑 | **M7 · 打磨与发布（80%）** |
-| 当前阶段目标 | rc15：登录失败自动自检；等真机复测 → v1.0.0 |
+| 当前阶段目标 | rc16：App 图标；等真机复测 → v1.0.0 |
 | 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ▓▓▓▓▓▓▓▓▓░ 80% |
-| 构建状态 | ✅ 常规 CI 全绿；Release rc1~rc15 |
+| 构建状态 | ✅ 常规 CI 全绿；Release rc1~rc16 |
 | 单测覆盖率 | 7 个包 81 个用例 |
-| 最新产物 | Release `v1.0.0-rc15` |
-| 下一步 | 用户复测：登录页失败自检结果 / 演示播放 / 后台下载 → v1.0.0 |
+| 最新产物 | Release `v1.0.0-rc16`（图标 + iPad 分栏 + 登录自检） |
+| 下一步 | 用户复测：登录页自检结果 / 演示播放 / 后台下载 → v1.0.0 |
 | 阻塞项 | 真机登录待确认；MKV PiP/AirPlay 为 P2 |
 
 ---
@@ -115,6 +115,7 @@
 | 2026-11-04 23:05 | M7 | **演示播放**（无需登录）：Apple HLS 样例 + 内嵌 SRT + AVPlayer 内核，验证播放/字幕/PiP/AirPlay；发布 `v1.0.0-rc13` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc13 | ✅ |
 | 2026-11-04 23:20 | M7 | **iPad 媒体库分栏**：`NavigationSplitView`（侧栏继续观看/番剧，右侧详情或播放）；手机保持单栏；发布 `v1.0.0-rc14` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc14 | ✅ |
 | 2026-11-04 23:35 | M2 | 登录失败页内嵌自动自检（设备码接口 + API 连通性）+ 一键复制诊断；发布 `v1.0.0-rc15` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc15 | ✅ |
+| 2026-11-04 23:50 | M7 | App 图标：1024 柠檬渐变 + 播放三角 + 字幕条，Asset Catalog 接入（IPA 17.7MB）；发布 `v1.0.0-rc16` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc16 | ✅ |
 
 ---
 
