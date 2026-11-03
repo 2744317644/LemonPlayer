@@ -36,6 +36,8 @@ final class PlayerViewModel {
     /// SRT/VTT 自绘字幕开关（ASS 走内核 libass，不经过这里）
     private(set) var isOverlaySubtitleActive = false
     private(set) var activeSubtitleLines: [String] = []
+    /// 播放结束（用于剧集自动连播）
+    private(set) var didFinish = false
 
     @ObservationIgnored private let session: SessionStore
     @ObservationIgnored private let service: GuangyaFileService
@@ -412,6 +414,12 @@ final class PlayerViewModel {
                 }
                 self.isPlaying = (self.engine.state == .playing)
                 self.refreshOverlayLines()
+
+                if self.engine.state == .ended {
+                    self.didFinish = true
+                } else if self.engine.state == .playing {
+                    self.didFinish = false
+                }
 
                 NowPlayingController.shared.update(
                     title: self.file.name,

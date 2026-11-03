@@ -137,7 +137,13 @@ struct LibraryView: View {
 
 struct SeriesDetailView: View {
     let series: LibrarySeries
-    @State private var playing: GuangyaFile?
+    @State private var queue: [GuangyaFile] = []
+    @State private var startIndex = 0
+    @State private var showPlayer = false
+
+    private var sortedEpisodes: [SeriesEpisode] {
+        series.episodes
+    }
 
     var body: some View {
         List {
@@ -170,15 +176,9 @@ struct SeriesDetailView: View {
             }
 
             Section("剧集") {
-                ForEach(series.episodes) { episode in
+                ForEach(Array(sortedEpisodes.enumerated()), id: \.element.id) { offset, episode in
                     Button {
-                        playing = GuangyaFile(
-                            id: episode.id,
-                            parentID: episode.parentID,
-                            name: episode.fileName,
-                            size: 0,
-                            kind: .video
-                        )
+                        play(from: offset)
                     } label: {
                         HStack {
                             Text(episode.displayName)
@@ -193,9 +193,23 @@ struct SeriesDetailView: View {
         }
         .navigationTitle(series.title)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $playing) { file in
-            PlayerView(file: file)
+        .navigationDestination(isPresented: $showPlayer) {
+            PlayerView(files: queue, startIndex: startIndex)
         }
+    }
+
+    private func play(from offset: Int) {
+        queue = sortedEpisodes.map {
+            GuangyaFile(
+                id: $0.id,
+                parentID: $0.parentID,
+                name: $0.fileName,
+                size: 0,
+                kind: .video
+            )
+        }
+        startIndex = offset
+        showPlayer = true
     }
 
     @ViewBuilder

@@ -4,10 +4,26 @@ import LemonPlayback
 import LemonSubtitle
 
 struct PlayerView: View {
-    let file: GuangyaFile
+    private let files: [GuangyaFile]
+    @State private var index: Int
 
     @Environment(SessionStore.self) private var session
     @State private var model: PlayerViewModel?
+
+    init(file: GuangyaFile) {
+        files = [file]
+        _index = State(initialValue: 0)
+    }
+
+    init(files: [GuangyaFile], startIndex: Int = 0) {
+        self.files = files
+        _index = State(initialValue: min(max(0, startIndex), max(0, files.count - 1)))
+    }
+
+    private var currentFile: GuangyaFile? {
+        guard files.indices.contains(index) else { return nil }
+        return files[index]
+    }
 
     var body: some View {
         Group {
@@ -17,17 +33,29 @@ struct PlayerView: View {
                 ProgressView("准备播放…")
             }
         }
-        .navigationTitle(file.name)
+        .navigationTitle(currentFile?.name ?? "播放")
         .navigationBarTitleDisplayMode(.inline)
-        .task {
-            guard model == nil else { return }
+        .task(id: index) {
+            model?.stop()
+            model = nil
+            guard let file = currentFile else { return }
             let created = PlayerViewModel(file: file, session: session)
             model = created
             await created.start()
         }
+        .onChange(of: model?.didFinish) { _, finished in
+            guard finished == true else { return }
+            advanceToNextEpisode()
+        }
         .onDisappear {
             model?.stop()
         }
+    }
+
+    private func advanceToNextEpisode() {
+        guard index + 1 < files.count else { return }
+        model?.stop()
+        index += 1
     }
 }
 
