@@ -8,14 +8,14 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **M2 完成 ✅ → M3 播放内核** |
-| 当前阶段目标 | M3：MobileVLCKit 接入（Podfile + PlaybackEngine + 播放器 UI + 直链播放） |
-| 整体进度 | M0 ✅ · M1 ✅ · M2 ✅ · M3 ▓░░░░░░░░░ 10% |
-| 构建状态 | ✅ **CI 全绿**：run `41662857687`（test 41s + build 5m20s），IPA artifact 168KB |
-| 单测覆盖率 | 4 个纯逻辑包 41 个用例（Linux 容器 + 本地 WSL 双跑） |
-| 最新产物 | `LemonPlayer-unsigned-ipa`（登录 + 目录浏览 + 搜索） |
-| 下一步 | M3：Podfile/MobileVLCKit → PlaybackEngine 协议 → 播放器 UI → 直链播放联调 |
-| 阻塞项 | 真机扫码/播放需用户安装 IPA 验证；无代码阻塞 |
+| 当前里程碑 | **M3 · 播放内核 + 直链播放** |
+| 当前阶段目标 | Podfile/MobileVLCKit 接入 + 播放器 UI + 直链播放联调 |
+| 整体进度 | M0 ✅ · M1 ✅ · M2 ✅ · M3 ▓▓░░░░░░░░ 20% |
+| 构建状态 | ✅ **CI 全绿**：run `41665500144`（test 5 包 + build），IPA artifact 已产出 |
+| 单测覆盖率 | 5 个包 45 个用例（XCTest + Swift Testing，Linux 容器/本地 WSL） |
+| 最新产物 | `LemonPlayer-unsigned-ipa`（登录 + 目录浏览 + 搜索 + 播放抽象层） |
+| 下一步 | T-301 Podfile + pod install + workspace 构建 → VLCKit 适配 → T-304 播放器 UI |
+| 阻塞项 | 真机验证需用户安装 IPA 扫码/播放；无代码阻塞 |
 
 ---
 
@@ -26,7 +26,7 @@
 | M0 | 立项与文档 | ✅ 已完成 | 100% | 2026-11 |
 | M1 | 可编译骨架 + CI 出包 | ✅ 已完成 | 100% | 2026-11 |
 | M2 | 登录 + 网盘浏览 | ✅ 已完成 | 100% | 2026-12 |
-| M3 | 播放内核 + 直链播放 | 🚧 进行中 | 10% | 2026-12 |
+| M3 | 播放内核 + 直链播放 | 🚧 进行中 | 20% | 2026-12 |
 | M4 | 外挂字幕 | ⬜ 未开始 | 0% | 2027-01 |
 | M5 | 媒体库 + 剧集 | ⬜ 未开始 | 0% | 2027-01 |
 | M6 | 离线缓存 | ⬜ 未开始 | 0% | 2027-02 |
@@ -79,6 +79,7 @@
 | 2026-11-04 00:40 | 基建 | CI 架构调整：**单测跑 Linux 容器（41s），macOS 只做 build+archive**；`macos-latest` arm64 队列不可用后切 `macos-26-intel` | `.github/workflows/build.yml` | ✅ |
 | 2026-11-04 00:45 | M2 | **CI 全绿**：test 41s + build 5m20s，产出 `LemonPlayer-unsigned-ipa`（168KB） | run `41662857687` | ✅ |
 | 2026-11-04 00:50 | M3 | 直链 API 完成：`PlaybackLink`（signedURL→downloadUrl 空串回退、Referer/UA 头）+ 单测 5 个；本地 18 用例通过 | `Packages/LemonGuangya/Sources/Files/PlaybackLink.swift` | ✅ |
+| 2026-11-04 00:58 | M3 | `PlaybackEngine` 抽象 + Mock 引擎 + 4 个 Swift Testing 用例；CI 增加 LemonPlayback 包；**CI 全绿**（run 41665500144） | `Packages/LemonPlayback/**` | ✅ |
 | 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
 
 ---
