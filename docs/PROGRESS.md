@@ -9,13 +9,13 @@
 | 项目 | 值 |
 |---|---|
 | 当前里程碑 | **M7 · 打磨与发布（80%）** |
-| 当前阶段目标 | rc17：诊断元信息；等真机复测 → v1.0.0 |
+| 当前阶段目标 | rc18：授权页网页域名兜底 + API 复核；等真机复测 → v1.0.0 |
 | 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ▓▓▓▓▓▓▓▓▓░ 80% |
-| 构建状态 | ✅ 常规 CI 全绿；Release rc1~rc17 |
+| 构建状态 | ✅ 常规 CI 全绿；Release rc1~rc18 |
 | 单测覆盖率 | 7 个包 81 个用例 |
-| 最新产物 | Release `v1.0.0-rc17` |
-| 下一步 | 用户复测：登录页自检结果 / 演示播放 / 后台下载 → v1.0.0 |
-| 阻塞项 | 真机登录待确认；MKV PiP/AirPlay 为 P2；headless 模拟器 UI 测试不可用 |
+| 最新产物 | Release `v1.0.0-rc18` |
+| 下一步 | 用户复测：授权页（两个域名都试）/ 登录页自检 / 演示播放 → v1.0.0 |
+| 阻塞项 | 真机登录待确认；MKV PiP/AirPlay 为 P2 |
 
 ---
 
@@ -117,6 +117,7 @@
 | 2026-11-04 23:35 | M2 | 登录失败页内嵌自动自检（设备码接口 + API 连通性）+ 一键复制诊断；发布 `v1.0.0-rc15` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc15 | ✅ |
 | 2026-11-04 23:50 | M7 | App 图标：1024 柠檬渐变 + 播放三角 + 字幕条，Asset Catalog 接入（IPA 17.7MB）；发布 `v1.0.0-rc16` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc16 | ✅ |
 | 2026-11-05 00:10 | M7 | 诊断导出附版本/机型/系统信息 + 「复制诊断摘要」；手动触发 UI 测试 job 仍卡在模拟器引导（headless Intel 限制，已记录）；发布 `v1.0.0-rc17` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc17 | ✅ |
+| 2026-11-05 01:15 | M2 | **设备码链路复核（WSL 实测）**：device/code 200（120s/2s）、轮询 400 `authorization_pending`(4050)；发现 account 域名不承载 web 授权页（404）、api 域名 410。登录页新增「改用网页域名打开」兜底；发布 `v1.0.0-rc18` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc18 | ✅ |
 
 ---
 
