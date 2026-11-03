@@ -9,13 +9,13 @@
 | 项目 | 值 |
 |---|---|
 | 当前里程碑 | **M7 · 打磨与发布（60%）** + M6 收官 |
-| 当前阶段目标 | rc6：网络自检/缓存/无障碍；等真机复测登录与下载 |
+| 当前阶段目标 | rc6 已发布；等真机复测登录/后台下载，随后 v1.0.0 |
 | 整体进度 | M0-M5 ✅ · M6 ✅75% · M7 ▓▓▓▓▓▓▓░░░ 60% |
-| 构建状态 | ✅ CI 全绿 + Release 工作流实测通过（rc1~rc4） |
+| 构建状态 | ✅ test 全绿、build/archive 成功；仅图床 artifact 上传偶发 GitHub 服务超时（Release 发布不受影响） |
 | 单测覆盖率 | 7 个包 75 个用例 |
-| 最新产物 | Release `v1.0.0-rc5`（待发布）：后台下载/断点续传 |
-| 下一步 | 用户复测登录（rc4 三通道）→ 后台下载真机验证 → v1.0.0 |
-| 阻塞项 | 真机登录问题待复测确认；PiP/AirPlay 为 P2 |
+| 最新产物 | Release `v1.0.0-rc6`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc6 |
+| 下一步 | 用户复测：登录三通道 / 后台下载 / 播放字幕 → 修问题 → v1.0.0 |
+| 阻塞项 | 真机登录待确认；PiP/AirPlay 为 P2 |
 
 ---
 
@@ -101,7 +101,8 @@
 | 2026-11-04 03:50 | M7 | 发布 `v1.0.0-rc3`（Token 直登 + 轮询可视化） | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc3 | ✅ |
 | 2026-11-04 04:00 | M2/M5 | 登录第三通道：设备码可复制 + 「浏览器打开授权页」（扫码不生效时手动授权）；TMDB 客户端（搜索/海报/年份）+ 设置页填 Key + 媒体库兜底匹配；本地 LemonMedia 15 用例通过 | `TMDBClient`、`LoginView`、`LibraryViewModel` | ✅ |
 | 2026-11-04 04:10 | M6 | **后台下载**：DownloadManager 改 background URLSession（`sessionSendsLaunchEvents`）；resumeData 持久化（ResumeData 目录）支持重启续传；AppDelegate 接住 `handleEventsForBackgroundURLSession` completionHandler；本地 LemonDownloads 5 用例通过 | `LemonDownloads/**`、`AppDelegate` | ✅ |
-| 2026-11-04 04:20 | M7 | 可用性：设置页「测试光鸭 API 连通性」（无效 token 探测 401）、URLCache 海报缓存（64MB/512MB）、播放器无障碍标签、字幕样式面板实时预览 | `SettingsView`、`PlayerView`、`LemonPlayerApp` | 🟡 CI 验证中 |
+| 2026-11-04 04:20 | M7 | 可用性：设置页「测试光鸭 API 连通性」（无效 token 探测 401）、URLCache 海报缓存（64MB/512MB）、播放器无障碍标签、字幕样式面板实时预览 | `SettingsView`、`PlayerView`、`LemonPlayerApp` | ✅ |
+| 2026-11-04 04:35 | M7 | 发布 `v1.0.0-rc6`（网络自检/缓存/无障碍）；CI 构建成功、artifact 上传因 GitHub 服务超时重试失败，Release 上传正常 | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc6 | ✅ |
 
 ---
 
