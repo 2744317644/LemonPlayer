@@ -61,6 +61,9 @@
 | T-506 | 剧集自动连播（播放队列 + didFinish） | M5 | P1 | Lead | `Features/Player/**` |
 | T-507 | 继续观看（媒体库首页横向卡片 + 进度条续播） | M5 | P1 | Lead | `Features/Library/**`、`LemonPersistence/**` |
 | T-602 | 下载状态机（DownloadRecord/State）+ 5 个测试 | M6 | P0 | Lead | `Packages/LemonDownloads/**` |
+| T-601 | DownloadManager：URLSession 下载 + resumeData 断点续传 + 持久化 + 进度流 | M6 | P0 | Lead | `LemonDownloads/DownloadManager.swift` |
+| T-603 | 下载页 UI（列表/进度/暂停恢复/删除/容量统计） | M6 | P0 | Lead | `Features/Downloads/**` |
+| T-605 | 离线播放：已下载优先本地文件 | M6 | P0 | Lead | `PlayerViewModel` |
 
 ---
 
@@ -68,8 +71,7 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-601 | DownloadManager：后台 URLSession + 断点续传 + 暂停/恢复/删除 | M6 | P0 | Lead | M6 下一步 | `Packages/LemonDownloads/**` |
-| T-603 | 下载页 UI（列表/进度/速度/批量/容量） | M6 | P0 | Lead | T-601 | `Features/Downloads/**` |
+| T-604 | 缓存管理（容量上限/自动清理/全部清空）+ 后台会话优化 | M6 | P1 | Lead | M6 下一步 | `LemonDownloads/**`、`Features/Downloads/**` |
 
 ---
 
@@ -77,7 +79,9 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-605 | 离线播放：本地文件优先于远程直链 | M6 | P0 | T-601 | `PlayerViewModel`、`LemonDownloads/**` |
+| T-703 | 设置页（播放/缓存/网络/关于） | M7 | P0 | T-204 | `Features/Settings/**` |
+| T-705 | 隐私清单/开源许可/免责声明 | M7 | P0 | 下一步 | `Resources/**` |
+| T-708 | Release 工作流 + v1.0.0 tag + 安装文档 | M7 | P0 | T-104 | `.github/workflows/**`、`docs/INSTALL.md` |
 | T-411 | 字幕样式预览页 | M4 | P1 | T-408 | `Features/Player/**` |
 | T-209 | iPad 分栏布局 | M2 | P2 | T-206 | `Sources/LemonPlayer/Features/**` |
 
