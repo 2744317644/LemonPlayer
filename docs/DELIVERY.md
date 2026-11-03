@@ -62,7 +62,7 @@ Swift / SwiftUI 原生 iOS 播放器：扫码登录**光鸭云盘**后直接浏�
 | 演示播放（无需登录） | ✅ | Apple HLS 样例 + 内嵌字幕：验证播放/字幕/画中画/AirPlay 链路 |
 | 隐私清单 / 许可 / 免责声明 | ✅ | `PrivacyInfo.xcprivacy` + 许可页 |
 | **画中画 / AirPlay** | ✅ 部分 | MP4/MOV/M4V 走 AVPlayer 内核：原生画中画 + AirPlay 路由；MKV 走 VLCKit 不支持（ADR-018，后续评估桥接/换内核） |
-| iPad 分栏 | ⏸️ P2 | 当前 iPad 复用 iPhone 布局 |
+| iPad 分栏 | ✅ | regular 宽度下媒体库两栏（侧栏番剧/继续观看 + 右侧详情/播放） |
 
 ---
 
