@@ -188,15 +188,19 @@ private struct PlayerContent: View {
 
     @ViewBuilder
     private var surface: some View {
-        #if canImport(MobileVLCKit)
-        if let engine = model.engine as? VLCKitEngine {
-            VLCVideoSurface(engine: engine)
+        if let engine = model.engine as? AVPlayerEngine {
+            AVPlayerSurface(engine: engine)
         } else {
+            #if canImport(MobileVLCKit)
+            if let engine = model.engine as? VLCKitEngine {
+                VLCVideoSurface(engine: engine)
+            } else {
+                unsupportedSurface
+            }
+            #else
             unsupportedSurface
+            #endif
         }
-        #else
-        unsupportedSurface
-        #endif
     }
 
     private var unsupportedSurface: some View {
@@ -285,6 +289,21 @@ private struct PlayerContent: View {
                         Image(systemName: isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
                     }
                     .accessibilityLabel(isFullscreen ? "退出全屏" : "全屏")
+
+                    if model.isAVPlayerEngine {
+                        AirPlayRouteView()
+                            .frame(width: 28, height: 28)
+                            .accessibilityLabel("AirPlay")
+
+                        if model.isPiPAvailable {
+                            Button {
+                                model.togglePiP()
+                            } label: {
+                                Image(systemName: "pip")
+                            }
+                            .accessibilityLabel("画中画")
+                        }
+                    }
 
                     audioTrackMenu
 

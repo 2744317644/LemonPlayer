@@ -53,6 +53,7 @@ final class VLCKitEngine: NSObject, PlaybackEngine {
 
     var audioTracks: [PlaybackTrack] { audioTracksValue }
     var subtitleTracks: [PlaybackTrack] { subtitleTracksValue }
+    var supportsNativeASS: Bool { true }
 
     func load(_ source: PlaybackSource) async throws {
         stateValue = .preparing

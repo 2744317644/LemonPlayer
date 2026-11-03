@@ -63,6 +63,8 @@ public protocol PlaybackEngine: AnyObject {
     var rate: Float { get set }
     var audioTracks: [PlaybackTrack] { get }
     var subtitleTracks: [PlaybackTrack] { get }
+    /// 内核是否原生渲染 ASS 特效（VLCKit/mpv 为 true；AVPlayer 为 false，改用自绘 overlay）
+    var supportsNativeASS: Bool { get }
 
     func load(_ source: PlaybackSource) async throws
     func play()

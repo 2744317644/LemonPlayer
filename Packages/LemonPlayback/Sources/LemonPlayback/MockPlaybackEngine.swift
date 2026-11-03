@@ -9,6 +9,7 @@ public final class MockPlaybackEngine: PlaybackEngine {
     public var rate: Float = 1
     public private(set) var audioTracks: [PlaybackTrack] = []
     public private(set) var subtitleTracks: [PlaybackTrack] = []
+    public var supportsNativeASS: Bool { false }
     public private(set) var loadedSource: PlaybackSource?
     public private(set) var externalSubtitleURLs: [URL] = []
 

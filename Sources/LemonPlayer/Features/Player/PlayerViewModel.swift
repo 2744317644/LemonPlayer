@@ -62,7 +62,7 @@ final class PlayerViewModel {
         self.file = file
         self.session = session
         self.service = GuangyaFileService(identity: session.identity)
-        self.engine = PlaybackEngineFactory.make()
+        self.engine = PlaybackEngineFactory.make(for: file.name)
     }
 
     // MARK: - 生命周期
@@ -187,6 +187,16 @@ final class PlayerViewModel {
         isRecovering = false
     }
 
+    // MARK: - 画中画 / AirPlay（仅 AVPlayer 内核）
+
+    var isAVPlayerEngine: Bool { engine is AVPlayerEngine }
+
+    var isPiPAvailable: Bool { (engine as? AVPlayerEngine)?.isPiPAvailable ?? false }
+
+    func togglePiP() {
+        (engine as? AVPlayerEngine)?.togglePiP()
+    }
+
     // MARK: - 字幕
 
     func autoAttachSubtitle() async {
@@ -263,7 +273,7 @@ final class PlayerViewModel {
             let decoded = SubtitleTextDecoder.decode(response.data)
             let format = SubtitleParser.detectFormat(fileExtension: subtitleFile.ext, text: decoded.text)
 
-            if !asSecondary, format == .ass {
+            if !asSecondary, format == .ass, engine.supportsNativeASS {
                 // ASS：内核 libass 渲染（完整特效）
                 kernelSubtitleFile = subtitleFile
                 kernelSubtitleText = decoded.text
