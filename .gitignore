@@ -76,3 +76,4 @@ xcodebuild.log
 *.swp
 Thumbs.db
 desktop.ini
+.tmp/
