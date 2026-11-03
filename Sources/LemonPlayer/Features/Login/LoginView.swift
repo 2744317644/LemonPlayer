@@ -4,6 +4,7 @@ import LemonGuangya
 struct LoginView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     @State private var model: LoginViewModel?
     @State private var showTokenSheet = false
 
@@ -11,7 +12,9 @@ struct LoginView: View {
         NavigationStack {
             Group {
                 if let model {
-                    LoginStatusView(model: model) {
+                    LoginStatusView(model: model) { url in
+                        openURL(url)
+                    } onShowTokenLogin: {
                         showTokenSheet = true
                     }
                 } else {
@@ -44,6 +47,7 @@ struct LoginView: View {
 
 private struct LoginStatusView: View {
     let model: LoginViewModel
+    let onOpenAuthorization: (URL) -> Void
     let onShowTokenLogin: () -> Void
 
     var body: some View {
@@ -71,9 +75,29 @@ private struct LoginStatusView: View {
                 Text("二维码约 \(code.expiresIn) 秒内有效，过期会自动换新")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(code.userCode)
-                    .font(.system(.footnote, design: .monospaced))
-                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 8) {
+                    Text(code.userCode)
+                        .font(.system(.footnote, design: .monospaced))
+                        .textSelection(.enabled)
+                    Button {
+                        UIPasteboard.general.string = code.userCode
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                            .font(.caption)
+                    }
+                }
+
+                // 浏览器兜底：App 扫码不生效时，手动打开授权页并输入设备码
+                if let url = authorizationURL(for: code) {
+                    Button {
+                        onOpenAuthorization(url)
+                    } label: {
+                        Label("在浏览器打开授权页", systemImage: "safari")
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.bordered)
+                }
 
                 Text(pollStatus)
                     .font(.caption2)
@@ -127,6 +151,16 @@ private struct LoginStatusView: View {
                 .padding(.horizontal)
         }
         .padding()
+    }
+
+    private func authorizationURL(for code: DeviceCode) -> URL? {
+        if let complete = code.verificationURIComplete, let url = URL(string: complete) {
+            return url
+        }
+        if let base = code.verificationURL, let url = URL(string: base) {
+            return url
+        }
+        return nil
     }
 
     private var pollStatus: String {

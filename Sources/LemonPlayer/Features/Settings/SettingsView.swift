@@ -9,6 +9,8 @@ struct SettingsView: View {
     @State private var downloadedBytes: Int64 = 0
     @State private var completedCount = 0
     @State private var showClearConfirm = false
+    @State private var tmdbKey = UserDefaults.standard.string(forKey: "lemonplayer.tmdb.key") ?? ""
+    @State private var tmdbSaved = false
 
     var body: some View {
         Form {
@@ -39,6 +41,30 @@ struct SettingsView: View {
                     SubtitleStyleSettingsPreview()
                 }
                 Text("字幕样式在播放页的字幕按钮中实时调整；这里查看当前默认值。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("媒体库（可选）") {
+                SecureField("TMDB API Key", text: $tmdbKey)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                HStack {
+                    Button("保存 Key") {
+                        UserDefaults.standard.set(
+                            tmdbKey.trimmingCharacters(in: .whitespacesAndNewlines),
+                            forKey: "lemonplayer.tmdb.key"
+                        )
+                        tmdbSaved = true
+                    }
+                    .disabled(tmdbKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if tmdbSaved {
+                        Label("已保存", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
+                }
+                Text("可选。Bangumi 匹配不到时用 TMDB 兜底海报（真人影视更适用）。留空则只用 Bangumi。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

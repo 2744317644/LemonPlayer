@@ -58,17 +58,30 @@ final class LibraryViewModel {
                 VideoFile(id: $0.id, name: $0.name, parentID: $0.parentID)
             }
             let client = bangumi
+            let tmdbKey = UserDefaults.standard.string(forKey: "lemonplayer.tmdb.key") ?? ""
+            let tmdb = TMDBClient(apiKey: tmdbKey)
             let built = await LibraryScraper.build(files: inputs) { title in
-                guard let subject = try? await client.searchSubjects(keyword: title, limit: 3).first else {
-                    return nil
+                if let subject = try? await client.searchSubjects(keyword: title, limit: 3).first {
+                    return LibraryMatch(
+                        bangumiID: subject.id,
+                        title: subject.displayName,
+                        coverURL: subject.coverURL?.absoluteString,
+                        year: Int(String(subject.date?.prefix(4) ?? "")),
+                        score: subject.rating?.score
+                    )
                 }
-                return LibraryMatch(
-                    bangumiID: subject.id,
-                    title: subject.displayName,
-                    coverURL: subject.coverURL?.absoluteString,
-                    year: Int(String(subject.date?.prefix(4) ?? "")),
-                    score: subject.rating?.score
-                )
+                // Bangumi 未命中：用 TMDB 兜底（需用户在设置中填 Key）
+                if tmdb.isConfigured,
+                   let result = try? await tmdb.search(title).first {
+                    return LibraryMatch(
+                        bangumiID: nil,
+                        title: result.displayTitle,
+                        coverURL: result.posterURL?.absoluteString,
+                        year: result.year,
+                        score: result.voteAverage
+                    )
+                }
+                return nil
             }
 
             series = built
