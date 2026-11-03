@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import AVFAudio
+import LemonCore
 import LemonDownloads
 import LemonGuangya
 import LemonNetwork
