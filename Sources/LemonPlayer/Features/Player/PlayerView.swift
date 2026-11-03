@@ -62,6 +62,20 @@ private struct PlayerContent: View {
             }
 
             if model.phase == .ready {
+                HStack(spacing: 0) {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture(count: 2) {
+                            model.seek(to: max(0, model.currentTime - 10))
+                        }
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture(count: 2) {
+                            model.seek(to: min(model.duration, model.currentTime + 10))
+                        }
+                }
+                .allowsHitTesting(true)
+
                 controls
                     .opacity(showControls ? 1 : 0)
                     .animation(.easeInOut(duration: 0.2), value: showControls)
@@ -142,6 +156,8 @@ private struct PlayerContent: View {
 
                     subtitleMenu
 
+                    audioTrackMenu
+
                     Menu {
                         ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { value in
                             Button {
@@ -172,6 +188,21 @@ private struct PlayerContent: View {
                     .foregroundStyle(.orange)
                     .padding(.bottom, 8)
             }
+        }
+    }
+
+    private var audioTrackMenu: some View {
+        Menu {
+            ForEach(model.engine.audioTracks) { track in
+                Button(track.name) {
+                    model.engine.selectAudioTrack(id: track.id)
+                }
+            }
+            if model.engine.audioTracks.isEmpty {
+                Text("无音轨信息")
+            }
+        } label: {
+            Image(systemName: "waveform")
         }
     }
 

@@ -44,6 +44,7 @@ final class PlayerViewModel {
     func start() async {
         phase = .loading
         configureAudioSession()
+        configureRemoteCommands()
         do {
             let token = try await session.validAccessToken()
             let link = try await service.playbackURL(fileID: file.id, accessToken: token)
@@ -94,7 +95,19 @@ final class PlayerViewModel {
         progressTask?.cancel()
         progressTask = nil
         engine.stop()
+        NowPlayingController.shared.clear()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    private func configureRemoteCommands() {
+        let controller = NowPlayingController.shared
+        controller.onPlay = { [weak self] in self?.togglePlay() }
+        controller.onPause = { [weak self] in
+            guard let self, self.engine.state == .playing else { return }
+            self.togglePlay()
+        }
+        controller.onSeek = { [weak self] time in self?.seek(to: time) }
+        controller.configure()
     }
 
     // MARK: - 外挂字幕
@@ -208,6 +221,13 @@ final class PlayerViewModel {
                     self.duration = self.engine.duration
                 }
                 self.isPlaying = (self.engine.state == .playing)
+                NowPlayingController.shared.update(
+                    title: self.file.name,
+                    duration: self.duration,
+                    position: self.currentTime,
+                    rate: self.rate,
+                    isPlaying: self.isPlaying
+                )
             }
         }
     }
