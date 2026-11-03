@@ -1,0 +1,76 @@
+# macOS / Xcode
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Xcode build products
+build/
+DerivedData/
+*.xcarchive
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+xcuserdata/
+timeline.xctimeline
+playground.xcworkspace
+*.moved-aside
+*.hmap
+*.xccheckout
+*.xcscmblueprint
+*.o
+*.swiftmodule
+*.swiftdoc
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/*/.build/
+Packages/*/.swiftpm/
+Packages/*/Package.resolved.bak
+SourcePackages/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# CocoaPods (only if we fall back to it)
+Pods/
+Podfile.lock.bak
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Secrets / certificates — NEVER commit
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile
+*.p8
+*.pem
+.env
+.env.*
+secrets/
+*.keystore
+
+# Generated / scratch
+tmp/
+temp/
+scripts/out/
+*.log
+coverage/
+.lcov/
+xcodebuild.log
+*.xcresult
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+desktop.ini
