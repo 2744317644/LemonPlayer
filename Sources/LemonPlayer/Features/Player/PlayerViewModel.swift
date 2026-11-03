@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import AVFAudio
+import LemonDownloads
 import LemonGuangya
 import LemonNetwork
 import LemonPersistence
@@ -71,11 +72,16 @@ final class PlayerViewModel {
         configureAudioSession()
         configureRemoteCommands()
         do {
-            let token = try await session.validAccessToken()
-            let link = try await service.playbackURL(fileID: file.id, accessToken: token)
-            try await engine.load(
-                PlaybackSource(url: link.url, headers: link.headers, title: file.name)
-            )
+            let source: PlaybackSource
+            if let localURL = await DownloadManager.shared.localURL(for: file.id) {
+                // 已下载：直接播本地文件（离线可用）
+                source = PlaybackSource(url: localURL, headers: [:], title: file.name)
+            } else {
+                let token = try await session.validAccessToken()
+                let link = try await service.playbackURL(fileID: file.id, accessToken: token)
+                source = PlaybackSource(url: link.url, headers: link.headers, title: file.name)
+            }
+            try await engine.load(source)
             rate = engine.rate
             phase = .ready
             isPlaying = true

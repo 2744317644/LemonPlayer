@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import LemonGuangya
 
 struct BrowseView: View {
@@ -47,6 +48,20 @@ private struct BrowseContent: View {
                     row(for: file)
                 }
                 .buttonStyle(.plain)
+                .contextMenu {
+                    if file.isPlayable {
+                        Button {
+                            Task { await model.download(file) }
+                        } label: {
+                            Label("下载", systemImage: "arrow.down.circle")
+                        }
+                    }
+                    Button {
+                        UIPasteboard.general.string = file.name
+                    } label: {
+                        Label("复制文件名", systemImage: "doc.on.doc")
+                    }
+                }
                 .onAppear {
                     if file.id == model.items.last?.id {
                         Task { await model.loadMore() }

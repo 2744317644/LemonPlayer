@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import LemonDownloads
 import LemonGuangya
 
 /// 目录浏览状态机：分页、面包屑、排序、错误重试。
@@ -139,6 +140,23 @@ final class BrowseViewModel {
         crumbs.removeSubrange((index + 1)...)
         items = []
         await reload()
+    }
+
+    func download(_ file: GuangyaFile) async {
+        guard file.isPlayable else { return }
+        do {
+            let token = try await session.validAccessToken()
+            let link = try await service.playbackURL(fileID: file.id, accessToken: token)
+            await DownloadManager.shared.enqueue(
+                fileID: file.id,
+                fileName: file.name,
+                parentID: file.parentID,
+                url: link.url,
+                headers: link.headers
+            )
+        } catch {
+            // 下载失败不阻塞浏览；可在下载页重试
+        }
     }
 
     private func fetch(page: Int) async throws -> FileListPage {

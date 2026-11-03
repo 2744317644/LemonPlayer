@@ -36,6 +36,13 @@ struct MainTabView: View {
             }
 
             NavigationStack {
+                DownloadsView()
+            }
+            .tabItem {
+                Label("下载", systemImage: "arrow.down.circle")
+            }
+
+            NavigationStack {
                 SettingsView()
             }
             .tabItem {
