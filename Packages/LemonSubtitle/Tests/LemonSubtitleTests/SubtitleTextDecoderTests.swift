@@ -15,12 +15,16 @@ final class SubtitleTextDecoderTests: XCTestCase {
         XCTAssertEqual(result.text, "带 BOM 的字幕")
     }
 
-    func testGB18030Chinese() {
-        // “中文” 的 GBK/GB18030 字节
+    func testGB18030Chinese() throws {
+        #if canImport(Darwin)
+        // “中文” 的 GBK/GB18030 字节（Apple 平台才有 GB18030 解码）
         let data = Data([0xD6, 0xD0, 0xCE, 0xC4])
         let result = SubtitleTextDecoder.decode(data)
         XCTAssertEqual(result.text, "中文")
         XCTAssertEqual(result.encoding, SubtitleTextDecoder.gb18030)
+        #else
+        throw XCTSkip("Linux Foundation 不支持 GB18030 解码")
+        #endif
     }
 
     func testUTF16LEWithBOM() {
