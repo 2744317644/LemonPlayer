@@ -142,7 +142,7 @@ public enum SubtitleMatcher {
 
     public static func removingEpisode(_ base: String) -> String {
         var value = base
-        if let range = value.range(of: /\d{1,4}(?=$)/) {
+        if let range = value.firstRange(of: /\d{1,4}(?=$)/) {
             value.removeSubrange(range)
         }
         return value
@@ -156,7 +156,7 @@ public enum SubtitleMatcher {
         if let match = lower.firstMatch(of: /s\d{1,2}e(\d{1,4})/) {
             return Int(match.1)
         }
-        if let match = lower.firstMatch(of: /(?<![a-z])e(?:p)?\.?\s?(\d{1,4})(?![0-9])/) {
+        if let match = lower.firstMatch(of: /(?:^|[^a-z])e(?:p)?\.?\s?(\d{1,4})(?![0-9])/) {
             return Int(match.1)
         }
         if let match = name.firstMatch(of: /第\s?(\d{1,4})\s?[话話集]/) {
@@ -165,7 +165,7 @@ public enum SubtitleMatcher {
         if let match = name.firstMatch(of: /\[(\d{1,4})(?:v\d)?\]/) {
             return Int(match.1)
         }
-        if let match = lower.firstMatch(of: /(?<![0-9])(?:^|[^0-9])(\d{2,3})(?![0-9])(?:[^0-9]|$)/) {
+        if let match = lower.firstMatch(of: /(?:^|[^0-9])(\d{2,3})(?![0-9])(?:[^0-9]|$)/) {
             let value = Int(match.1)
             if let value, (1...999).contains(value) {
                 return value
@@ -185,9 +185,9 @@ public enum SubtitleMatcher {
 
         for token in tokens {
             switch token {
-            case "chs", "sc", "zhcn", "zh-cn", "gb", "简体", "简中":
+            case "chs", "sc", "zhcn", "zh-cn", "gb", "cn", "简体", "简中":
                 return .chineseSimplified
-            case "cht", "tc", "zhtw", "zh-tw", "big5", "繁体", "繁中":
+            case "cht", "tc", "zhtw", "zh-tw", "big5", "tw", "hk", "繁体", "繁中":
                 return .chineseTraditional
             case "jpn", "jp", "ja", "日语":
                 return .japanese

@@ -1,23 +1,29 @@
 #!/usr/bin/env bash
 # 在 WSL 里跑纯逻辑包单测（macOS CI 排队时的本地快速反馈通道）。
+# 用法: bash wsl-test.sh [PackageName ...]
 set -uo pipefail
 
 export PATH=/opt/swift/usr/bin:$PATH
 SRC=/mnt/e/Code/LemonPlayer/Packages
 DST=/root/lemon
 
-rm -rf "$DST"
+rm -rf "$DST/Packages"
 mkdir -p "$DST"
 cp -r "$SRC" "$DST/"
 
 cd "$DST/Packages" || exit 1
 
+PKGS="${*:-LemonCore LemonNetwork LemonGuangya LemonSubtitle}"
 FAILED=0
-for p in LemonCore LemonNetwork LemonGuangya LemonSubtitle; do
+for p in $PKGS; do
   echo "===== $p ====="
-  if swift test --package-path "$p" 2>&1 | tail -30; then
-    :
+  LOG="/tmp/swift-test-$p.log"
+  if swift test --package-path "$p" >"$LOG" 2>&1; then
+    grep -E "Executed [0-9]+ tests" "$LOG" | tail -1
+    echo "PASS: $p"
   else
+    echo "FAIL: $p"
+    grep -nE "error: |XCTAssert|failed \(" "$LOG" | head -30
     FAILED=1
   fi
 done

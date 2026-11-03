@@ -89,8 +89,10 @@ public struct HTTPClient: @unchecked Sendable {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 120
-        configuration.waitsForConnectivity = false
         configuration.httpAdditionalHeaders = ["Accept": "application/json"]
+        #if canImport(Darwin)
+        configuration.waitsForConnectivity = false
+        #endif
         return URLSession(configuration: configuration)
     }
 

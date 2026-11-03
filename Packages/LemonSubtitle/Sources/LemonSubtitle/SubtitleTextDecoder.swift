@@ -46,12 +46,12 @@ public enum SubtitleTextDecoder {
             }
         }
         if data.starts(with: [0xFF, 0xFE]) {
-            if let text = String(data: data, encoding: .utf16LittleEndian) {
+            if let text = String(data: data.dropFirst(2), encoding: .utf16LittleEndian) {
                 return (text, .utf16LittleEndian)
             }
         }
         if data.starts(with: [0xFE, 0xFF]) {
-            if let text = String(data: data, encoding: .utf16BigEndian) {
+            if let text = String(data: data.dropFirst(2), encoding: .utf16BigEndian) {
                 return (text, .utf16BigEndian)
             }
         }
@@ -68,6 +68,10 @@ public enum SubtitleTextDecoder {
         }
         #endif
 
-        return (String(data: data, encoding: .isoLatin1) ?? "", .isoLatin1)
+        if let text = String(data: data, encoding: .isoLatin1) {
+            return (text, .isoLatin1)
+        }
+        // 最后兜底：UTF-8 宽松解码（非法字节替换为 U+FFFD），保证不丢内容、不抛错
+        return (String(decoding: data, as: UTF8.self), .utf8)
     }
 }
