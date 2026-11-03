@@ -7,8 +7,11 @@ let package = Package(
     products: [
         .library(name: "LemonMedia", targets: ["LemonMedia"])
     ],
+    dependencies: [
+        .package(path: "../LemonNetwork")
+    ],
     targets: [
-        .target(name: "LemonMedia"),
+        .target(name: "LemonMedia", dependencies: ["LemonNetwork"]),
         .testTarget(name: "LemonMediaTests", dependencies: ["LemonMedia"])
     ]
 )

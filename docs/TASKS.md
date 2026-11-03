@@ -52,6 +52,9 @@
 | T-408 | SRT/VTT 自绘字幕层（字号/颜色/描边/背景/边距实时生效） | M4 | P0 | Lead | `SubtitleOverlayView`、`SubtitleStyle` |
 | T-409 | 双语字幕（主/副叠加） | M4 | P1 | Lead | `PlayerViewModel`、`SubtitleOverlayView` |
 | T-410 | 按文件记忆字幕选择与偏移 + 全局样式持久化 | M4 | P0 | Lead | `SubtitlePreferenceStore` |
+| T-407b | 上下滑调音量/亮度、全屏与方向锁定 | M3 | P1 | Lead | `SystemControls.swift`、`PlayerView` |
+| T-501 | 文件名解析器（标题/季集/多命名规范）+ 5 个测试 | M5 | P0 | Lead | `Packages/LemonMedia/Sources/MediaNameParser.swift` |
+| T-502 | Bangumi 客户端（搜索/详情/剧集；UA + 1req/s 限流）+ 4 个解码测试 | M5 | P0 | Lead | `Packages/LemonMedia/Sources/Bangumi*.swift` |
 
 ---
 
@@ -59,7 +62,8 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-407b | 上下滑调音量/亮度、全屏与方向锁定 | M3 | P1 | Lead | T-304 | `Features/Player/**` |
+| T-503 | 刮削编排：解析 → 搜索 → 匹配 → 入库 → 缓存 | M5 | P0 | Lead | M5 下一步 | `Packages/LemonMedia/**`、`LemonPersistence/**` |
+| T-504 | 首页海报墙（继续观看/最近添加/分类） | M5 | P0 | Lead | T-503 | `Features/Library/**` |
 
 ---
 
@@ -67,8 +71,8 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-501 | 文件名解析器（标题/季集/多命名规范）+ 单测 | M5 | P0 | M5 启动 | `Packages/LemonMedia/Sources/Parsing/**` |
-| T-502 | Bangumi 客户端（搜索/详情/剧集/图片；UA + 限流） | M5 | P0 | T-201 | `Packages/LemonMedia/Sources/Bangumi/**` |
+| T-505 | 详情页 + 剧集列表 + 手动纠错 | M5 | P1 | T-503 | `Features/Library/**` |
+| T-506 | 剧集自动连播 + 下一集预加载 | M5 | P1 | T-504 | `Features/Player/**` |
 | T-411 | 字幕样式预览页（静态帧 + 实时样式预览） | M4 | P1 | T-408 | `Features/Player/**` |
 | T-209 | iPad 分栏布局（NavigationSplitView） | M2 | P2 | T-206 | `Sources/LemonPlayer/Features/**` |
 
