@@ -21,7 +21,7 @@ struct BrowseView: View {
             await model?.start()
         }
         .navigationDestination(item: $playing) { file in
-            PlayerView(mediaTitle: file.name)
+            PlayerView(file: file)
         }
     }
 }

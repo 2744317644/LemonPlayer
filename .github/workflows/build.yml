@@ -68,10 +68,23 @@ jobs:
           xcodegen generate --spec project.yml
           ls -la LemonPlayer.xcodeproj
 
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            Pods
+          key: pods-${{ hashFiles('Podfile') }}
+
+      - name: Install Pods (MobileVLCKit)
+        run: |
+          pod install
+          ls -la LemonPlayer.xcworkspace
+
       - name: Build for simulator (unsigned)
         run: |
           xcodebuild build \
-            -project LemonPlayer.xcodeproj \
+            -workspace LemonPlayer.xcworkspace \
             -scheme LemonPlayer \
             -configuration Debug \
             -sdk iphonesimulator \
@@ -83,7 +96,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           xcodebuild archive \
-            -project LemonPlayer.xcodeproj \
+            -workspace LemonPlayer.xcworkspace \
             -scheme LemonPlayer \
             -configuration Release \
             -sdk iphoneos \
