@@ -1,6 +1,7 @@
 import SwiftUI
 import LemonGuangya
 import LemonMedia
+import LemonPersistence
 
 struct LibraryView: View {
     @Environment(SessionStore.self) private var session
