@@ -8,14 +8,14 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **M1 完成 ✅ → M2 开始** |
-| 当前阶段目标 | 登录（扫码 OAuth2）+ 目录浏览 + token 刷新 |
-| 整体进度 | M0 ✅ 100% · M1 ✅ 100% · M2 ░░░░░░░░░░ 0% · M3-M7 未开始 |
-| 构建状态 | ✅ **CI 全绿**：run `41650264063`，1m16s，8 包编译 + 单测 + 未签名 IPA + artifact |
-| 单测覆盖率 | LemonCore / LemonSubtitle 包内单测已在 CI 跑（覆盖率上传待补） |
-| 最新产物 | artifact `LemonPlayer-unsigned-ipa`（骨架版 22KB，14 天保留） |
-| 下一步 | M2：`LemonNetwork` → 光鸭 Auth/设备码 → Keychain → 目录列表 |
-| 阻塞项 | 用户提供的 token 无效（非 JWT）；真机联调需改走扫码登录 |
+| 当前里程碑 | **M2 · 登录 + 网盘浏览** |
+| 当前阶段目标 | 扫码登录链路已完成编码（设备码 → 二维码 → 轮询 → Keychain），待 CI 验证 |
+| 整体进度 | M0 ✅ · M1 ✅ · M2 ▓▓▓░░░░░░░ 30%（登录层完成，目录层未开始） |
+| 构建状态 | 🔴 **CI 被阻塞**：GitHub 账号未验证邮箱，`git push` 与 API 提交均 403 |
+| 单测覆盖率 | 新增 LemonNetwork / LemonGuangya 单测（设备码解码、轮询结果、异常兜底） |
+| 最新产物 | 本地 commit `ff60534`（登录链路）待推送；远程仍停在 `d7fecd3` |
+| 下一步 | ① 用户验证邮箱 → 推送 → 修 CI ② 目录列表 API + 浏览页 |
+| 阻塞项 | **GitHub 账号 email 验证**（外部阻塞，需用户操作） |
 
 ---
 
@@ -25,7 +25,7 @@
 |---|---|---|---|---|
 | M0 | 立项与文档 | ✅ 已完成 | 100% | 2026-11 |
 | M1 | 可编译骨架 + CI 出包 | ✅ 已完成 | 100% | 2026-11 |
-| M2 | 登录 + 网盘浏览 | 🚧 进行中 | 0% | 2026-12 |
+| M2 | 登录 + 网盘浏览 | 🚧 进行中 | 30% | 2026-12 |
 | M3 | 播放内核 + 直链播放 | ⬜ 未开始 | 0% | 2026-12 |
 | M4 | 外挂字幕 | ⬜ 未开始 | 0% | 2027-01 |
 | M5 | 媒体库 + 剧集 | ⬜ 未开始 | 0% | 2027-01 |
@@ -63,6 +63,11 @@
 | 2026-11-03 22:59 | M1 | **CI 首跑全绿**（run 41650264063，1m16s）：XcodeGen 生成、8 包编译、包内单测、未签名 IPA 归档、artifact 上传 | GitHub Actions | ✅ |
 | 2026-11-03 23:02 | M1 | 内核/CI 调研 v0.2 合并（后台 agent 迟到产出：768 行，补充 SwiftVLC、MPVKit 1.1.0 预发布校正、xcode-27 镜像、CocoaPods 缓存策略） | `docs/tech/*.md` | ✅ |
 | 2026-11-03 23:05 | M1 | **M1 收口**：构建链闭环，进入 M2 | — | ✅ |
+| 2026-11-03 23:15 | M2 | **设备码流程实测通过**：`device/code` 返回 200，字段为 `verification_url`（非 `verification_uri`）、`expires_in=120`、`interval=2`；轮询未扫码返回 HTTP 400 + `authorization_pending` | `docs/api/GUANGYA_API.md` | ✅ |
+| 2026-11-03 23:25 | M2 | 登录链路编码完成：LemonNetwork（HTTP 封装）、LemonGuangya（设备码/轮询/刷新/探针）、LemonPersistence（Keychain/TokenStore）、SessionStore、二维码登录页 + 单测 | commit `ff60534`（本地） | 🟡 待 CI |
+| 2026-11-03 23:32 | M2 | CI 失败：包默认 macOS 10.13，`URLSession.data(for:)` 需 macOS 12+；已给所有本地包补 `platforms` | commit `ff60534` | ✅ 已修 |
+| 2026-11-03 23:36 | M2 | **推送被 GitHub 403 拦截**：`You must verify your email address.`；尝试 API 提交同样 403（`At least one email address must be verified`） | `scripts/push-via-api.ps1` | 🔴 阻塞 |
+| 2026-11-03 23:40 | M2 | Bangumi API 调研完成（1380 行）：20 个端点实测、剧集接口实为 `/v0/episodes?subject_id=`、`sort` 跨季续编号、无 PKCE 等结论 | [`docs/api/BANGUMI_API.md`](api/BANGUMI_API.md) | ✅ |
 | 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
 
 ---

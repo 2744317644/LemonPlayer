@@ -45,8 +45,11 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-201 | 网络层：URLSession 封装、超时、重试退避、错误映射、日志脱敏 | M2 | P0 | T-102 | `Packages/LemonNetwork/**` |
-| T-202 | 光鸭 Auth 客户端：设备码申请 / 轮询 / token 刷新 | M2 | P0 | T-201、T-005 | `Packages/LemonGuangya/Sources/Auth/**` |
+| T-201 | 网络层：URLSession 封装、超时、重试退避、错误映射、日志脱敏 | M2 | P0 | Lead | `Packages/LemonNetwork/**` |
+| T-202 | 光鸭 Auth 客户端：设备码申请 / 轮询 / token 刷新 | M2 | P0 | Lead | `Packages/LemonGuangya/Sources/Auth/**` |
+| T-203 | 登录页：二维码渲染、倒计时、状态机（等待/成功/过期/失败） | M2 | P0 | Lead | `Sources/LemonPlayer/Features/Login/**` |
+| T-204 | Keychain 凭据存储 + TokenStore actor | M2 | P0 | Lead | `Packages/LemonPersistence/**` |
+| T-205 | 文件列表 API 客户端（分页/排序/搜索）与模型 | M2 | P0 | T-201 | `Packages/LemonGuangya/Sources/Files/**` |
 
 ---
 
