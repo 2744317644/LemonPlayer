@@ -52,16 +52,18 @@
 **交付物**
 - [x] `docs/REQUIREMENTS.md` 需求清单（F/N/C/R/J 编号体系）
 - [x] `docs/GOALS.md` 目标列表与里程碑（本文件）
-- [ ] `docs/TASKS.md` 任务看板
-- [ ] `docs/PROGRESS.md` 进度日志
-- [ ] `docs/ARCHITECTURE.md` 架构设计
-- [ ] `docs/DECISIONS.md` 架构决策记录（ADR）
-- [ ] `docs/api/GUANGYA_API.md` 光鸭 API 逆向参考
-- [ ] `docs/tech/PLAYER_KERNEL.md` 播放内核选型
-- [ ] `docs/tech/CI_BUILD.md` GitHub Actions 构建方案
-- [ ] 仓库初始化（git init、.gitignore、首次提交、推送 GitHub）
+- [x] `docs/TASKS.md` 任务看板
+- [x] `docs/PROGRESS.md` 进度日志
+- [x] `docs/ARCHITECTURE.md` 架构设计
+- [x] `docs/DECISIONS.md` 架构决策记录（ADR-001~013）
+- [x] `docs/api/GUANGYA_API.md` 光鸭 API 逆向参考（22 接口 + 10 项待验证）
+- [x] `docs/tech/SKILLS.md` Swift/iOS 技能集评估索引
+- [ ] `docs/tech/PLAYER_KERNEL.md` 播放内核选型（调研中）
+- [ ] `docs/tech/CI_BUILD.md` GitHub Actions 构建方案（调研中）
+- [x] 仓库初始化（git init、.gitignore、首次提交、私有仓库推送 `2744317644/LemonPlayer`）
 
 **验收**：文档齐备且相互引用一致；调研结论有来源链接；不确定项显式标注"待验证"。
+**当前完成度**：约 85%（仅差内核与 CI 两份调研文档）。
 
 ---
 
@@ -209,7 +211,8 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | M0 |
-| 当前目标 | 文档齐备 + 技术调研结论 + 仓库初始化 |
-| 下一步 | 汇总调研结论 → 写架构文档与 ADR → git 首次提交 |
-| 阻塞项 | 等待用户确认：仓库托管方式、iOS 最低版本、签名/安装路径、TMDB Key |
+| 当前里程碑 | M0（约 85%） |
+| 当前目标 | 等播放内核/CI 调研落盘 → 补 `PLAYER_KERNEL.md`、`CI_BUILD.md` → 更新 ADR-003 → M0 收口 |
+| 下一步 | M1：project.yml + SPM 模块骨架 + Actions 出包 |
+| 阻塞项 | 播放内核调研仍在进行（VLCKit 二进制已验证下载）；真机 token 验证待用户操作 |
+| 仓库 | https://github.com/2744317644/LemonPlayer（private） |

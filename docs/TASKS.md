@@ -19,6 +19,10 @@
 | T-004 | 进度日志建立（快照 + 日志 + 变更记录） | M0 | P0 | Lead | `docs/PROGRESS.md` |
 | T-005 | 光鸭云盘 API 逆向调研（22 接口 + 10 项待验证） | M0 | P0 | sub:api-recon | `docs/api/GUANGYA_API.md` |
 | T-011 | Swift/iOS 技能集评估与按需索引（不 vendor） | M0 | P1 | Lead | `docs/tech/SKILLS.md` |
+| T-007 | 架构设计文档（分层/SPM 包/领域模型/四条链路） | M0 | P0 | Lead | `docs/ARCHITECTURE.md` |
+| T-008 | ADR 决策记录（ADR-001~013） | M0 | P0 | Lead | `docs/DECISIONS.md` |
+| T-009 | 仓库初始化（git init / .gitignore / 首次提交） | M0 | P0 | Lead | `.gitignore`、3 个提交 |
+| T-010 | 创建私有仓库并推送（2744317644/LemonPlayer） | M0 | P0 | Lead | https://github.com/2744317644/LemonPlayer |
 
 ---
 
@@ -27,7 +31,6 @@
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
 | T-006 | 播放内核与 CI 出包调研 | M0 | P0 | sub:kernel-recon | — | `docs/tech/**` |
-| T-009 | 仓库初始化（git init / .gitignore / 首次提交） | M0 | P0 | Lead | T-003、T-004 | `.gitignore`、根配置 |
 
 ---
 
@@ -35,9 +38,6 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-007 | 架构设计文档（模块划分、数据流、并发模型、状态管理） | M0 | P0 | T-005、T-006 | `docs/ARCHITECTURE.md` |
-| T-008 | ADR 决策记录（平台/API/内核/字幕渲染/CI/仓库） | M0 | P0 | T-005、T-006 | `docs/DECISIONS.md` |
-| T-010 | 推送 GitHub 仓库并确认 Actions 可用 | M0 | P0 | T-009 + 用户确认仓库名/可见性 | `.github/**` |
 | T-101 | 工程配置：`project.yml`（XcodeGen）+ SwiftFormat/SwiftLint 配置 | M1 | P0 | T-009 | `*.yml`、`.swiftformat`、`.swiftlint.yml` |
 | T-102 | SPM 模块骨架（7 个本地 package，空实现可编译） | M1 | P0 | T-101 | `Packages/**` |
 | T-103 | App 入口 + 三页占位 UI（登录/浏览/播放）导航 | M1 | P0 | T-102 | `Sources/LemonPlayer/**` |
