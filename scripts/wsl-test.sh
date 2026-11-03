@@ -19,7 +19,7 @@ for p in $PKGS; do
   echo "===== $p ====="
   LOG="/tmp/swift-test-$p.log"
   if swift test --package-path "$p" >"$LOG" 2>&1; then
-    grep -E "Executed [0-9]+ tests" "$LOG" | tail -1
+    grep -E "Executed [0-9]+ tests|Test run with [0-9]+ test" "$LOG" | tail -2
     echo "PASS: $p"
   else
     echo "FAIL: $p"

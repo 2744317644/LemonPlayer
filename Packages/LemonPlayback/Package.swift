@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "LemonPlayback", targets: ["LemonPlayback"])
     ],
     targets: [
-        .target(name: "LemonPlayback")
+        .target(name: "LemonPlayback"),
+        .testTarget(name: "LemonPlaybackTests", dependencies: ["LemonPlayback"])
     ]
 )

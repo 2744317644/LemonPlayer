@@ -39,6 +39,7 @@
 | T-210 | 单测补齐：认证/文件/搜索/字幕（4 包 36 用例） | M2 | P0 | Lead | `Packages/**/Tests/**` |
 | T-206 | 浏览页：列表、面包屑、排序、下拉刷新、无限滚动 | M2 | P0 | Lead | `Sources/LemonPlayer/Features/Browse/**` |
 | T-303 | 直链获取与解析（signedURL 回退、Referer/UA、117 映射） | M3 | P0 | Lead | `Packages/LemonGuangya/Sources/Files/PlaybackLink.swift` |
+| T-302 | `PlaybackEngine` 协议 + 轨道/状态模型 + Mock 引擎（Swift Testing 4 用例） | M3 | P0 | Lead | `Packages/LemonPlayback/**` |
 
 ---
 
@@ -46,8 +47,8 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-301 | 内核集成（MobileVLCKit 3.7.5，CocoaPods）与资源打包 | M3 | P0 | Lead | 下一步 | `Podfile`、`project.yml`、`.github/workflows/build.yml` |
-| T-302 | `PlaybackEngine` 协议 + 内核适配层（轨道/状态/控制） | M3 | P0 | Lead | T-301 | `Packages/LemonPlayback/**` |
+| T-301 | 内核集成（MobileVLCKit 3.7.5，CocoaPods）与资源打包 | M3 | P0 | Lead | 下一步（Podfile + CI workspace） | `Podfile`、`project.yml`、`.github/workflows/build.yml` |
+| T-304 | 播放器 UI：手势、控制栏、进度条、倍速、轨道切换 | M3 | P0 | Lead | T-302 | `Sources/LemonPlayer/Features/Player/**` |
 
 ---
 
