@@ -85,6 +85,29 @@ public actor DownloadManager {
         records.values.sorted { $0.updatedAt > $1.updatedAt }
     }
 
+    public func totalDownloadedBytes() -> Int64 {
+        records.values.reduce(0) { $0 + $1.downloadedBytes }
+    }
+
+    public func completedCount() -> Int {
+        records.values.filter { $0.state == .completed }.count
+    }
+
+    /// 清空全部任务与本地文件。
+    public func removeAll() {
+        for id in records.keys {
+            tasks[id]?.cancel()
+            tasks[id] = nil
+            if let path = records[id]?.localPath {
+                try? FileManager.default.removeItem(atPath: path)
+            }
+        }
+        records.removeAll()
+        resumeData.removeAll()
+        persist()
+        emit()
+    }
+
     public func localURL(for fileID: String) -> URL? {
         guard let record = records[fileID], record.state == .completed,
               let path = record.localPath else { return nil }
