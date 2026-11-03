@@ -263,3 +263,12 @@ LemonPlayer/
 - [x] 工程生成工具：XcodeGen（ADR-004）
 - [x] 本地持久化：SwiftData（ADR-005）
 - [ ] 分支与提交规范、Release 触发方式（ADR-007，待 M1 落地细节）
+
+---
+
+## 13. 实现状态（as-built，2026-11-04）
+
+- 模块命名差异：播放抽象包定为 `LemonPlayback`（避免与 App target `LemonPlayer` 重名）；`LemonMedia` 同时承载 Bangumi/TMDB 客户端、文件名解析与媒体库刮削。
+- 已落地数据流：Login（三通道）→ Browse（分页/排序/本地搜索）→ Player（VLCKit 内核 + 自绘字幕 overlay）→ Library（Bangumi/TMDB 扫描与海报墙）→ Downloads（后台 URLSession）→ Settings/Diagnostics。
+- 持久化分布：Keychain（凭据）、UserDefaults（播放进度/字幕记忆/样式/容量上限）、Application Support JSON（媒体库、匹配缓存、下载记录、resumeData）。
+- CI 分层：Linux 容器单测（7 包 75 用例）→ macOS 构建/归档/Release；UI 冒烟测试为手动触发的独立 job。

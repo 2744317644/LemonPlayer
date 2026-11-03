@@ -185,10 +185,48 @@
 
 ---
 
+## ADR-015 · 后台下载使用 background URLSession + resumeData 持久化
+
+- **状态**：已接受（2026-11-04）
+- **背景**：需求 F-DL-02 要求切后台/锁屏继续下载；前台 URLSession 会被系统挂起。
+- **决策**：
+  - `DownloadManager` 在 iOS 使用 `URLSessionConfiguration.background(withIdentifier:)` + `sessionSendsLaunchEvents = true`；
+  - `resumeData` 写入 `Application Support/LemonPlayer/ResumeData/<fileID>.resume`，App 重启后可续传；
+  - 新增 `AppDelegate.handleEventsForBackgroundURLSession`，把系统 completionHandler 交给 `BackgroundSessionEvents` 在 `urlSessionDidFinishEvents` 时回调；
+  - 非 iOS（Linux 测试）回落 `URLSessionConfiguration.default`。
+- **后果**：下载可在后台继续；代价是需要 AppDelegate 桥接与断点文件治理（完成/取消/删除时清理）。
+
+---
+
+## ADR-016 · TMDB 作为可选兜底（Bangumi 优先不变）
+
+- **状态**：已接受（2026-11-04）
+- **背景**：ADR-014 确定 Bangumi 优先；真人影视/命名不规范时 Bangumi 可能无结果。
+- **决策**：
+  - 设置页提供 TMDB API Key（可选，仅本机 UserDefaults）；
+  - 刮削顺序：匹配缓存 → Bangumi 搜索 → TMDB（仅当配置 Key）→ 记为未命中；
+  - TMDB 结果不参与 Bangumi 章节映射，只提供标题/海报/年份/评分。
+- **后果**：有 Key 时真人影视也有海报；无 Key 时行为与之前一致，不产生额外请求。
+
+---
+
+## ADR-017 · 测试与 CI 分层：Linux 单测 / macOS 构建 / 手动 UI 测试
+
+- **状态**：已接受（2026-11-04）
+- **背景**：无本地 Xcode；macOS arm64 runner 排队不可控；headless Intel 模拟器引导不稳定。
+- **决策**：
+  - 纯逻辑包单测跑 Linux 容器（`swift:6.0`，~1 分钟）；
+  - macOS job 只做 XcodeGen → pod install → 模拟器构建 → 归档 → IPA/Release；
+  - UI 冒烟测试保留工程但改为 `workflow_dispatch` 手动触发的独立 job（含模拟器预热），不阻塞常规流水线；
+  - 本地 Windows 通过 WSL Swift 6.0.3 跑纯逻辑包测试（`scripts/wsl-test.sh`）。
+- **后果**：每次 push 约 6 分钟反馈；运行时 UI 证据按需生成。
+
+---
+
 ## 待定 ADR 队列
 
 | 候选 | 说明 |
 |---|---|
-| ADR-012 | 海报与元数据缓存策略（磁盘 LRU vs 数据库索引） |
-| ADR-013 | 下载文件命名与目录布局 |
-| ADR-014 | 日志与诊断上报（是否接第三方崩溃收集） |
+| ADR-018 | 海报与元数据缓存策略（URLCache vs 自建磁盘 LRU） |
+| ADR-019 | 画中画/AirPlay 技术路线（AetherEngine / AVSampleBufferDisplayLayer） |
+| ADR-020 | Bangumi 账号 OAuth 与追番进度同步 |

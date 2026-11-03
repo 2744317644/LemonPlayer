@@ -31,13 +31,16 @@
 
 | 项 | 状态 |
 |---|---|
-| 需求 / 目标 / 看板 / 进度 | ✅ 已建立 |
-| 光鸭 API 逆向文档 | ✅ 已产出（22 个接口 + 实测校正） |
-| 播放内核 | ✅ MobileVLCKit 3.7.5 已接入（libass、MKV/HEVC、17MB IPA） |
-| 构建方案 | ✅ macos-26-intel + Xcode 26.6 → 未签名 IPA（CI 全绿） |
-| 登录 + 网盘浏览 | ✅ M2：扫码登录、Keychain、列表/面包屑/排序/搜索 |
-| 播放 + 外挂字幕 | 🚧 M3/M4：直链播放、自动匹配、GBK 转码、锁屏控制（进行中） |
-| Xcode 工程 / CI | ✅ M1 通过：XcodeGen 工程 + Actions 出未签名 IPA |
+| 交付说明 | ✅ [`docs/DELIVERY.md`](docs/DELIVERY.md)：功能对照/安装/已知限制 |
+| 需求 / 目标 / 看板 / 进度 | ✅ 已建立并持续更新 |
+| 光鸭 API 逆向文档 | ✅ 22 个接口 + 实测校正 |
+| 播放内核 | ✅ MobileVLCKit 3.7.5（libass、MKV/HEVC） |
+| 构建与发布 | ✅ CI 全绿；`v1.0.0-rc8` Release（未签名 IPA 17.4MB + SHA256） |
+| 登录 + 网盘浏览 | ✅ M2：扫码 / 浏览器授权页 / Token 直登 + 列表/面包屑/排序/搜索 |
+| 播放 + 外挂字幕 | ✅ M3/M4：直链播放、手势、全屏、后台音频、字幕自动匹配/样式/双语/偏移/记忆 |
+| 媒体库 | ✅ M5：Bangumi 扫描、海报墙、详情、连播、继续观看、匹配缓存（TMDB 可选兜底） |
+| 离线缓存 | ✅ M6：后台下载、断点续传、容量上限、离线播放 |
+| 发布 | 🚧 M7：设置/许可/隐私/诊断/Release 流水线/UI 冒烟测试工程已就绪 |
 
 进度以 [`docs/PROGRESS.md`](docs/PROGRESS.md) 为唯一真相源；里程碑计划见 [`docs/GOALS.md`](docs/GOALS.md)。
 
@@ -51,8 +54,9 @@
 | [`docs/GOALS.md`](docs/GOALS.md) | 目标列表、M0-M7 里程碑、成功指标、执行节奏 |
 | [`docs/TASKS.md`](docs/TASKS.md) | 任务看板：60+ 任务卡与依赖关系 |
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | 进度日志、指标跟踪、决策变更、里程碑复盘 |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 架构设计（待补） |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | 架构决策记录 ADR（待补） |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 架构设计（分层、模块、数据流） |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | 架构决策记录 ADR-001~017 |
+| [`docs/DELIVERY.md`](docs/DELIVERY.md) | 交付说明：功能对照、安装、已知限制、验证状态 |
 | [`docs/api/GUANGYA_API.md`](docs/api/GUANGYA_API.md) | 光鸭云盘 API 逆向参考（22 接口、字段表、直链链路、错误码） |
 | [`docs/tech/PLAYER_KERNEL.md`](docs/tech/PLAYER_KERNEL.md) | 播放内核选型：MobileVLCKit / MPVKit / AetherEngine 对比 | 
 | [`docs/tech/CI_BUILD.md`](docs/tech/CI_BUILD.md) | macOS runner、Xcode 26.6、未签名 IPA、workflow 骨架 |
@@ -62,10 +66,10 @@
 
 ## 构建与安装
 
-- **构建**：GitHub Actions（`macos-26` runner + Xcode 26）产出未签名 IPA；本地 Windows 环境不参与编译。
-- **安装**：v1 交付前补齐文档（AltStore / Sideloadly 自签；有开发者账号可走 TestFlight）。
+- **构建**：GitHub Actions（`macos-26-intel` + Xcode 26.6）产出未签名 IPA；本地 Windows 只改代码与文档。
+- **安装**：下载 [Releases](https://github.com/2744317644/LemonPlayer/releases) 里的 `LemonPlayer-unsigned.ipa`，用 Sideloadly / AltStore 自签安装；详见 [`docs/INSTALL.md`](docs/INSTALL.md)。
 
-> ⚠️ 暂无 Mac 开发环境，CI 是唯一编译验证途径；每次推送即构建，失败日志会回写到进度日志。
+> ⚠️ 暂无 Mac 开发环境，CI 是唯一 iOS 编译验证途径；纯逻辑层可在 WSL（Swift 6.0.3）本地跑测试（`scripts/wsl-test.sh`）。
 
 ---
 
