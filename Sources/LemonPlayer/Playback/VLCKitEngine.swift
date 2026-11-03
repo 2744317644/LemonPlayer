@@ -31,13 +31,17 @@ final class VLCKitEngine: NSObject, PlaybackEngine {
     var state: PlaybackState { stateValue }
 
     var currentTime: TimeInterval {
-        guard let time = player.time, time.intValue > 0 else { return 0 }
-        return TimeInterval(time.intValue) / 1000.0
+        let milliseconds = player.time.intValue
+        guard milliseconds > 0 else { return 0 }
+        return TimeInterval(milliseconds) / 1000.0
     }
 
     var duration: TimeInterval {
-        if let length = player.media?.length, length.intValue > 0 {
-            return TimeInterval(length.intValue) / 1000.0
+        if let media = player.media {
+            let milliseconds = media.length.intValue
+            if milliseconds > 0 {
+                return TimeInterval(milliseconds) / 1000.0
+            }
         }
         return durationValue
     }
@@ -57,10 +61,7 @@ final class VLCKitEngine: NSObject, PlaybackEngine {
         subtitleTracksValue = []
         externalSubtitleURLs = []
 
-        guard let media = VLCMedia(url: source.url) else {
-            stateValue = .failed(PlaybackError.engine("无法创建播放媒体").localizedDescription)
-            throw PlaybackError.engine("无法创建播放媒体")
-        }
+        let media = VLCMedia(url: source.url)
         media.addOption(":network-caching=1500")
         media.addOption(":http-referrer=\(source.headers["Referer"] ?? "https://www.guangyupan.com/")")
         if let userAgent = source.headers["User-Agent"] {
@@ -114,11 +115,11 @@ final class VLCKitEngine: NSObject, PlaybackEngine {
 
     private func refreshTracks() {
         audioTracksValue = player.audioTrackIndexes.compactMap { number in
-            let index = (number as? NSNumber)?.int32Value ?? Int32(truncating: number as? NSNumber ?? 0)
+            guard let index = (number as? NSNumber)?.int32Value else { return nil }
             return PlaybackTrack(id: index, name: "音轨 \(index)", language: nil, kind: .audio)
         }
         subtitleTracksValue = player.videoSubTitlesIndexes.compactMap { number in
-            let index = (number as? NSNumber)?.int32Value ?? Int32(truncating: number as? NSNumber ?? 0)
+            guard let index = (number as? NSNumber)?.int32Value else { return nil }
             let name = index < 0 ? "关闭字幕" : "字幕 \(index)"
             return PlaybackTrack(id: index, name: name, language: nil, kind: .subtitle)
         }
@@ -155,8 +156,8 @@ extension VLCKitEngine: VLCMediaPlayerDelegate {
     nonisolated func mediaPlayerTimeChanged(_ aNotification: Notification) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            if self.durationValue == 0, let length = self.player.media?.length, length.intValue > 0 {
-                self.durationValue = TimeInterval(length.intValue) / 1000.0
+            if self.durationValue == 0, let media = self.player.media, media.length.intValue > 0 {
+                self.durationValue = TimeInterval(media.length.intValue) / 1000.0
             }
         }
     }
