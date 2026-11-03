@@ -33,7 +33,8 @@
 |---|---|
 | 需求 / 目标 / 看板 / 进度 | ✅ 已建立 |
 | 光鸭 API 逆向文档 | ✅ 已产出（22 个接口 + 10 项待验证清单） |
-| 播放内核选型 | 🚧 调研中 |
+| 播放内核选型 | ✅ MobileVLCKit 3.7.5（libass），MPVKit 备选 |
+| 构建方案 | ✅ macos-26 + Xcode 26.6 → 未签名 IPA |
 | Xcode 工程 / CI | ⬜ 未开始（M1） |
 
 进度以 [`docs/PROGRESS.md`](docs/PROGRESS.md) 为唯一真相源；里程碑计划见 [`docs/GOALS.md`](docs/GOALS.md)。
@@ -51,8 +52,9 @@
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 架构设计（待补） |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 架构决策记录 ADR（待补） |
 | [`docs/api/GUANGYA_API.md`](docs/api/GUANGYA_API.md) | 光鸭云盘 API 逆向参考（22 接口、字段表、直链链路、错误码） |
-| [`docs/tech/PLAYER_KERNEL.md`](docs/tech/PLAYER_KERNEL.md) | 播放内核选型（待补） |
-| [`docs/tech/CI_BUILD.md`](docs/tech/CI_BUILD.md) | GitHub Actions 构建方案（待补） |
+| [`docs/tech/PLAYER_KERNEL.md`](docs/tech/PLAYER_KERNEL.md) | 播放内核选型：MobileVLCKit / MPVKit / AetherEngine 对比 | 
+| [`docs/tech/CI_BUILD.md`](docs/tech/CI_BUILD.md) | macOS runner、Xcode 26.6、未签名 IPA、workflow 骨架 |
+| [`docs/tech/SKILLS.md`](docs/tech/SKILLS.md) | Swift/iOS 技能集索引（按里程碑取用） |
 
 ---
 

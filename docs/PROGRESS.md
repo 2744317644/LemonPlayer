@@ -8,14 +8,14 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **M0 · 立项与文档**（85%） |
-| 当前阶段目标 | 补完播放内核与 CI 调研 → 更新 ADR-003 → M0 收口 |
-| 整体进度 | M0 ▓▓▓▓▓▓▓▓▓░ 85% · M1-M7 未开始 |
-| 构建状态 | ⚪ 尚无 Xcode 工程（CI 方案调研中） |
+| 当前里程碑 | **M1 · 可编译骨架 + CI 出包** |
+| 当前阶段目标 | 建 XcodeGen 工程 + SPM 模块骨架 + CocoaPods 接入 + Actions 出未签名 IPA |
+| 整体进度 | M0 ✅ 100% · M1 ░░░░░░░░░░ 0% · M2-M7 未开始 |
+| 构建状态 | ⚪ 尚无 Xcode 工程；CI 方案已定稿（`docs/tech/CI_BUILD.md`） |
 | 单测覆盖率 | — |
-| 最新产物 | 私有仓库 https://github.com/2744317644/LemonPlayer（3 次提交） |
-| 下一步 | 内核/CI 调研落盘 → ADR-003 定稿 → M1 骨架（project.yml + SPM 模块 + Actions） |
-| 阻塞项 | ① 播放内核调研进行中 ② 真机 token 验证需用户操作（F-AUTH-07） |
+| 最新产物 | 私有仓库 https://github.com/2744317644/LemonPlayer |
+| 下一步 | T-101 project.yml → T-102 SPM 模块 → T-104 build.yml → 首跑 Actions |
+| 阻塞项 | 真机 token 联调需用户操作（F-AUTH-07）；无其他阻塞 |
 
 ---
 
@@ -23,8 +23,8 @@
 
 | 里程碑 | 主题 | 状态 | 完成度 | 计划完成 |
 |---|---|---|---|---|
-| M0 | 立项与文档 | 🚧 进行中 | 85% | 2026-11 |
-| M1 | 可编译骨架 + CI 出包 | ⬜ 未开始 | 0% | 2026-11 |
+| M0 | 立项与文档 | ✅ 已完成 | 100% | 2026-11 |
+| M1 | 可编译骨架 + CI 出包 | 🚧 进行中 | 0% | 2026-11 |
 | M2 | 登录 + 网盘浏览 | ⬜ 未开始 | 0% | 2026-12 |
 | M3 | 播放内核 + 直链播放 | ⬜ 未开始 | 0% | 2026-12 |
 | M4 | 外挂字幕 | ⬜ 未开始 | 0% | 2027-01 |
@@ -51,6 +51,10 @@
 | 2026-11-03 22:08 | M0 | 第二轮需求确认：private 仓库、iOS 26.0+、未签名 IPA 自签、Bundle ID `com.lemonplayer.ios`、TMDB 后补、仅自签分发、先用官方 token 联调 | 对话结论 → ADR-012/013 | ✅ |
 | 2026-11-03 22:12 | M0 | 评估 swift-ios-skills（86 技能）：质量通过、许可 PolyForm Perimeter；因 DSH 不能热装 + shell 无法直连 GitHub，改为"索引 + 按需 web_fetch" | [`docs/tech/SKILLS.md`](tech/SKILLS.md) | ✅ |
 | 2026-11-03 22:20 | M0 | 创建私有仓库并推送成功（gh 账号 2744317644），3 次提交上云 | https://github.com/2744317644/LemonPlayer | ✅ |
+| 2026-11-03 22:30 | M0 | 核实 CI 环境：macos-26 镜像预装 **Xcode 26.6（默认）**、iOS 26.5 SDK、CocoaPods 1.17.0 | `docs/tech/CI_BUILD.md` | ✅ |
+| 2026-11-03 22:36 | M0 | 播放内核定案：**MobileVLCKit 3.7.5 主选**（libass、LGPL、2026-10-31 发布），MPVKit 备选，AetherEngine 列为观察（Xcode 27 + 不渲染 ASS） | [`docs/tech/PLAYER_KERNEL.md`](tech/PLAYER_KERNEL.md)、ADR-003 | ✅ |
+| 2026-11-03 22:40 | M0 | 验证本机代理 `127.0.0.1:7890` 可用（github.com / raw 均 200），写入 Windows 开发说明 | `docs/tech/CI_BUILD.md` §4 | ✅ |
+| 2026-11-03 22:45 | M0 | **M0 收口**：文档 9 份齐备、ADR-001~013 定稿、仓库上云 | 全部 `docs/` | ✅ |
 | 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
 
 ---

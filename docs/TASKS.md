@@ -23,6 +23,7 @@
 | T-008 | ADR 决策记录（ADR-001~013） | M0 | P0 | Lead | `docs/DECISIONS.md` |
 | T-009 | 仓库初始化（git init / .gitignore / 首次提交） | M0 | P0 | Lead | `.gitignore`、3 个提交 |
 | T-010 | 创建私有仓库并推送（2744317644/LemonPlayer） | M0 | P0 | Lead | https://github.com/2744317644/LemonPlayer |
+| T-006 | 播放内核与 CI 出包调研（选型定案 + 构建方案） | M0 | P0 | Lead | `docs/tech/PLAYER_KERNEL.md`、`docs/tech/CI_BUILD.md` |
 
 ---
 
@@ -30,7 +31,7 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-006 | 播放内核与 CI 出包调研 | M0 | P0 | sub:kernel-recon | — | `docs/tech/**` |
+| — | _（M0 收口，M1 任务待认领）_ | — | — | — | — | — |
 
 ---
 
@@ -66,7 +67,7 @@
 ### M3 播放内核 + 直链播放
 | 编号 | 任务 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|
-| T-301 | 内核集成（ADR-003 结论：MPVKit/VLCKit）与资源打包 | P0 | T-102、T-008 | `Packages/Player/**`、`project.yml` |
+| T-301 | 内核集成（MobileVLCKit 3.7.5，CocoaPods 静态链接）与资源打包 | P0 | T-102、T-008 | `Packages/Player/**`、`project.yml`、`Podfile` |
 | T-302 | `PlaybackEngine` 协议 + 内核适配层（轨道枚举/控制/状态回调） | P0 | T-301 | `Packages/Player/**` |
 | T-303 | 直链获取与续签（预过期刷新、Range seek、403 自动重取） | P0 | T-205 | `Packages/GuangyaAPI/Sources/Playback/**` |
 | T-304 | 播放器 UI：手势（双击/左右/上下/长按）、控制栏、锁定 | P0 | T-302 | `Sources/LemonPlayer/Features/Player/**` |
@@ -116,8 +117,8 @@
 ### M7 打磨与发布
 | 编号 | 任务 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|
-| T-701 | 画中画（PiP） | P1 | T-302、ADR | `Packages/Player/**` |
-| T-702 | AirPlay（AVRoutePickerView，限制见 ADR） | P1 | T-301 | 同上 |
+| T-701 | 画中画（PiP）——VLCKit 不支持，v1 置灰/降级，记录 ADR | P2 | T-302、ADR | `Packages/Player/**` |
+| T-702 | AirPlay——VLCKit 无 AVPlayer 管线，v1 仅音频路由，记录 ADR | P2 | T-301 | 同上 |
 | T-703 | 设置页（播放/缓存/网络/外观/关于） | P0 | T-204 | `Features/Settings/**` |
 | T-704 | 诊断日志（滚动 + 脱敏 + 导出） | P1 | T-201 | `Packages/Core/**` |
 | T-705 | 隐私清单、开源许可页、免责声明 | P0 | — | `Resources/**`、`Features/Settings/**` |

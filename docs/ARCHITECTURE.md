@@ -52,7 +52,7 @@
 | `LemonNetwork` | URLSession 封装、拦截器链（鉴权/重试/日志脱敏）、限流 | LemonCore | `HTTPClient`、`RequestBuilder`、`RetryPolicy` | `Packages/LemonNetwork/**` |
 | `LemonGuangya` | 光鸭 API 客户端：Auth、Files、Playback URL；DTO ↔ Domain 映射 | LemonCore, LemonNetwork | `GuangyaAuthClient`、`GuangyaFileService`、`PlayURLProvider` | `Packages/LemonGuangya/**` |
 | `LemonSubtitle` | SRT/VTT/ASS 解析、编码检测、同名匹配、时间轴校准模型 | LemonCore | `SubtitleParser`、`SubtitleCue`、`SubtitleMatcher`、`EncodingDetector`、`SubtitleTimeline` | `Packages/LemonSubtitle/**` |
-| `LemonPlayer` | `PlaybackEngine` 协议与内核适配、轨道模型、播放器状态机 | LemonCore, LemonSubtitle | `PlaybackEngine`、`PlayerState`、`TrackInfo`、`MPVEngine`/`VLCKitEngine` | `Packages/LemonPlayer/**` |
+| `LemonPlayer` | `PlaybackEngine` 协议与内核适配、轨道模型、播放器状态机 | LemonCore, LemonSubtitle | `PlaybackEngine`、`PlayerState`、`TrackInfo`、`VLCKitEngine`（主）/`MPVEngine`（备） | `Packages/LemonPlayer/**` |
 | `LemonMedia` | TMDB 客户端、文件名解析、刮削编排 | LemonCore, LemonNetwork | `TMDBClient`、`MediaNameParser`、`LibraryScraper` | `Packages/LemonMedia/**` |
 | `LemonPersistence` | Keychain、SwiftData 模型、策略（字幕记忆/历史/缓存索引） | LemonCore | `CredentialStore`、`PlaybackHistoryStore`、`SubtitlePreferenceStore` | `Packages/LemonPersistence/**` |
 | `LemonDownloads` | 后台下载任务、断点续传、容量管理 | LemonCore, LemonNetwork | `DownloadTask`、`DownloadManager`、`StoragePolicy` | `Packages/LemonDownloads/**` |
@@ -258,7 +258,8 @@ LemonPlayer/
 
 ## 12. 待定项（随 ADR 落定）
 
-- [ ] 播放内核最终选型与版本锁定（ADR-003）
-- [ ] 工程生成工具：XcodeGen vs Tuist（ADR-004）
-- [ ] 本地持久化：SwiftData vs GRDB（ADR-005）
-- [ ] 分支与提交规范、Release 触发方式（ADR-006/007）
+- [x] 播放内核选型：MobileVLCKit 3.7.5 主选，MPVKit 备选（ADR-003，见 `docs/tech/PLAYER_KERNEL.md`）
+- [x] 构建与出包：GitHub Actions macos-26 + Xcode 26.6，未签名 IPA（ADR-006，见 `docs/tech/CI_BUILD.md`）
+- [x] 工程生成工具：XcodeGen（ADR-004）
+- [x] 本地持久化：SwiftData（ADR-005）
+- [ ] 分支与提交规范、Release 触发方式（ADR-007，待 M1 落地细节）

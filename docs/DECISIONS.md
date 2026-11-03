@@ -38,16 +38,16 @@
 
 ---
 
-## ADR-003 · 播放内核：FFmpeg 系内核（提案：MPVKit，待调研结论确认）
+## ADR-003 · 播放内核：MobileVLCKit 3.7.5 为主选（MPVKit 备选）
 
-- **状态**：提案（调研中）
+- **状态**：已接受（2026-11-03）· 依据 [`docs/tech/PLAYER_KERNEL.md`](tech/PLAYER_KERNEL.md)
 - **背景**：光鸭片源以 MKV 为主（H.264/HEVC，常见 DTS/AC3 音轨、PGS/ASS 内嵌字幕）。AVPlayer 不支持 MKV 容器与多数非 MP4 音频，无法满足"全格式"要求。
-- **决策（提案）**：引入 **MPVKit**（mpv + FFmpeg，SPM 分发，自带 libass），通过 `PlaybackEngine` 协议封装；备选 **MobileVLCKit**（CocoaPods，libass 同样内置）。最终以 [`docs/tech/PLAYER_KERNEL.md`](tech/PLAYER_KERNEL.md) 的对比结论为准。
-- **理由**：MKV/HEVC/AV1/DTS 全解码；libass 免费提供 ASS 完整特效；SPM 集成符合无 CocoaPods 的 CI 偏好。
+- **决策**：引入 **MobileVLCKit 3.7.5**（CocoaPods，静态链接，LGPLv2.1+，内置 libass），通过 `PlaybackEngine` 协议封装，App 层不直接依赖 VLCKit 类型；**备选 MPVKit**（SPM，LGPLv3，libass 0.17.5），若 CocoaPods 在 CI 上不可接受则切换。
+- **理由**：用户核心需求是 MKV 全格式 + ASS 特效，必须内置 libass；VLCKit 3.7.5（2026-10-31 发布）是唯一"libass 完整渲染 + 长期维护 + 生产验证"的组合；MPVKit 作者自述"仅适合学习、不频繁维护"，且 Metal 支持为非官方补丁；AetherEngine 虽然能效/HDR/PiP 最好，但只输出字幕 cue、不渲染 ASS 特效，且要求 Xcode 27。
 - **后果**：
-  - ✅ 格式覆盖与字幕能力达标；
-  - ❌ 二进制体积大（FFmpeg 全量）；画中画/AirPlay 需自行桥接（`AVSampleBufferDisplayLayer`）；GPL/LGPL 合规需声明。
-- **备选**：MobileVLCKit（成熟、但 CocoaPods 依赖与 GPL 风险）；AVPlayer + 自研 MKV demux（工作量过大，不现实）。
+  - ✅ 全格式（MKV/HEVC/AV1/DTS/AC3/TrueHD）+ ASS 完整渲染；外挂字幕一行 `addPlaybackSlave` 接入；
+  - ❌ 只能走 CocoaPods（CI 需 `pod install`）；**无原生 PiP/AirPlay**（F-PLAY-10/11 降级为置灰/说明）；IPA 增大约 80–120MB；能效低于系统播放器。
+- **备选**：MPVKit（纯 SPM、集成简单、能效更差）；AetherEngine（仅当未来接受"ASS 只做文本样式"且 CI 升到 Xcode 27 时重开本 ADR）；AVPlayer（不支持 MKV，否决）。
 
 ---
 
