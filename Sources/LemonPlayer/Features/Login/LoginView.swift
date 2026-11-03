@@ -97,6 +97,17 @@ private struct LoginStatusView: View {
                             .font(.footnote)
                     }
                     .buttonStyle(.bordered)
+
+                    // API 域名的 web 页面在部分网络下 404；改用网页域名再试
+                    if let webURL = webAuthorizationURL(for: code), webURL != url {
+                        Button {
+                            onOpenAuthorization(webURL)
+                        } label: {
+                            Label("改用网页域名打开", systemImage: "globe")
+                                .font(.footnote)
+                        }
+                        .buttonStyle(.bordered)
+                    }
                 }
 
                 Text(pollStatus)
@@ -184,6 +195,16 @@ private struct LoginStatusView: View {
             return url
         }
         return nil
+    }
+
+    /// 同一路径换成网页域名（account 是 API 域，不一定承载授权页）。
+    private func webAuthorizationURL(for code: DeviceCode) -> URL? {
+        guard let primary = authorizationURL(for: code),
+              var components = URLComponents(url: primary, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+        components.host = "www.guangyupan.com"
+        return components.url
     }
 
     private var pollStatus: String {

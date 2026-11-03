@@ -138,6 +138,12 @@ Content-Type: application/json
 → 因此 **LemonPlayer 侧需要自己用 `CoreImage.CIFilter.qrCodeGenerator` 把 `verification_uri_complete`（或 `verification_uri + "?user_code=" + user_code`）画成二维码**。
 依据：[S3 `get_qrcode`](https://raw.githubusercontent.com/ShukeBta/Guangyadisk/main/plugins.v2/shukguangyadisk/__init__.py) 返回值中没有图片字段，只有 `user_code` / `verification_uri` / `verification_uri_complete`。
 
+> **2026-11-05 复核（WSL 直连实测）**
+> - `POST /v1/auth/device/code`（JSON body）**仍返回 200**，字段与上表一致：`expires_in=120`、`interval=2`。
+> - `POST /v1/auth/token`（未扫码）返回 **HTTP 400** + `error=authorization_pending`、`error_code=4050`、`error_description=Precondition Required`；`details[].message = "Authorizing"`。客户端只认 `authorization_pending` 即可。
+> - ⚠️ **API 域名不承载授权网页**：`account.guangyapan.com/__/auth/device/`（含 `verification_uri_complete`）返回 404（nginx，且 `Accept: text/html` 也一样）。授权页应由 web 域名（`www.guangyupan.com`）提供；客户端需保留「改用网页域名打开」兜底。
+> - `api.guangyapan.com` 对任意路径返回 **410 Gone**（疑似需要 web 端专用头/或已迁移），不要用该域名做登录。
+
 #### ② 轮询状态 / 换 token（同一个接口）
 
 ```http
