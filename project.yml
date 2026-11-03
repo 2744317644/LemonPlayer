@@ -30,7 +30,8 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     IPHONEOS_DEPLOYMENT_TARGET: "26.0"
-    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    # CocoaPods 的 embed/copy 脚本（rsync）与 user script sandbox 不兼容，必须关闭
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
 
 targets:
   LemonPlayer:
