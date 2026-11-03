@@ -33,6 +33,7 @@ public struct GuangyaFileService: Sendable {
         pageSize: Int = 100,
         orderBy: Int = 3,
         sortType: Int = 1,
+        fileTypes: [Int] = [],
         accessToken: String
     ) async throws -> FileListPage {
         struct Body: Encodable {
@@ -41,16 +42,52 @@ public struct GuangyaFileService: Sendable {
             let pageSize: Int
             let orderBy: Int
             let sortType: Int
+            let fileTypes: [Int]
         }
 
         let request = try HTTPRequest.json(
             url: Self.apiBaseURL.appendingPathComponent("nd.bizuserres.s/v1/file/get_file_list"),
             headers: headers(accessToken: accessToken),
-            body: Body(parentId: parentID, page: page, pageSize: pageSize, orderBy: orderBy, sortType: sortType)
+            body: Body(
+                parentId: parentID,
+                page: page,
+                pageSize: pageSize,
+                orderBy: orderBy,
+                sortType: sortType,
+                fileTypes: fileTypes
+            )
         )
         let response = try await http.send(request)
         let envelope = try decodeEnvelope(response)
         return FileListPage(total: envelope.total, items: envelope.items)
+    }
+
+    /// 全盘视频聚合（`parentId: "*"` + `fileTypes: [2]`）。
+    /// 用于媒体库扫描；大账号注意调用量，默认最多 20 页（2000 个视频）。
+    public func listAllVideos(
+        pageSize: Int = 100,
+        maxPages: Int = 20,
+        accessToken: String
+    ) async throws -> [GuangyaFile] {
+        var results: [GuangyaFile] = []
+        var page = 0
+        while page < maxPages {
+            let current = try await listFiles(
+                parentID: "*",
+                page: page,
+                pageSize: pageSize,
+                orderBy: 3,
+                sortType: 1,
+                fileTypes: [2],
+                accessToken: accessToken
+            )
+            results.append(contentsOf: current.items)
+            if !current.hasMore(pageSize: pageSize, accumulated: results.count) {
+                break
+            }
+            page += 1
+        }
+        return results
     }
 
     // MARK: - 播放直链
