@@ -120,13 +120,17 @@ public enum LibraryScraper {
     }
 
     /// 批量刮削。`match` 由调用方提供（生产环境调 Bangumi，测试注入桩）。
+    /// `onProgress` 在每个分组开始前回传 (已完成, 总数)，用于扫描进度条。
     public static func build(
         files: [VideoFile],
+        onProgress: (@Sendable (Int, Int) -> Void)? = nil,
         match: @Sendable (String) async -> LibraryMatch?
     ) async -> [LibrarySeries] {
         var results: [LibrarySeries] = []
-        for group in group(files) {
+        let groups = group(files)
+        for (index, group) in groups.enumerated() {
             if Task.isCancelled { break }
+            onProgress?(index, groups.count)
             let matched = await match(group.title)
             let episodes = group.files
                 .map { file -> SeriesEpisode in

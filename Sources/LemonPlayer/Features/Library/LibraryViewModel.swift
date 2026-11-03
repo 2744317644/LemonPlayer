@@ -27,6 +27,7 @@ final class LibraryViewModel {
     @ObservationIgnored private let matchCache = LibraryMatchCache()
     @ObservationIgnored private let bangumi = BangumiClient()
     @ObservationIgnored private let fileService: GuangyaFileService
+    @ObservationIgnored private var scanTask: Task<Void, Never>?
 
     init(session: SessionStore) {
         self.session = session
@@ -49,11 +50,27 @@ final class LibraryViewModel {
     func scan() async {
         guard phase != .scanning else { return }
         phase = .scanning
+        let task = Task { await self.performScan() }
+        scanTask = task
+        await task.value
+    }
+
+    func cancelScan() {
+        scanTask?.cancel()
+        scanTask = nil
+    }
+
+    private func performScan() async {
         statusMessage = "正在枚举网盘视频…"
         do {
             let token = try await session.validAccessToken()
             let files = try await fileService.listAllVideos(accessToken: token)
-            statusMessage = "找到 \(files.count) 个视频，正在匹配 Bangumi…"
+            if Task.isCancelled {
+                phase = .idle
+                statusMessage = nil
+                return
+            }
+            statusMessage = "找到 \(files.count) 个视频，正在匹配…"
 
             let inputs = files.map {
                 VideoFile(id: $0.id, name: $0.name, parentID: $0.parentID)
@@ -62,7 +79,17 @@ final class LibraryViewModel {
             let tmdbKey = UserDefaults.standard.string(forKey: "lemonplayer.tmdb.key") ?? ""
             let tmdb = TMDBClient(apiKey: tmdbKey)
             let cache = matchCache
-            let built = await LibraryScraper.build(files: inputs) { title in
+            let (progressStream, progressContinuation) = AsyncStream<(Int, Int)>.makeStream()
+            let progressTask = Task { [weak self] in
+                for await (done, total) in progressStream {
+                    self?.statusMessage = "匹配中 \(done)/\(total)…"
+                }
+            }
+
+            let built = await LibraryScraper.build(
+                files: inputs,
+                onProgress: { done, total in progressContinuation.yield((done, total)) }
+            ) { title in
                 // 命中缓存直接返回（含"未命中"缓存），减少 Bangumi 请求
                 if let cached = await cache.lookup(for: title) {
                     switch cached {
@@ -101,6 +128,14 @@ final class LibraryViewModel {
 
                 await cache.store(nil, for: title)
                 return nil
+            }
+            progressContinuation.finish()
+            progressTask.cancel()
+
+            if Task.isCancelled {
+                phase = .idle
+                statusMessage = nil
+                return
             }
 
             series = built

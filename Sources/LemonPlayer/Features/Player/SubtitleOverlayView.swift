@@ -6,11 +6,18 @@ struct SubtitleOverlayView: View {
     let lines: [String]
     let style: SubtitleStyle
 
+    /// 跟随系统字号（辅助功能大字号时适度放大，最多 1.5x，避免字幕过大遮挡画面）
+    @ScaledMetric(relativeTo: .body) private var dynamicScale: CGFloat = 1
+
+    private var effectiveFontSize: CGFloat {
+        style.fontSize * min(max(dynamicScale, 1), 1.5)
+    }
+
     var body: some View {
         VStack(spacing: 4) {
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 Text(line)
-                    .font(.system(size: style.fontSize, weight: .semibold))
+                    .font(.system(size: effectiveFontSize, weight: .semibold))
                     .foregroundStyle(Color(hex: style.textColorHex))
                     .shadow(color: Color(hex: style.outlineColorHex), radius: style.outlineWidth)
                     .padding(.horizontal, 8)

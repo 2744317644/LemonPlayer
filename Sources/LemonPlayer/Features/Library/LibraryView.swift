@@ -49,6 +49,10 @@ struct LibraryView: View {
                 Text(model.statusMessage ?? "扫描中…")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                Button("取消扫描", role: .cancel) {
+                    model.cancelScan()
+                }
+                .buttonStyle(.bordered)
             }
 
         case .failed(let message):
