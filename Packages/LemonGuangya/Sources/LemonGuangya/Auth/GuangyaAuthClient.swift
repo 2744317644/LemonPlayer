@@ -153,6 +153,7 @@ public struct GuangyaAuthClient: Sendable {
 
 public enum GuangyaError: Error, Equatable, Sendable {
     case requestFailed(statusCode: Int, message: String)
+    case api(code: Int, message: String)
     case tokenExpired
     case unauthorized
 
@@ -160,6 +161,8 @@ public enum GuangyaError: Error, Equatable, Sendable {
         switch self {
         case .requestFailed(let statusCode, let message):
             return "请求失败（HTTP \(statusCode)）：\(message)"
+        case .api(let code, let message):
+            return "接口错误（\(code)）：\(message)"
         case .tokenExpired:
             return "登录已过期，请重新扫码"
         case .unauthorized:

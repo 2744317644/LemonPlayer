@@ -20,6 +20,7 @@ final class SessionStore {
     let auth: GuangyaAuthClient
     let identity: DeviceIdentity
     private let tokens: TokenStore
+    @ObservationIgnored private var refreshTask: Task<String, Error>?
 
     init(
         auth: GuangyaAuthClient? = nil,
@@ -83,6 +84,51 @@ final class SessionStore {
             return nil
         }
         return credentials.accessToken
+    }
+
+    /// 取一个可用的 access_token；过期时自动刷新（single-flight，避免并发互踢 refresh_token）。
+    func validAccessToken() async throws -> String {
+        guard let credentials = try await tokens.load() else {
+            throw GuangyaError.unauthorized
+        }
+        if !credentials.isExpired() {
+            return credentials.accessToken
+        }
+        return try await refreshAccessToken()
+    }
+
+    @discardableResult
+    func refreshAccessToken() async throws -> String {
+        if let existing = refreshTask {
+            return try await existing.value
+        }
+
+        let task = Task { [tokens, auth] () throws -> String in
+            guard let credentials = try await tokens.load() else {
+                throw GuangyaError.unauthorized
+            }
+            let refreshed = try await auth.refresh(refreshToken: credentials.refreshToken)
+            let newCredentials = Credentials(
+                accessToken: refreshed.accessToken,
+                refreshToken: refreshed.refreshToken,
+                expiresAt: Date().addingTimeInterval(TimeInterval(refreshed.expiresIn)),
+                subject: refreshed.subject ?? credentials.subject
+            )
+            try await tokens.save(newCredentials)
+            return newCredentials.accessToken
+        }
+        refreshTask = task
+
+        do {
+            let token = try await task.value
+            refreshTask = nil
+            state = .loggedIn(subject: (try? await tokens.load())?.subject ?? "已登录")
+            return token
+        } catch {
+            refreshTask = nil
+            state = .loggedOut
+            throw error
+        }
     }
 
     private nonisolated static func loadOrCreateIdentity() -> DeviceIdentity {
