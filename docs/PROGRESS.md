@@ -9,12 +9,12 @@
 | 项目 | 值 |
 |---|---|
 | 当前里程碑 | **M7 · 打磨与发布（75%）** |
-| 当前阶段目标 | rc11：匹配缓存质量 + 扫码接口自检；等真机复测 → v1.0.0 |
+| 当前阶段目标 | rc12：扫描进度/取消 + 字幕跟随系统字号；等真机复测 → v1.0.0 |
 | 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ▓▓▓▓▓▓▓▓░░ 75% |
-| 构建状态 | ✅ 常规 CI 全绿；Release rc1~rc11 |
-| 单测覆盖率 | 7 个包 81 个用例（LemonMedia 21） |
-| 最新产物 | Release `v1.0.0-rc11` |
-| 下一步 | 用户复测登录（连通性 + 扫码接口自检 + 三通道）→ v1.0.0 |
+| 构建状态 | ✅ 常规 CI 全绿；Release rc1~rc12 |
+| 单测覆盖率 | 7 个包 81 个用例 |
+| 最新产物 | Release `v1.0.0-rc12` |
+| 下一步 | 用户复测登录（连通性/扫码接口自检 + 三通道）→ v1.0.0 正式版 |
 | 阻塞项 | 真机登录待确认；MKV PiP/AirPlay、iPad 分栏为 P2 |
 
 ---
@@ -111,6 +111,7 @@
 | 2026-11-04 21:40 | M7 | 发布 `v1.0.0-rc9`（双内核）；首跑 Release 上传因 api.github.com 超时失败，rerun failed 后成功 | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc9 | ✅ |
 | 2026-11-04 22:10 | M4/M7 | **ASS 自定义字体导入**：`SubtitleFontStore` + VLCKit `:sub-fonts-dir`；播放页字幕菜单 fileImporter（ttf/otf 多选），设置页显示/清除；发布 `v1.0.0-rc10` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc10 | ✅ |
 | 2026-11-04 22:35 | M5/M7 | 匹配缓存迁入 `LemonMedia`（可测试）：修正"未命中缓存仍重复请求"缺陷（`.miss` 短路）；新增 6 个测试；设置页新增「测试扫码授权接口」；发布 `v1.0.0-rc11` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc11 | ✅ |
+| 2026-11-04 22:50 | M5/M7 | 扫描进度（已完成/总数）与取消按钮；字幕 overlay 跟随系统字号（≤1.5x）；发布 `v1.0.0-rc12` | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc12 | ✅ |
 
 ---
 
