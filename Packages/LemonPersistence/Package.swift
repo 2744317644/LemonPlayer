@@ -7,6 +7,9 @@ let package = Package(
         .library(name: "LemonPersistence", targets: ["LemonPersistence"])
     ],
     targets: [
-        .target(name: "LemonPersistence")
+        .target(
+            name: "LemonPersistence",
+            linkerSettings: [.linkedFramework("Security")]
+        )
     ]
 )

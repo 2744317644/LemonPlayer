@@ -45,6 +45,8 @@ jobs:
         run: |
           swift test --package-path Packages/LemonCore
           swift test --package-path Packages/LemonSubtitle
+          swift test --package-path Packages/LemonNetwork
+          swift test --package-path Packages/LemonGuangya
 
       - name: Build for simulator (unsigned)
         run: |

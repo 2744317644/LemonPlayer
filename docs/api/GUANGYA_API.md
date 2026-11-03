@@ -112,18 +112,27 @@ Content-Type: application/json
 { "scope": "user", "client_id": "aMe-8VSlkrbQXpUR" }
 ```
 
-成功响应（**字段名由消费端读取证实**，为扁平结构，无 `data` 包裹）：
+**真实响应（2026-11-03 实测）**：
 
-| 字段 | 含义 | 来源 |
+```json
+{
+  "device_code": "AWrp64wt9HmyQUIZBmaFo3C4oJpX2EH4MoOPYuj3UgJ-6arEgA",
+  "user_code": "AWrp64zaRXBZp3c0Kg",
+  "expires_in": 120,
+  "interval": 2,
+  "verification_url": "https://account.guangyapan.com/__/auth/device/?client_id=...&scope=user%20profile%20sso%20offline",
+  "verification_uri_complete": "https://account.guangyapan.com/__/auth/device/?client_id=...&scope=...&user_code=AWrp64zaRXBZp3c0Kg"
+}
+```
+
+| 字段 | 含义 | 备注 |
 |---|---|---|
-| `device_code` | 轮询用的设备码（长字符串，**不要展示给用户**） | [S3](https://raw.githubusercontent.com/ShukeBta/Guangyadisk/main/plugins.v2/shukguangyadisk/__init__.py) `result.get("device_code")` |
-| `user_code` | 向用户展示的短码 | 同上 |
-| `verification_uri` | 授权页地址 | 同上 |
-| `verification_uri_complete` | 带 `user_code` 的授权页地址（插件透传给前端生成二维码） | 同上 |
-| `expires_in` | 有效期秒数，插件按 `300` 兜底 | 同上 `int(result.get("expires_in") or 300)` |
-| `interval` | 轮询间隔秒数，插件按 `5` 兜底 | 同上 `int(result.get("interval") or 5)` |
-
-> 完整 JSON 样例（是否含 `expires_at`、是否有 `data` 包裹）— **【待验证】**。上面的字段名可以确信，因为代码在每个字段上都做了显式读取。
+| `device_code` | 轮询用的设备码（长字符串，**不要展示给用户**） | ✅ 实测 |
+| `user_code` | 向用户展示的短码 | ✅ 实测 |
+| `verification_url` | 授权页地址 | ✅ 实测，**注意是 `url` 不是 `uri`**（社区文档写作 `verification_uri`，与真实响应不符） |
+| `verification_uri_complete` | 带 `user_code` 的授权页地址 | ✅ 实测，二维码直接用这个 |
+| `expires_in` | 有效期秒数，**实测 120**（社区实现按 300 兜底） | ✅ 实测 |
+| `interval` | 轮询间隔秒数，**实测 2**（社区实现按 5 兜底） | ✅ 实测 |
 
 **二维码怎么来**：插件没有调用任何"返回 PNG/SVG"的接口，而是把 `verification_uri_complete` 交给前端渲染二维码。
 → 因此 **LemonPlayer 侧需要自己用 `CoreImage.CIFilter.qrCodeGenerator` 把 `verification_uri_complete`（或 `verification_uri + "?user_code=" + user_code`）画成二维码**。

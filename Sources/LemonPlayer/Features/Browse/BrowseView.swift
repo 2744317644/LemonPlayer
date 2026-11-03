@@ -1,7 +1,8 @@
 import SwiftUI
-import LemonCore
 
 struct BrowseView: View {
+    @Environment(SessionStore.self) private var session
+
     var body: some View {
         List {
             Section("光鸭云盘") {
@@ -14,21 +15,16 @@ struct BrowseView: View {
             }
 
             Section {
-                Text("M1 骨架：登录与目录 API 将在 M2 接入。")
+                Text("已登录：目录 API（M2 后续）将在这里显示真实文件树。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
         .navigationTitle("网盘")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("登录") {}
-                    .disabled(true)
-            }
-        }
     }
 }
 
 #Preview {
     NavigationStack { BrowseView() }
+        .environment(SessionStore())
 }

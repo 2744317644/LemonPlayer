@@ -6,7 +6,11 @@ let package = Package(
     products: [
         .library(name: "LemonNetwork", targets: ["LemonNetwork"])
     ],
+    dependencies: [
+        .package(path: "../LemonCore")
+    ],
     targets: [
-        .target(name: "LemonNetwork")
+        .target(name: "LemonNetwork", dependencies: ["LemonCore"]),
+        .testTarget(name: "LemonNetworkTests", dependencies: ["LemonNetwork"])
     ]
 )
