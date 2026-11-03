@@ -105,17 +105,25 @@ public struct HTTPClient: @unchecked Sendable {
             urlRequest.setValue(value, forHTTPHeaderField: key)
         }
 
+        let startedAt = Date()
         let data: Data
         let response: URLResponse
         do {
             (data, response) = try await session.data(for: urlRequest)
         } catch {
+            let message = "\(request.method) \(request.url.host ?? "")\(request.url.path) failed: \(error.localizedDescription)"
+            Task { await DiagnosticsCenter.shared.log(.error, "network", message) }
             throw HTTPError.transport(error.localizedDescription)
         }
 
         guard let http = response as? HTTPURLResponse else {
             throw HTTPError.invalidResponse
         }
+
+        let milliseconds = Int(Date().timeIntervalSince(startedAt) * 1000)
+        let logMessage = "\(request.method) \(request.url.host ?? "")\(request.url.path) -> \(http.statusCode) \(milliseconds)ms"
+        let logLevel: DiagnosticLevel = http.statusCode >= 400 ? .warning : .debug
+        Task { await DiagnosticsCenter.shared.log(logLevel, "network", logMessage) }
 
         var headers: [String: String] = [:]
         for (key, value) in http.allHeaderFields {

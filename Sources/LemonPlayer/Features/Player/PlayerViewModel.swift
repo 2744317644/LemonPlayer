@@ -454,9 +454,16 @@ final class PlayerViewModel {
     }
 
     private func message(for error: Error) -> String {
-        if let error = error as? GuangyaError { return error.localizedDescription }
-        if let error = error as? PlaybackError { return error.localizedDescription }
-        return error.localizedDescription
+        let text: String
+        if let error = error as? GuangyaError {
+            text = error.localizedDescription
+        } else if let error = error as? PlaybackError {
+            text = error.localizedDescription
+        } else {
+            text = error.localizedDescription
+        }
+        Task { await DiagnosticsCenter.shared.log(.error, "player", "\(file.name): \(text)") }
+        return text
     }
 
     private static func format(_ seconds: Double) -> String {

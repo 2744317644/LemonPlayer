@@ -46,6 +46,9 @@ struct SettingsView: View {
             Section("关于") {
                 LabeledContent("版本", value: LemonCore.version)
                 LabeledContent("构建", value: LemonCore.build)
+                NavigationLink("诊断日志") {
+                    DiagnosticsView()
+                }
                 NavigationLink("开源许可与免责声明") {
                     LicenseView()
                 }

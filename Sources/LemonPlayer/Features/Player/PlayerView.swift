@@ -393,6 +393,20 @@ private struct SubtitleStyleSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("预览") {
+                    ZStack {
+                        Color.black
+                        SubtitleOverlayView(
+                            lines: ["示例字幕：这是预览效果 Sample"],
+                            style: style
+                        )
+                        .padding(.vertical, 8)
+                    }
+                    .frame(height: 96)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .listRowInsets(EdgeInsets())
+                }
+
                 Section("字号") {
                     HStack {
                         Slider(value: Binding(get: { style.fontSize }, set: { style.fontSize = $0; onApply(style) }), in: 14...40)
