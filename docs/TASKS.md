@@ -71,7 +71,18 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-604 | 缓存管理（容量上限/自动清理/全部清空）+ 后台会话优化 | M6 | P1 | Lead | M6 下一步 | `LemonDownloads/**`、`Features/Downloads/**` |
+| T-703 | 设置页（账号/存储/字幕样式/关于） | M7 | P0 | Lead | `Features/Settings/**` |
+| T-705 | 隐私清单/开源许可/免责声明 | M7 | P0 | Lead | `PrivacyInfo.xcprivacy`、`LicenseView.swift` |
+| T-708 | Release 工作流（tag → IPA + SHA256 → Release） | M7 | P0 | Lead | `.github/workflows/release.yml`（v1.0.0-rc1 实测） |
+
+---
+
+## 🚧 Doing
+
+| 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
+|---|---|---|---|---|---|---|
+| — | v1.0.0 正式发布：真机回归 J-01~J-05 + 问题修复 | M7 | P0 | Lead | 用户装包验证 | `docs/qa/REGRESSION.md` |
+| T-604 | 缓存管理（容量上限/自动清理）+ 后台会话优化 | M6 | P1 | Lead | — | `LemonDownloads/**` |
 
 ---
 
@@ -79,9 +90,9 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-703 | 设置页（播放/缓存/网络/关于） | M7 | P0 | T-204 | `Features/Settings/**` |
-| T-705 | 隐私清单/开源许可/免责声明 | M7 | P0 | 下一步 | `Resources/**` |
-| T-708 | Release 工作流 + v1.0.0 tag + 安装文档 | M7 | P0 | T-104 | `.github/workflows/**`、`docs/INSTALL.md` |
+| T-701 | 画中画（VLCKit 限制，需 AVSampleBufferDisplayLayer 方案或换内核） | M7 | P2 | ADR-003 | `Packages/LemonPlayback/**` |
+| T-702 | AirPlay（VLCKit 无 AVPlayer 管线，仅音频路由） | M7 | P2 | T-301 | `Packages/LemonPlayback/**` |
+| T-704 | 诊断日志（滚动/脱敏/导出） | M7 | P1 | T-201 | `Packages/LemonCore/**` |
 | T-411 | 字幕样式预览页 | M4 | P1 | T-408 | `Features/Player/**` |
 | T-209 | iPad 分栏布局 | M2 | P2 | T-206 | `Sources/LemonPlayer/Features/**` |
 

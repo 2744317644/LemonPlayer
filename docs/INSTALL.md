@@ -4,13 +4,15 @@
 
 ## 1. 拿到 IPA
 
-方式 A：GitHub Actions
+方式 A：GitHub Release（当前推荐，已有实测版本）
+- 打开 https://github.com/2744317644/LemonPlayer/releases
+- 下载最新版本的 `LemonPlayer-unsigned.ipa` 与 `LemonPlayer-unsigned.ipa.sha256`
+- 校验：`shasum -a 256 -c LemonPlayer-unsigned.ipa.sha256`
+
+方式 B：GitHub Actions
 1. 打开仓库 → Actions → 最近一次 `build` 运行；
 2. 页面底部 `Artifacts` → 下载 `LemonPlayer-unsigned-ipa`（zip）；
 3. 解压得到 `LemonPlayer-unsigned.ipa`。
-
-方式 B：Release（M7 之后）
-- 打 `v*` tag 后，Release 页会附带 IPA 与 `SHA256SUMS`。
 
 > 未签名 IPA **不能直接安装**，必须用工具重签。
 
