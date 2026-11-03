@@ -122,7 +122,7 @@
 ## ADR-010 · SPM 模块边界（8 个包）
 
 - **状态**：已接受
-- **决策**：`LemonCore`、`LemonNetwork`、`LemonGuangya`、`LemonSubtitle`、`LemonPlayer`、`LemonMedia`、`LemonPersistence`、`LemonDownloads`。依赖单向：App → Domain ← Data/Platform。
+- **决策**：`LemonCore`、`LemonNetwork`、`LemonGuangya`、`LemonSubtitle`、`LemonPlayback`、`LemonMedia`、`LemonPersistence`、`LemonDownloads`。依赖单向：App → Domain ← Data/Platform。
 - **理由**：并行开发时写入范围互不重叠；纯逻辑包可在 CI 独立测试；内核可替换。
 - **约束**：Domain 层禁止 import UIKit/AVFoundation。
 
@@ -163,6 +163,23 @@
   - 请求直链时固定携带 `Referer: https://www.guangyupan.com/` 与浏览器 UA（两个参考实现都这么做，成本为零）；
   - 所有待验证项收敛到 T-212（真机抓包回填），不阻塞 M3 开发。
 - **后果**：播放器不依赖未知 TTL，实现更稳；代价是极长视频可能多几次换链请求（可接受）。
+
+---
+
+## ADR-014 · 媒体元数据：Bangumi 优先，TMDB 兜底
+
+- **状态**：已接受（2026-11-03 用户确认"主力是动漫"）
+- **背景**：媒体库原计划用 TMDB，但用户内容以**动漫**为主。TMDB 对番剧的中文名、章节编号、放送日、关联条目（第二季/OVA/剧场版）覆盖较弱；Bangumi（bgm.tv）是中文动漫数据库且有开放 API（v0）。
+- **决策**：
+  - 媒体库主数据源 = **Bangumi**：搜索、条目详情、章节列表、关联条目、封面图；
+  - TMDB 仅在 Bangumi 匹配失败或真人影视内容时兜底（P1）；
+  - v1 先接**公开接口**（无需登录），`F-LIB-11` 的 OAuth 收藏/进度同步放 P1；
+  - 客户端必须带可识别 `User-Agent`、请求限流 ≥1 秒/次、封面图本地缓存。
+- **理由**：中文标题准确、章节/放送日/关联条目齐全、有收藏与进度体系，正好匹配"动漫 + 追番"场景。
+- **后果**：
+  - ✅ 动漫刮削质量显著提升；可扩展追番进度；
+  - ❌ 真人影视覆盖弱（需 TMDB 兜底）；Bangumi 有 UA 校验与限流（实现要克制）；封面图版权/署名需在关于页说明。
+- **备选**：只用 TMDB（中文动漫差，放弃）；AniList（英文化，中文名弱）；自建数据库（不现实）。
 
 ---
 

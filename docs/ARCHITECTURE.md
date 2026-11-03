@@ -52,11 +52,11 @@
 | `LemonNetwork` | URLSession 封装、拦截器链（鉴权/重试/日志脱敏）、限流 | LemonCore | `HTTPClient`、`RequestBuilder`、`RetryPolicy` | `Packages/LemonNetwork/**` |
 | `LemonGuangya` | 光鸭 API 客户端：Auth、Files、Playback URL；DTO ↔ Domain 映射 | LemonCore, LemonNetwork | `GuangyaAuthClient`、`GuangyaFileService`、`PlayURLProvider` | `Packages/LemonGuangya/**` |
 | `LemonSubtitle` | SRT/VTT/ASS 解析、编码检测、同名匹配、时间轴校准模型 | LemonCore | `SubtitleParser`、`SubtitleCue`、`SubtitleMatcher`、`EncodingDetector`、`SubtitleTimeline` | `Packages/LemonSubtitle/**` |
-| `LemonPlayer` | `PlaybackEngine` 协议与内核适配、轨道模型、播放器状态机 | LemonCore, LemonSubtitle | `PlaybackEngine`、`PlayerState`、`TrackInfo`、`VLCKitEngine`（主）/`MPVEngine`（备） | `Packages/LemonPlayer/**` |
-| `LemonMedia` | TMDB 客户端、文件名解析、刮削编排 | LemonCore, LemonNetwork | `TMDBClient`、`MediaNameParser`、`LibraryScraper` | `Packages/LemonMedia/**` |
+| `LemonPlayback` | `PlaybackEngine` 协议与内核适配、轨道模型、播放器状态机 | LemonCore, LemonSubtitle | `PlaybackEngine`、`PlayerState`、`TrackInfo`、`VLCKitEngine`（主）/`MPVEngine`（备） | `Packages/LemonPlayback/**` |
+| `LemonMedia` | **Bangumi** 客户端（番剧库）、文件名解析、刮削编排 | LemonCore, LemonNetwork | `BangumiClient`、`MediaNameParser`、`LibraryScraper` | `Packages/LemonMedia/**` |
 | `LemonPersistence` | Keychain、SwiftData 模型、策略（字幕记忆/历史/缓存索引） | LemonCore | `CredentialStore`、`PlaybackHistoryStore`、`SubtitlePreferenceStore` | `Packages/LemonPersistence/**` |
 | `LemonDownloads` | 后台下载任务、断点续传、容量管理 | LemonCore, LemonNetwork | `DownloadTask`、`DownloadManager`、`StoragePolicy` | `Packages/LemonDownloads/**` |
-| `LemonPlayerApp` | App target：入口、依赖装配、Feature UI | 以上全部 | `AppDependencies`、各 Feature View/ViewModel | `Sources/LemonPlayer/**` |
+| `LemonPlayer` | App target：入口、依赖装配、Feature UI | 以上全部 | `AppDependencies`、各 Feature View/ViewModel | `Sources/LemonPlayer/**` |
 
 > 包名带前缀避免与系统模块冲突；每个包内含 `Tests/` target。
 

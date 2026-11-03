@@ -27,6 +27,12 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.6.app
 
+      - name: Assert Xcode version
+        run: |
+          test "$(xcodebuild -version | head -1)" = "Xcode 26.6" || {
+            echo "::error::Xcode version drift; update XCODE_APP in build.yml"; exit 1; }
+          xcrun --sdk iphoneos --show-sdk-version
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
@@ -67,7 +73,7 @@ jobs:
           mkdir -p .build/Payload
           cp -R .build/LemonPlayer.xcarchive/Products/Applications/LemonPlayer.app .build/Payload/
           cd .build
-          zip -qr LemonPlayer-unsigned.ipa Payload
+          zip -qrX LemonPlayer-unsigned.ipa Payload
           shasum -a 256 LemonPlayer-unsigned.ipa
           du -h LemonPlayer-unsigned.ipa
 

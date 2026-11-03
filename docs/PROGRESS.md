@@ -8,14 +8,14 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **M1 · 可编译骨架 + CI 出包** |
-| 当前阶段目标 | 建 XcodeGen 工程 + SPM 模块骨架 + CocoaPods 接入 + Actions 出未签名 IPA |
-| 整体进度 | M0 ✅ 100% · M1 ░░░░░░░░░░ 0% · M2-M7 未开始 |
-| 构建状态 | ⚪ 尚无 Xcode 工程；CI 方案已定稿（`docs/tech/CI_BUILD.md`） |
-| 单测覆盖率 | — |
-| 最新产物 | 私有仓库 https://github.com/2744317644/LemonPlayer |
-| 下一步 | T-101 project.yml → T-102 SPM 模块 → T-104 build.yml → 首跑 Actions |
-| 阻塞项 | 真机 token 联调需用户操作（F-AUTH-07）；无其他阻塞 |
+| 当前里程碑 | **M1 完成 ✅ → M2 开始** |
+| 当前阶段目标 | 登录（扫码 OAuth2）+ 目录浏览 + token 刷新 |
+| 整体进度 | M0 ✅ 100% · M1 ✅ 100% · M2 ░░░░░░░░░░ 0% · M3-M7 未开始 |
+| 构建状态 | ✅ **CI 全绿**：run `41650264063`，1m16s，8 包编译 + 单测 + 未签名 IPA + artifact |
+| 单测覆盖率 | LemonCore / LemonSubtitle 包内单测已在 CI 跑（覆盖率上传待补） |
+| 最新产物 | artifact `LemonPlayer-unsigned-ipa`（骨架版 22KB，14 天保留） |
+| 下一步 | M2：`LemonNetwork` → 光鸭 Auth/设备码 → Keychain → 目录列表 |
+| 阻塞项 | 用户提供的 token 无效（非 JWT）；真机联调需改走扫码登录 |
 
 ---
 
@@ -24,8 +24,8 @@
 | 里程碑 | 主题 | 状态 | 完成度 | 计划完成 |
 |---|---|---|---|---|
 | M0 | 立项与文档 | ✅ 已完成 | 100% | 2026-11 |
-| M1 | 可编译骨架 + CI 出包 | 🚧 进行中 | 0% | 2026-11 |
-| M2 | 登录 + 网盘浏览 | ⬜ 未开始 | 0% | 2026-12 |
+| M1 | 可编译骨架 + CI 出包 | ✅ 已完成 | 100% | 2026-11 |
+| M2 | 登录 + 网盘浏览 | 🚧 进行中 | 0% | 2026-12 |
 | M3 | 播放内核 + 直链播放 | ⬜ 未开始 | 0% | 2026-12 |
 | M4 | 外挂字幕 | ⬜ 未开始 | 0% | 2027-01 |
 | M5 | 媒体库 + 剧集 | ⬜ 未开始 | 0% | 2027-01 |
@@ -55,6 +55,14 @@
 | 2026-11-03 22:36 | M0 | 播放内核定案：**MobileVLCKit 3.7.5 主选**（libass、LGPL、2026-10-31 发布），MPVKit 备选，AetherEngine 列为观察（Xcode 27 + 不渲染 ASS） | [`docs/tech/PLAYER_KERNEL.md`](tech/PLAYER_KERNEL.md)、ADR-003 | ✅ |
 | 2026-11-03 22:40 | M0 | 验证本机代理 `127.0.0.1:7890` 可用（github.com / raw 均 200），写入 Windows 开发说明 | `docs/tech/CI_BUILD.md` §4 | ✅ |
 | 2026-11-03 22:45 | M0 | **M0 收口**：文档 9 份齐备、ADR-001~013 定稿、仓库上云 | 全部 `docs/` | ✅ |
+| 2026-11-03 22:48 | M1 | 用户提供 token 探针失败：`oidc: malformed jwt`（非 JWT）→ 需扫码登录获取真 token | — | ⚠️ 阻塞真机联调 |
+| 2026-11-03 22:50 | M1 | 决策调整：媒体库改为 **Bangumi 优先 + TMDB 兜底**（用户主力动漫），新增 ADR-014 与 F-LIB-10~12、C-07、R-09/R-10、J-05 | `docs/DECISIONS.md`、`docs/REQUIREMENTS.md` | ✅ |
+| 2026-11-03 22:52 | M1 | 骨架落地：`project.yml`（XcodeGen）+ 8 个 SPM 包 + 三页占位 UI + `build.yml`，提交 `81b8a62` 推送 | `project.yml`、`Packages/**`、`.github/workflows/build.yml` | ✅ |
+| 2026-11-03 22:53 | M1 | Actions 首跑 `41650264063` 触发（macos-26 / Xcode 26.6），后台监控中 | CI | 🚧 |
+| 2026-11-03 22:55 | M1 | 并行启动 Bangumi API 接入调研（`docs/api/BANGUMI_API.md`） | — | 🚧 |
+| 2026-11-03 22:59 | M1 | **CI 首跑全绿**（run 41650264063，1m16s）：XcodeGen 生成、8 包编译、包内单测、未签名 IPA 归档、artifact 上传 | GitHub Actions | ✅ |
+| 2026-11-03 23:02 | M1 | 内核/CI 调研 v0.2 合并（后台 agent 迟到产出：768 行，补充 SwiftVLC、MPVKit 1.1.0 预发布校正、xcode-27 镜像、CocoaPods 缓存策略） | `docs/tech/*.md` | ✅ |
+| 2026-11-03 23:05 | M1 | **M1 收口**：构建链闭环，进入 M2 | — | ✅ |
 | 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
 
 ---
