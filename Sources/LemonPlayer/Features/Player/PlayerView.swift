@@ -239,6 +239,8 @@ private struct PlayerContent: View {
                     in: 0...max(model.duration, 1)
                 )
                 .tint(.yellow)
+                .accessibilityLabel("播放进度")
+                .accessibilityValue("\(model.formattedPosition) / \(model.formattedDuration)")
 
                 HStack(spacing: 16) {
                     Button {
@@ -246,6 +248,7 @@ private struct PlayerContent: View {
                     } label: {
                         Image(systemName: "gobackward.10")
                     }
+                    .accessibilityLabel("快退 10 秒")
 
                     Button {
                         model.togglePlay()
@@ -253,12 +256,14 @@ private struct PlayerContent: View {
                         Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
                             .font(.title2)
                     }
+                    .accessibilityLabel(model.isPlaying ? "暂停" : "播放")
 
                     Button {
                         model.seek(to: min(model.duration, model.currentTime + 10))
                     } label: {
                         Image(systemName: "goforward.10")
                     }
+                    .accessibilityLabel("快进 10 秒")
 
                     Spacer()
 
@@ -272,12 +277,14 @@ private struct PlayerContent: View {
                     } label: {
                         Image(systemName: "textformat.size")
                     }
+                    .accessibilityLabel("字幕样式")
 
                     Button {
                         toggleFullscreen()
                     } label: {
                         Image(systemName: isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
                     }
+                    .accessibilityLabel(isFullscreen ? "退出全屏" : "全屏")
 
                     audioTrackMenu
 
@@ -297,6 +304,7 @@ private struct PlayerContent: View {
                         Text("\(Double(model.rate), specifier: "%g")x")
                             .font(.caption)
                     }
+                    .accessibilityLabel("播放速度 \(Double(model.rate), specifier: "%g") 倍")
                 }
                 .foregroundStyle(.white)
             }
@@ -342,6 +350,7 @@ private struct PlayerContent: View {
         } label: {
             Image(systemName: "waveform")
         }
+        .accessibilityLabel("音轨")
     }
 
     private var subtitleMenu: some View {
@@ -377,6 +386,7 @@ private struct PlayerContent: View {
         } label: {
             Image(systemName: model.attachedSubtitleName == nil ? "captions.bubble" : "captions.bubble.fill")
         }
+        .accessibilityLabel("字幕")
     }
 }
 

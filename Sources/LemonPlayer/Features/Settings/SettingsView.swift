@@ -1,6 +1,7 @@
 import SwiftUI
 import LemonCore
 import LemonDownloads
+import LemonNetwork
 import LemonPersistence
 import LemonSubtitle
 
@@ -11,6 +12,8 @@ struct SettingsView: View {
     @State private var showClearConfirm = false
     @State private var tmdbKey = UserDefaults.standard.string(forKey: "lemonplayer.tmdb.key") ?? ""
     @State private var tmdbSaved = false
+    @State private var probeResult: String?
+    @State private var probing = false
 
     var body: some View {
         Form {
@@ -69,12 +72,37 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("关于") {
-                LabeledContent("版本", value: LemonCore.version)
-                LabeledContent("构建", value: LemonCore.build)
+            Section("诊断") {
+                Button {
+                    Task { await runNetworkProbe() }
+                } label: {
+                    HStack {
+                        Text("测试光鸭 API 连通性")
+                        Spacer()
+                        if probing {
+                            ProgressView()
+                        }
+                    }
+                }
+                .disabled(probing)
+
+                if let probeResult {
+                    Text(probeResult)
+                        .font(.footnote)
+                        .foregroundStyle(probeResult.contains("✅") ? .green : .red)
+                }
+
                 NavigationLink("诊断日志") {
                     DiagnosticsView()
                 }
+                Text("登录失败时：先跑连通性测试，再导出诊断日志发给开发者。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("关于") {
+                LabeledContent("版本", value: LemonCore.version)
+                LabeledContent("构建", value: LemonCore.build)
                 NavigationLink("开源许可与免责声明") {
                     LicenseView()
                 }
@@ -98,6 +126,28 @@ struct SettingsView: View {
     private func refreshStorage() async {
         downloadedBytes = await DownloadManager.shared.totalDownloadedBytes()
         completedCount = await DownloadManager.shared.completedCount()
+    }
+
+    /// 用一个故意无效的 token 请求 /user/me：
+    /// - 401/117 → 网络可达（符合预期）
+    /// - 传输错误 → 本机网络无法直连光鸭
+    private func runNetworkProbe() async {
+        probing = true
+        probeResult = nil
+        defer { probing = false }
+
+        do {
+            _ = try await session.auth.me(accessToken: "invalid-probe-token")
+            probeResult = "⚠️ 返回了意外结果，但网络可达"
+        } catch {
+            if let guangya = error as? GuangyaError, guangya == .tokenExpired {
+                probeResult = "✅ 网络可达光鸭 API（401 属预期：探测用 token 无效）"
+            } else if let http = error as? HTTPError {
+                probeResult = "❌ 网络无法访问光鸭 API：\(http.localizedDescription)"
+            } else {
+                probeResult = "❌ 网络异常：\(error.localizedDescription)"
+            }
+        }
     }
 }
 
