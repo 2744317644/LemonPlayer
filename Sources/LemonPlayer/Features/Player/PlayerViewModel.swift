@@ -3,10 +3,11 @@ import Observation
 import AVFAudio
 import LemonGuangya
 import LemonNetwork
+import LemonPersistence
 import LemonPlayback
 import LemonSubtitle
 
-/// 播放页状态：取直链 → 加载内核 → 自动匹配外挂字幕 → 进度轮询 → 控制。
+/// 播放页状态：取直链 → 加载内核 → 恢复进度 → 自动匹配字幕 → 进度轮询/上报 → 控制。
 @MainActor
 @Observable
 final class PlayerViewModel {
@@ -26,13 +27,23 @@ final class PlayerViewModel {
     private(set) var subtitleCandidates: [SubtitleCandidate] = []
     private(set) var attachedSubtitleName: String?
     private(set) var subtitleNotice: String?
-    @ObservationIgnored private var subtitleFiles: [GuangyaFile] = []
+    private(set) var subtitleOffsetValue: TimeInterval = 0
+    private(set) var resumeNotice: String?
     var rate: Float = 1
 
     @ObservationIgnored private let session: SessionStore
     @ObservationIgnored private let service: GuangyaFileService
     @ObservationIgnored private let http = HTTPClient()
+    @ObservationIgnored private let progressStore = PlaybackProgressStore()
     @ObservationIgnored private var progressTask: Task<Void, Never>?
+    @ObservationIgnored private var subtitleFiles: [GuangyaFile] = []
+    @ObservationIgnored private var currentSubtitleFile: GuangyaFile?
+    @ObservationIgnored private var subtitleRawText: String?
+    @ObservationIgnored private var subtitleFormat: SubtitleFormat = .unknown
+    @ObservationIgnored private var subtitleOffset: TimeInterval = 0
+    @ObservationIgnored private var recoveryAttempts = 0
+    @ObservationIgnored private var isRecovering = false
+    @ObservationIgnored private var tickCount = 0
 
     init(file: GuangyaFile, session: SessionStore) {
         self.file = file
@@ -40,6 +51,8 @@ final class PlayerViewModel {
         self.service = GuangyaFileService(identity: session.identity)
         self.engine = PlaybackEngineFactory.make()
     }
+
+    // MARK: - 生命周期
 
     func start() async {
         phase = .loading
@@ -55,15 +68,23 @@ final class PlayerViewModel {
             phase = .ready
             isPlaying = true
             startProgressLoop()
+            await applyResumePosition()
             await autoAttachSubtitle()
         } catch {
             phase = .failed(message(for: error))
         }
     }
 
-    func retry() async {
-        await start()
+    func stop() {
+        progressTask?.cancel()
+        progressTask = nil
+        saveProgress()
+        engine.stop()
+        NowPlayingController.shared.clear()
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
+
+    // MARK: - 控制
 
     func togglePlay() {
         switch engine.state {
@@ -83,6 +104,7 @@ final class PlayerViewModel {
             guard let self else { return }
             await self.engine.seek(to: value)
             self.currentTime = value
+            self.saveProgress()
         }
     }
 
@@ -91,28 +113,53 @@ final class PlayerViewModel {
         engine.rate = newRate
     }
 
-    func stop() {
-        progressTask?.cancel()
-        progressTask = nil
-        engine.stop()
-        NowPlayingController.shared.clear()
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    // MARK: - 断点续播
+
+    private func applyResumePosition() async {
+        guard let saved = await progressStore.progress(for: file.id) else { return }
+        guard saved.position > 5 else { return }
+        if saved.duration > 0, saved.position > saved.duration - 15 {
+            return // 已接近结尾，不恢复
+        }
+        await engine.seek(to: saved.position)
+        currentTime = saved.position
+        resumeNotice = "已跳转到上次位置 \(Self.format(saved.position))"
     }
 
-    private func configureRemoteCommands() {
-        let controller = NowPlayingController.shared
-        controller.onPlay = { [weak self] in self?.togglePlay() }
-        controller.onPause = { [weak self] in
-            guard let self, self.engine.state == .playing else { return }
-            self.togglePlay()
+    private func saveProgress() {
+        guard phase == .ready, currentTime > 0 else { return }
+        let snapshot = PlaybackProgress(fileID: file.id, position: currentTime, duration: duration)
+        Task { [progressStore] in
+            await progressStore.save(snapshot)
         }
-        controller.onSeek = { [weak self] time in self?.seek(to: time) }
-        controller.configure()
+    }
+
+    // MARK: - 错误恢复（直链过期 / 网络中断）
+
+    private func recoverPlayback() async {
+        guard !isRecovering, recoveryAttempts < 2 else { return }
+        isRecovering = true
+        recoveryAttempts += 1
+        let position = currentTime
+        do {
+            let token = try await session.refreshAccessToken()
+            let link = try await service.playbackURL(fileID: file.id, accessToken: token)
+            try await engine.load(
+                PlaybackSource(url: link.url, headers: link.headers, title: file.name)
+            )
+            await engine.seek(to: position)
+            currentTime = position
+            phase = .ready
+            isPlaying = true
+            resumeNotice = "播放地址已刷新"
+        } catch {
+            phase = .failed("播放恢复失败：\(message(for: error))")
+        }
+        isRecovering = false
     }
 
     // MARK: - 外挂字幕
 
-    /// 同目录同名自动匹配：列出父目录 → 过滤字幕 → 规范化匹配 → 取最高分加载。
     func autoAttachSubtitle() async {
         guard file.isPlayable else { return }
         do {
@@ -141,7 +188,6 @@ final class PlayerViewModel {
         }
     }
 
-    /// 用户手动选择某个候选字幕。
     func attachCandidate(_ candidate: SubtitleCandidate) async {
         guard let matched = subtitleFiles.first(where: { $0.name == candidate.fileName }) else {
             subtitleNotice = "字幕文件不在当前目录"
@@ -150,37 +196,66 @@ final class PlayerViewModel {
         await attach(matched)
     }
 
-    /// 下载字幕 → 自动识别编码并转 UTF-8 → 交给内核。
-    /// 不直接把签名直链交给 VLC：一是直链可能要求 Referer/UA，二是 GBK 需要转码。
+    /// 下载字幕 → 识别编码并转 UTF-8 → 缓存原文 → 按当前偏移注入内核。
     func attach(_ subtitleFile: GuangyaFile) async {
         do {
             let token = try await session.validAccessToken()
             let link = try await service.playbackURL(fileID: subtitleFile.id, accessToken: token)
-
-            let response = try await http.send(
-                HTTPRequest(url: link.url, headers: link.headers)
-            )
+            let response = try await http.send(HTTPRequest(url: link.url, headers: link.headers))
             guard response.isSuccess else {
                 subtitleNotice = "字幕下载失败"
                 return
             }
 
             let decoded = SubtitleTextDecoder.decode(response.data)
-            let tempURL = try writeTemporarySubtitle(
-                text: decoded.text,
-                fileName: subtitleFile.name
+            currentSubtitleFile = subtitleFile
+            subtitleRawText = decoded.text
+            subtitleFormat = SubtitleParser.detectFormat(
+                fileExtension: subtitleFile.ext,
+                text: decoded.text
             )
+            subtitleOffset = 0
+            subtitleOffsetValue = 0
+            await applySubtitleContent()
+        } catch {
+            subtitleNotice = "字幕加载失败：\(error.localizedDescription)"
+        }
+    }
+
+    func adjustSubtitleOffset(_ delta: TimeInterval) async {
+        subtitleOffset = ((subtitleOffset + delta) * 10).rounded() / 10
+        subtitleOffsetValue = subtitleOffset
+        await applySubtitleContent()
+    }
+
+    func resetSubtitleOffset() async {
+        subtitleOffset = 0
+        subtitleOffsetValue = 0
+        await applySubtitleContent()
+    }
+
+    func disableSubtitles() {
+        engine.selectSubtitleTrack(id: nil)
+        attachedSubtitleName = nil
+    }
+
+    private func applySubtitleContent() async {
+        guard let subtitleFile = currentSubtitleFile, let rawText = subtitleRawText else { return }
+        do {
+            let transformed: String
+            if subtitleFormat == .ass {
+                transformed = ASSSubtitleShifter.shift(rawText, after: subtitleOffset)
+            } else {
+                let cues = SubtitleParser.parseCues(text: rawText, format: subtitleFormat)
+                transformed = SubtitleSerializer.srt(from: cues, offset: subtitleOffset)
+            }
+            let tempURL = try writeTemporarySubtitle(text: transformed, fileName: subtitleFile.name)
             try await engine.addExternalSubtitle(url: tempURL, encoding: .utf8)
             attachedSubtitleName = subtitleFile.name
             subtitleNotice = nil
         } catch {
             subtitleNotice = "字幕加载失败：\(error.localizedDescription)"
         }
-    }
-
-    func disableSubtitles() {
-        engine.selectSubtitleTrack(id: nil)
-        attachedSubtitleName = nil
     }
 
     private func writeTemporarySubtitle(text: String, fileName: String) throws -> URL {
@@ -193,7 +268,7 @@ final class PlayerViewModel {
         return url
     }
 
-    // MARK: - 音频会话（后台播放）
+    // MARK: - 音频会话 / 远程控制
 
     private func configureAudioSession() {
         do {
@@ -205,7 +280,18 @@ final class PlayerViewModel {
         }
     }
 
-    // MARK: - 进度
+    private func configureRemoteCommands() {
+        let controller = NowPlayingController.shared
+        controller.onPlay = { [weak self] in self?.togglePlay() }
+        controller.onPause = { [weak self] in
+            guard let self, self.engine.state == .playing else { return }
+            self.togglePlay()
+        }
+        controller.onSeek = { [weak self] time in self?.seek(to: time) }
+        controller.configure()
+    }
+
+    // MARK: - 进度轮询
 
     var formattedPosition: String { Self.format(currentTime) }
     var formattedDuration: String { Self.format(duration) }
@@ -221,6 +307,7 @@ final class PlayerViewModel {
                     self.duration = self.engine.duration
                 }
                 self.isPlaying = (self.engine.state == .playing)
+
                 NowPlayingController.shared.update(
                     title: self.file.name,
                     duration: self.duration,
@@ -228,6 +315,17 @@ final class PlayerViewModel {
                     rate: self.rate,
                     isPlaying: self.isPlaying
                 )
+
+                // 每 5 秒落盘一次进度
+                self.tickCount += 1
+                if self.tickCount % 10 == 0 {
+                    self.saveProgress()
+                }
+
+                // 直链过期/断网：自动重取一次
+                if case .failed = self.engine.state, !self.isRecovering {
+                    await self.recoverPlayback()
+                }
             }
         }
     }

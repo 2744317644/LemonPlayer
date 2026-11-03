@@ -188,6 +188,13 @@ private struct PlayerContent: View {
                     .foregroundStyle(.orange)
                     .padding(.bottom, 8)
             }
+
+            if let resume = model.resumeNotice {
+                Text(resume)
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(.bottom, 8)
+            }
         }
     }
 
@@ -211,6 +218,18 @@ private struct PlayerContent: View {
             Button("关闭字幕") {
                 model.disableSubtitles()
             }
+            Divider()
+            Button("字幕延迟 +0.1s") {
+                Task { await model.adjustSubtitleOffset(0.1) }
+            }
+            Button("字幕延迟 -0.1s") {
+                Task { await model.adjustSubtitleOffset(-0.1) }
+            }
+            Button("重置延迟") {
+                Task { await model.resetSubtitleOffset() }
+            }
+            Text("当前延迟 \(String(format: "%+.1f", model.subtitleOffsetValue))s")
+            Divider()
             ForEach(model.subtitleCandidates) { candidate in
                 Button {
                     Task { await model.attachCandidate(candidate) }
