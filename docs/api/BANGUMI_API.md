@@ -333,12 +333,23 @@ GET https://api.bgm.tv/v0/episodes?subject_id=12&type=0&limit=200&offset=0
 
 实测 R14：直接返回**数组**（不分页），元素字段 `{images, name, name_cn, relation, type, id}`。
 
-`relation` 是**中文字符串**（不是枚举数字）：`片尾曲`、`书籍`、`续集`、`前传`、`剧场版`、`角色出演` 等。
+`relation` 是**中文字符串**（不是枚举数字）。实测出现过的取值：`书籍`、`单行本`、`片头曲`、`片尾曲`、`插入歌`、`原声集`、`续集`、`番外篇`、`角色出演`、`三次元`、`游戏`、`其他`。
+
+实测样例（`/v0/subjects/329906/subjects`，12 条）：
+
+```
+type=1 书籍    id=279379  间谍过家家（原作漫画）
+type=3 片尾曲  id=377129
+type=3 片头曲  id=377570
+type=2 番外篇  id=411428  剧场版 间谍过家家 代号：白
+type=2 续集    id=373267  间谍过家家 第2部分
+```
 
 用途：
 - 详情页"相关系列"横滑；
 - **季号链**：`续集`/`前传` 可以串出整个系列，用来校正"第几季"（比只靠标题关键词可靠）。
-- 结果里会混入音乐（`type=3`）、书籍（`type=1`），UI 上要过滤或分组。
+- 但**链不保证完整**：`329906`(S1) 的 `续集` 只指向 `373267`(第2部分)，并没有直接指向 `411427`(Season 2)。→ **关系链只能作辅助加分，不能当唯一依据**（见 §6.6）。
+- 结果里会混入音乐（`type=3`）、书籍（`type=1`）、游戏（`type=4`），UI 上要按 `type` 过滤或分组。
 
 ### 3.6 人物与角色
 
@@ -701,7 +712,7 @@ struct BGMImages: Decodable {
     /// 旧版接口/日历会给 http://，ATS 会拦 → 统一升 https
     private static func safe(_ s: String?) -> URL? {
         guard var s, !s.isEmpty else { return nil }
-        if s.hasPrefix("http://") { s = "https://" + s.dropFirst("http://".count) }
+        if s.hasPrefix("http://") { s = "https://" + String(s.dropFirst("http://".count)) }
         return URL(string: s)
     }
 }
@@ -951,7 +962,7 @@ Bangumi 用**独立 subject 表示每一季**（不像 TMDB 的 `season` 子对�
 1. **必须先解析季号再搜索**，且季号要进关键词（R6 实测：`"... 第二季"` 直接把目标顶到第 1 位）。
 2. 季号 token 归一化映射：`S2 / Season 2 / 2nd Season / 第2季 / 第二季 / 2期 / Part 2 / Cour 2 / II` → `season = 2`。
 3. **无季号的默认是第 1 季**；但如果候选里存在"更早的同名条目"，且本地文件年份更新，说明可能是续作 → 降权第 1 季候选。
-4. **利用 `续集/前传` 关系链校正**（§3.5）：如果 `p` 匹配到了第 1 季，而季号是 3，可以沿 `relation == "续集"` 走两跳到真正目标。这比改关键词更精确，代价是多 2 次请求（可只在"季号 ≥ 2 且标题打分相同"时启用）。
+4. **利用 `续集/前传` 关系链辅助校正**（§3.5）：如果 `p` 匹配到了第 1 季、而季号是 3，可沿 `relation == "续集"` 跳；但**实测链不完整**（S1 的 `续集` 只指到"第2部分"，没有直接指到 Season 2），所以只把关系链当**加分项（+5）**，且最多走 2 跳、总请求数 ≤ 2。
 5. `platform` 区分 `TV` / `WEB` / `OVA` / `剧场版`（[S11](https://github.com/bangumi/server/blob/master/pkg/vars/platform.go.json)）：
    - 文件名含 `剧场版/Movie/劇場版` → 优先 `platform == 剧场版`；
    - 含 `OVA/OAD` → 优先 `platform == OVA`；
@@ -1309,7 +1320,7 @@ Bangumi 与本 App 无隶属关系。
  "total":24,"limit":3,"offset":0}
 ```
 
-### A.3 `GET /v0/subjects/411427`（SPY S2）第 1 集 —— **`sort` 续编号的实证**
+### A.3 `GET /v0/episodes?subject_id=411427&type=0&limit=1`（SPY S2）—— **`sort` 续编号的实证**
 
 ```
 episodes type=0: total=12

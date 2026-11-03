@@ -1,8 +1,9 @@
-// swift-tools-version: 6.0
+﻿// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "LemonGuangya",
+    platforms: [.iOS(.v16), .macOS(.v13)],
     products: [
         .library(name: "LemonGuangya", targets: ["LemonGuangya"])
     ],
