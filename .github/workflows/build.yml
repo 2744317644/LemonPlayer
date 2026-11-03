@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Guard: no UTF-8 BOM in manifests
+      - name: "Guard: no UTF-8 BOM in manifests"
         run: |
           if grep -rl $'\xEF\xBB\xBF' Packages/*/Package.swift project.yml 2>/dev/null; then
             echo "::error::UTF-8 BOM found in Package.swift/project.yml (SwiftPM cannot parse it)"; exit 1
