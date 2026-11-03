@@ -18,6 +18,20 @@ struct RootView: View {
     }
 }
 
+struct LibraryTabRoot: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    var body: some View {
+        if horizontalSizeClass == .regular {
+            LibrarySplitView()
+        } else {
+            NavigationStack {
+                LibraryView()
+            }
+        }
+    }
+}
+
 struct MainTabView: View {
     var body: some View {
         TabView {
@@ -28,12 +42,10 @@ struct MainTabView: View {
                 Label("网盘", systemImage: "externaldrive")
             }
 
-            NavigationStack {
-                LibraryView()
-            }
-            .tabItem {
-                Label("媒体库", systemImage: "rectangle.stack")
-            }
+            LibraryTabRoot()
+                .tabItem {
+                    Label("媒体库", systemImage: "rectangle.stack")
+                }
 
             NavigationStack {
                 DownloadsView()
