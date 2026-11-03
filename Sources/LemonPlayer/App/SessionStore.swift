@@ -5,6 +5,14 @@ import LemonGuangya
 import LemonNetwork
 import LemonPersistence
 
+/// Token 直登结果（UI 据此给出具体原因）。
+enum TokenLoginResult: Equatable {
+    case success(String)
+    case invalidFormat
+    case unauthorized
+    case failed(String)
+}
+
 /// 登录态与依赖装配。App 内唯一持有 `GuangyaAuthClient` / `TokenStore` 的地方。
 @MainActor
 @Observable
@@ -87,9 +95,9 @@ final class SessionStore {
     }
 
     /// 兜底登录：直接粘贴 access_token（JWT）。先探测 /user/me，成功才落库。
-    func loginWithAccessToken(_ rawToken: String) async -> Bool {
+    func loginWithAccessToken(_ rawToken: String) async -> TokenLoginResult {
         let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard token.split(separator: ".").count == 3 else { return false }
+        guard token.split(separator: ".").count == 3 else { return .invalidFormat }
         do {
             let me = try await auth.me(accessToken: token)
             let credentials = Credentials(
@@ -102,10 +110,21 @@ final class SessionStore {
             try? await tokens.save(credentials)
             state = .loggedIn(subject: me.subject)
             Task { await DiagnosticsCenter.shared.log(.info, "auth", "Token 直登成功") }
-            return true
+            return .success(me.subject)
         } catch {
             Task { await DiagnosticsCenter.shared.log(.error, "auth", "Token 直登失败：\(error.localizedDescription)") }
-            return false
+            if let guangya = error as? GuangyaError {
+                switch guangya {
+                case .tokenExpired, .unauthorized:
+                    return .unauthorized
+                default:
+                    return .failed(guangya.localizedDescription)
+                }
+            }
+            if let http = error as? HTTPError {
+                return .failed(http.localizedDescription)
+            }
+            return .failed(error.localizedDescription)
         }
     }
 

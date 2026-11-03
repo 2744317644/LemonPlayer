@@ -220,8 +220,9 @@ private struct TokenLoginSheet: View {
     @State private var token = ""
     @State private var errorMessage: String?
     @State private var isSubmitting = false
+    @State private var showHelp = false
 
-    let onSubmit: (String) async -> Bool
+    let onSubmit: (String) async -> TokenLoginResult
 
     var body: some View {
         NavigationStack {
@@ -231,10 +232,34 @@ private struct TokenLoginSheet: View {
                         .lineLimit(3...6)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+
+                    Button {
+                        if let clipboard = UIPasteboard.general.string {
+                            token = clipboard
+                        }
+                    } label: {
+                        Label("从剪贴板粘贴", systemImage: "doc.on.clipboard")
+                    }
                 } header: {
-                    Text("Token 直登（临时方案）")
+                    Text("Token 直登")
                 } footer: {
-                    Text("获取方式：浏览器登录 www.guangyupan.com → F12 → Network → 任一请求的 Authorization: Bearer 后面的 JWT。Token 会过期，仅用于临时联调。")
+                    Text("Token 有效期约 1 小时；过期后重新获取即可。仅保存在本机 Keychain。")
+                }
+
+                Section {
+                    DisclosureGroup("如何获取 access_token？", isExpanded: $showHelp) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("1. 电脑浏览器打开 www.guangyupan.com 并登录")
+                            Text("2. 按 F12 / 右键「检查」→ Network 面板")
+                            Text("3. 刷新页面，点任意一个 api.guangyapan.com 请求")
+                            Text("4. Request Headers 里找 Authorization: Bearer eyJ...")
+                            Text("5. 复制 eyJ 开头的三段字符串（JWT），粘贴到这里")
+                            Text("提示：域名被墙时先连代理再访问网页。")
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 4)
+                    }
                 }
 
                 if let errorMessage {
@@ -248,12 +273,17 @@ private struct TokenLoginSheet: View {
                         Task {
                             isSubmitting = true
                             errorMessage = nil
-                            let success = await onSubmit(token)
+                            let result = await onSubmit(token)
                             isSubmitting = false
-                            if success {
+                            switch result {
+                            case .success:
                                 dismiss()
-                            } else {
-                                errorMessage = "Token 无效或已过期，请重新获取"
+                            case .invalidFormat:
+                                errorMessage = "格式不对：需要三段由 . 分隔的 JWT（以 eyJ 开头）"
+                            case .unauthorized:
+                                errorMessage = "Token 无效或已过期，请重新获取（401/117）"
+                            case .failed(let reason):
+                                errorMessage = "登录失败：\(reason)"
                             }
                         }
                     } label: {
