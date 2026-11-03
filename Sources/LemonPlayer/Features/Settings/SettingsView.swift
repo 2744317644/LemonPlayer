@@ -1,6 +1,7 @@
 import SwiftUI
 import LemonCore
 import LemonDownloads
+import LemonGuangya
 import LemonNetwork
 import LemonPersistence
 import LemonSubtitle
