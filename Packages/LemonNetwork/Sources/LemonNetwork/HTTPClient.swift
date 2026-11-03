@@ -91,7 +91,9 @@ public struct HTTPClient: @unchecked Sendable {
         configuration.timeoutIntervalForResource = 120
         configuration.httpAdditionalHeaders = ["Accept": "application/json"]
         #if canImport(Darwin)
-        configuration.waitsForConnectivity = false
+        // 允许等待网络恢复：从「光鸭 App 扫码」切回来时，系统可能短暂判定无网络，
+        // 若为 false 会立刻失败，导致登录轮询中断。
+        configuration.waitsForConnectivity = true
         #endif
         return URLSession(configuration: configuration)
     }

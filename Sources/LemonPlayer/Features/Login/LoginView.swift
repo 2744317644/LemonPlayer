@@ -3,6 +3,7 @@ import LemonGuangya
 
 struct LoginView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(\.scenePhase) private var scenePhase
     @State private var model: LoginViewModel?
 
     var body: some View {
@@ -24,6 +25,11 @@ struct LoginView: View {
             }
             model = created
             await created.start()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // 去光鸭 App 扫码后切回：若轮询已失败/过期，自动重试而不是让用户重扫
+            guard newPhase == .active, let model else { return }
+            Task { await model.retryIfNeeded() }
         }
     }
 }
@@ -53,10 +59,13 @@ private struct LoginStatusView: View {
                 }
                 Text("请用光鸭云盘 App 扫码")
                     .font(.headline)
+                Text("二维码约 \(code.expiresIn) 秒内有效，过期会自动换新")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Text(code.userCode)
                     .font(.system(.footnote, design: .monospaced))
                     .foregroundStyle(.secondary)
-                Button("刷新二维码") {
+                Button("换一张二维码") {
                     Task { await model.start() }
                 }
                 .buttonStyle(.bordered)
