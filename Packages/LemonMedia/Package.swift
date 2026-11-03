@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "LemonMedia", targets: ["LemonMedia"])
     ],
     targets: [
-        .target(name: "LemonMedia")
+        .target(name: "LemonMedia"),
+        .testTarget(name: "LemonMediaTests", dependencies: ["LemonMedia"])
     ]
 )

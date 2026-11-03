@@ -35,10 +35,22 @@ private struct PlayerContent: View {
     let model: PlayerViewModel
     @State private var showControls = true
     @State private var showStyleSheet = false
+    @State private var isFullscreen = false
+    @State private var hud: String?
+    @State private var dragStartBrightness: Double?
+    @State private var dragStartVolume: Float?
+
+    private enum GestureSide {
+        case brightness
+        case volume
+    }
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
+
+            VolumeControlView()
+                .frame(width: 0, height: 0)
 
             surface
 
@@ -66,17 +78,17 @@ private struct PlayerContent: View {
             if model.phase == .ready {
                 subtitleOverlay
 
-                HStack(spacing: 0) {
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture(count: 2) {
-                            model.seek(to: max(0, model.currentTime - 10))
-                        }
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture(count: 2) {
-                            model.seek(to: min(model.duration, model.currentTime + 10))
-                        }
+                gestureLayer
+
+                if let hud {
+                    Text(hud)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(.black.opacity(0.65))
+                        .clipShape(Capsule())
+                        .transition(.opacity)
                 }
 
                 controls
@@ -88,11 +100,62 @@ private struct PlayerContent: View {
         .onTapGesture {
             showControls.toggle()
         }
+        .toolbar(isFullscreen ? .hidden : .visible, for: .navigationBar)
+        .statusBarHidden(isFullscreen)
         .sheet(isPresented: $showStyleSheet) {
             SubtitleStyleSheet(style: model.subtitleStyle) { style in
                 model.updateStyle(style)
             }
         }
+    }
+
+    private var gestureLayer: some View {
+        HStack(spacing: 0) {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2) {
+                    model.seek(to: max(0, model.currentTime - 10))
+                }
+                .gesture(verticalDrag(side: .brightness))
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2) {
+                    model.seek(to: min(model.duration, model.currentTime + 10))
+                }
+                .gesture(verticalDrag(side: .volume))
+        }
+    }
+
+    private func verticalDrag(side: GestureSide) -> some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { value in
+                switch side {
+                case .brightness:
+                    if dragStartBrightness == nil {
+                        dragStartBrightness = BrightnessController.value
+                    }
+                    let delta = -Double(value.translation.height) / 250
+                    let next = min(max((dragStartBrightness ?? 0.5) + delta, 0), 1)
+                    BrightnessController.set(next)
+                    hud = "亮度 \(Int(next * 100))%"
+                case .volume:
+                    if dragStartVolume == nil {
+                        dragStartVolume = VolumeController.shared.value
+                    }
+                    let delta = Float(-value.translation.height) / 250
+                    let next = min(max((dragStartVolume ?? 0.5) + delta, 0), 1)
+                    VolumeController.shared.set(next)
+                    hud = "音量 \(Int(next * 100))%"
+                }
+            }
+            .onEnded { _ in
+                dragStartBrightness = nil
+                dragStartVolume = nil
+                Task {
+                    try? await Task.sleep(for: .milliseconds(700))
+                    withAnimation { hud = nil }
+                }
+            }
     }
 
     @ViewBuilder
@@ -182,6 +245,12 @@ private struct PlayerContent: View {
                         Image(systemName: "textformat.size")
                     }
 
+                    Button {
+                        toggleFullscreen()
+                    } label: {
+                        Image(systemName: isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                    }
+
                     audioTrackMenu
 
                     Menu {
@@ -222,6 +291,14 @@ private struct PlayerContent: View {
                     .padding(.bottom, 8)
             }
         }
+    }
+
+    private func toggleFullscreen() {
+        withAnimation {
+            isFullscreen.toggle()
+        }
+        OrientationManager.lock(to: isFullscreen ? .landscape : .portrait)
+        showControls = !isFullscreen
     }
 
     private var audioTrackMenu: some View {
