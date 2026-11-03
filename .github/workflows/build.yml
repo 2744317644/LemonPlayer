@@ -92,23 +92,6 @@ jobs:
             -derivedDataPath .build/DerivedData \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: UI smoke test (simulator)
-        # 观测阶段：模拟器 UI 测试在新环境首次引导较慢，先不阻塞出包；
-        # 连续绿 3 次后改为必须通过（去掉 continue-on-error）。
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          xcrun simctl list devices available | grep -E "iPhone" | head -5
-          xcrun simctl boot "iPhone 17" 2>/dev/null || true
-          xcrun simctl bootstatus "iPhone 17" -b || true
-          xcodebuild test \
-            -workspace LemonPlayer.xcworkspace \
-            -scheme LemonPlayer \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
-            -derivedDataPath .build/DerivedData \
-            -only-testing:LemonPlayerUITests \
-            CODE_SIGNING_ALLOWED=NO
-
       - name: Archive (unsigned)
         if: github.ref == 'refs/heads/main'
         run: |
@@ -136,3 +119,38 @@ jobs:
           name: LemonPlayer-unsigned-ipa
           path: .build/LemonPlayer-unsigned.ipa
           retention-days: 14
+
+  # 手动触发的模拟器 UI 冒烟测试（headless Intel runner 引导较慢，不阻塞常规流水线）
+  ui-test:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-26-intel
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate --spec project.yml
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            Pods
+          key: pods-${{ hashFiles('Podfile') }}
+      - name: Install Pods
+        run: pod install
+      - name: UI smoke test
+        run: |
+          xcrun simctl boot "iPhone 17" || true
+          xcrun simctl bootstatus "iPhone 17" -b || true
+          xcodebuild test \
+            -workspace LemonPlayer.xcworkspace \
+            -scheme LemonPlayer \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -derivedDataPath .build/DerivedData \
+            -only-testing:LemonPlayerUITests \
+            CODE_SIGNING_ALLOWED=NO
