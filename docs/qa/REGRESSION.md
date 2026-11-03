@@ -1,15 +1,16 @@
 # 回归清单（发布前必跑）
 
 > 每轮迭代结束 / 发版前执行；结果记录到 `docs/PROGRESS.md` 日志。
-> 当前版本：M2（登录 + 目录浏览）
+> 当前版本：v1.0.0-rc 系列
 
 ## 自动化（CI）
 
 | 编号 | 项目 | 命令 | 通过标准 |
 |---|---|---|---|
-| A-01 | 包内单测 | `swift test --package-path Packages/LemonCore` 等 4 个包 | 全绿 |
-| A-02 | 模拟器构建 | `xcodebuild build -scheme LemonPlayer -destination generic/platform=iOS Simulator` | 成功 |
+| A-01 | 包内单测（7 包） | `swift test --package-path Packages/<X>` | 全绿（Linux 容器） |
+| A-02 | 模拟器构建 | `xcodebuild build -workspace ... -destination generic/platform=iOS Simulator` | 成功 |
 | A-03 | 未签名 IPA | `xcodebuild archive ... CODE_SIGNING_ALLOWED=NO` + Payload/zip | 产出 artifact |
+| A-04 | **UI 冒烟测试** | `xcodebuild test -only-testing:LemonPlayerUITests`（iPhone 17 模拟器） | App 启动并显示登录页 |
 
 ## 手工（真机）
 
