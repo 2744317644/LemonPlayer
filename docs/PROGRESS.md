@@ -8,13 +8,13 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **M7 · 打磨与发布（65%）** |
-| 当前阶段目标 | rc8 已发布；等真机复测登录/播放/下载，随后 v1.0.0 |
-| 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ▓▓▓▓▓▓▓░░░ 65% |
-| 构建状态 | ✅ 常规 CI 全绿（Linux 单测 + macOS 构建/归档/Release）；UI 冒烟测试改为手动触发独立 job |
-| 单测覆盖率 | 7 个包 75 个用例 + 模拟器 UI 测试（手动） |
-| 最新产物 | Release `v1.0.0-rc8`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc8 |
-| 下一步 | 用户复测三通道登录 / 播放字幕 / 后台下载 → 修问题 → v1.0.0 |
+| 当前里程碑 | **M7 · 打磨与发布（70%）** |
+| 当前阶段目标 | 交付文档定稿（DELIVERY/ADR/as-built）；等真机复测 → v1.0.0 |
+| 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ▓▓▓▓▓▓▓░░░ 70% |
+| 构建状态 | ✅ 常规 CI 全绿；Release 发布稳定（rc1~rc8） |
+| 单测覆盖率 | 7 个包 75 个用例 + 模拟器 UI 冒烟测试（手动 job） |
+| 最新产物 | Release `v1.0.0-rc8`；交付说明 `docs/DELIVERY.md` |
+| 下一步 | 用户复测三通道登录 / 播放字幕 / 后台下载 → 修问题 → v1.0.0 正式版 |
 | 阻塞项 | 真机登录待确认；PiP/AirPlay 为 P2 |
 
 ---
@@ -106,6 +106,7 @@
 | 2026-11-04 04:45 | M5/M6 | 媒体库匹配缓存（30 天/未命中 7 天，扫描不再重复打 Bangumi）；下载容量上限（2/5/10/20GB）超限自动清理最久未用；本地 Downloads/Media 测试全绿 | `LibraryMatchCache`、`DownloadManager.enforceStorageLimit` | ✅ |
 | 2026-11-04 05:00 | M7 | 新增模拟器 UI 冒烟测试（XcodeGen `bundle.ui-testing` + LaunchSmokeTests）；headless Intel runner 模拟器引导不稳定，改为手动 workflow_dispatch 独立 job，常规流水线保持快绿 | `Tests/LemonPlayerUITests/**`、`build.yml` | ✅ |
 | 2026-11-04 05:05 | M7 | 发布 `v1.0.0-rc8`（匹配缓存/容量上限/UI 测试工程） | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc8 | ✅ |
+| 2026-11-04 05:20 | M7 | 交付文档定稿：`docs/DELIVERY.md`（功能对照/安装/已知限制/验证状态）；ADR-015~017（后台下载/TMDB 兜底/测试分层）；README 与 ARCHITECTURE as-built 更新 | `docs/DELIVERY.md`、`docs/DECISIONS.md`、`README.md` | ✅ |
 
 ---
 
