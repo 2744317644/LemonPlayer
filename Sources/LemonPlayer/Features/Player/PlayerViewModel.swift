@@ -84,6 +84,11 @@ final class PlayerViewModel {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
+    func retry() async {
+        recoveryAttempts = 0
+        await start()
+    }
+
     // MARK: - 控制
 
     func togglePlay() {
