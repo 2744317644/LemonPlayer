@@ -30,6 +30,11 @@
 | T-104 | GitHub Actions `build.yml`：模拟器构建 + 包内单测 | M1 | P0 | Lead | run 41650264063 全绿 |
 | T-105 | 未签名 IPA 打包步骤（Payload + zip -X + artifact） | M1 | P0 | Lead | artifact 22KB |
 | T-106 | 单测（LemonCore/LemonSubtitle）+ 覆盖率待补 | M1 | P0 | Lead | `Packages/**/Tests/**` |
+| T-201 | 网络层：URLSession 封装、JSON 请求、4xx 不短路的响应模型 | M2 | P0 | Lead | `Packages/LemonNetwork/**` |
+| T-202 | 光鸭 Auth 客户端：设备码申请 / 轮询 / token 刷新 / 用户探针 | M2 | P0 | Lead | `Packages/LemonGuangya/Sources/Auth/**` |
+| T-203 | 登录页：二维码渲染、倒计时、状态机（等待/成功/过期/失败） | M2 | P0 | Lead | `Sources/LemonPlayer/Features/Login/**` |
+| T-204 | Keychain 凭据存储 + TokenStore actor + SessionStore single-flight 刷新 | M2 | P0 | Lead | `Packages/LemonPersistence/**`、`SessionStore.swift` |
+| T-205 | 文件列表 API（code 信封、117 映射、分页/排序）与模型 | M2 | P0 | Lead | `Packages/LemonGuangya/Sources/Files/**` |
 
 ---
 
@@ -37,7 +42,7 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| — | _（M1 收口，M2 任务待认领）_ | — | — | — | — | — |
+| T-206 | 浏览页：列表、面包屑、排序、下拉刷新、无限滚动 | M2 | P0 | Lead | CI run 41652447008 验证中 | `Sources/LemonPlayer/Features/Browse/**` |
 
 ---
 
@@ -45,11 +50,9 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-201 | 网络层：URLSession 封装、超时、重试退避、错误映射、日志脱敏 | M2 | P0 | Lead | `Packages/LemonNetwork/**` |
-| T-202 | 光鸭 Auth 客户端：设备码申请 / 轮询 / token 刷新 | M2 | P0 | Lead | `Packages/LemonGuangya/Sources/Auth/**` |
-| T-203 | 登录页：二维码渲染、倒计时、状态机（等待/成功/过期/失败） | M2 | P0 | Lead | `Sources/LemonPlayer/Features/Login/**` |
-| T-204 | Keychain 凭据存储 + TokenStore actor | M2 | P0 | Lead | `Packages/LemonPersistence/**` |
-| T-205 | 文件列表 API 客户端（分页/排序/搜索）与模型 | M2 | P0 | T-201 | `Packages/LemonGuangya/Sources/Files/**` |
+| T-207 | 搜索：本地索引（已浏览目录）+ 当前目录过滤（光鸭无服务端搜索） | M2 | P1 | T-206 | `Features/Browse/**` |
+| T-209 | iPad 分栏布局（NavigationSplitView） | M2 | P1 | T-206 | `Sources/LemonPlayer/Features/**` |
+| T-210 | 单测补齐：登录状态机、错误映射、分页合并 | M2 | P0 | T-202~T-206 | `Packages/**/Tests/**` |
 
 ---
 

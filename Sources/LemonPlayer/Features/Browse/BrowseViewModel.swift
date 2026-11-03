@@ -58,6 +58,7 @@ final class BrowseViewModel {
     private(set) var sort: SortOption = .timeDescending
     private(set) var hasMore = false
     private(set) var isLoadingMore = false
+    var searchText = ""
 
     private let session: SessionStore
     private let service: GuangyaFileService
@@ -72,6 +73,11 @@ final class BrowseViewModel {
     var currentFolderID: String { crumbs.last?.id ?? "" }
     var currentFolderName: String { crumbs.last?.name ?? "网盘" }
     var canGoUp: Bool { crumbs.count > 1 }
+
+    /// 当前目录的本地过滤结果（光鸭无服务端搜索）。
+    var visibleItems: [GuangyaFile] {
+        FileSearch.filter(items, query: searchText)
+    }
 
     func start() async {
         guard items.isEmpty, phase == .idle else { return }

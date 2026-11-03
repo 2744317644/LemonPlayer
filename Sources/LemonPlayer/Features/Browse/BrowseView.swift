@@ -27,7 +27,7 @@ struct BrowseView: View {
 }
 
 private struct BrowseContent: View {
-    let model: BrowseViewModel
+    @Bindable var model: BrowseViewModel
     @Binding var playing: GuangyaFile?
 
     var body: some View {
@@ -40,7 +40,7 @@ private struct BrowseContent: View {
                 }
             }
 
-            ForEach(model.items) { file in
+            ForEach(model.visibleItems) { file in
                 Button {
                     open(file)
                 } label: {
@@ -81,13 +81,18 @@ private struct BrowseContent: View {
                     .buttonStyle(.bordered)
                 }
                 .frame(maxWidth: .infinity)
-            case .loaded where model.items.isEmpty:
-                ContentUnavailableView("空目录", systemImage: "folder", description: Text("这个目录里没有文件"))
+            case .loaded where model.visibleItems.isEmpty:
+                ContentUnavailableView(
+                    model.searchText.isEmpty ? "空目录" : "没有匹配的文件",
+                    systemImage: model.searchText.isEmpty ? "folder" : "magnifyingglass",
+                    description: Text(model.searchText.isEmpty ? "这个目录里没有文件" : "换个关键词试试")
+                )
             default:
                 EmptyView()
             }
         }
         .refreshable { await model.reload() }
+        .searchable(text: $model.searchText, prompt: "搜索当前目录")
         .navigationTitle(model.currentFolderName)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

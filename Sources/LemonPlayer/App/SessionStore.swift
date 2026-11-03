@@ -103,7 +103,7 @@ final class SessionStore {
             return try await existing.value
         }
 
-        let task = Task { [tokens, auth] () throws -> String in
+        let task = Task { [self] () throws -> String in
             guard let credentials = try await tokens.load() else {
                 throw GuangyaError.unauthorized
             }
