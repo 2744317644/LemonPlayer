@@ -32,7 +32,7 @@
 | 项 | 状态 |
 |---|---|
 | 需求 / 目标 / 看板 / 进度 | ✅ 已建立 |
-| 光鸭 API 逆向文档 | 🚧 调研中 |
+| 光鸭 API 逆向文档 | ✅ 已产出（22 个接口 + 10 项待验证清单） |
 | 播放内核选型 | 🚧 调研中 |
 | Xcode 工程 / CI | ⬜ 未开始（M1） |
 
@@ -50,7 +50,7 @@
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | 进度日志、指标跟踪、决策变更、里程碑复盘 |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 架构设计（待补） |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 架构决策记录 ADR（待补） |
-| [`docs/api/GUANGYA_API.md`](docs/api/GUANGYA_API.md) | 光鸭云盘 API 逆向参考（待补） |
+| [`docs/api/GUANGYA_API.md`](docs/api/GUANGYA_API.md) | 光鸭云盘 API 逆向参考（22 接口、字段表、直链链路、错误码） |
 | [`docs/tech/PLAYER_KERNEL.md`](docs/tech/PLAYER_KERNEL.md) | 播放内核选型（待补） |
 | [`docs/tech/CI_BUILD.md`](docs/tech/CI_BUILD.md) | GitHub Actions 构建方案（待补） |
 

@@ -15,6 +15,10 @@
 |---|---|---|---|---|---|
 | T-001 | 编写需求清单（F/N/C/R/J 编号体系） | M0 | P0 | Lead | `docs/REQUIREMENTS.md` |
 | T-002 | 编写目标列表与里程碑 | M0 | P0 | Lead | `docs/GOALS.md` |
+| T-003 | 任务看板建立与维护 | M0 | P0 | Lead | `docs/TASKS.md` |
+| T-004 | 进度日志建立（快照 + 日志 + 变更记录） | M0 | P0 | Lead | `docs/PROGRESS.md` |
+| T-005 | 光鸭云盘 API 逆向调研（22 接口 + 10 项待验证） | M0 | P0 | sub:api-recon | `docs/api/GUANGYA_API.md` |
+| T-011 | Swift/iOS 技能集评估与按需索引（不 vendor） | M0 | P1 | Lead | `docs/tech/SKILLS.md` |
 
 ---
 
@@ -22,9 +26,6 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-003 | 任务看板建立与维护 | M0 | P0 | Lead | — | `docs/TASKS.md` |
-| T-004 | 进度日志建立（快照 + 日志 + 变更记录） | M0 | P0 | Lead | — | `docs/PROGRESS.md` |
-| T-005 | 光鸭云盘 API 逆向调研 | M0 | P0 | sub:api-recon | — | `docs/api/**` |
 | T-006 | 播放内核与 CI 出包调研 | M0 | P0 | sub:kernel-recon | — | `docs/tech/**` |
 | T-009 | 仓库初始化（git init / .gitignore / 首次提交） | M0 | P0 | Lead | T-003、T-004 | `.gitignore`、根配置 |
 

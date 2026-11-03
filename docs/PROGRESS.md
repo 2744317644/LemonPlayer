@@ -46,6 +46,11 @@
 | 2026-11-03 21:50 | M0 | 输出目标列表与里程碑（M0-M7、G-01~G-10） | [`docs/GOALS.md`](GOALS.md) | ✅ |
 | 2026-11-03 21:52 | M0 | 初始化任务看板（60+ 任务卡，M0-M7 全量拆分） | [`docs/TASKS.md`](TASKS.md) | ✅ |
 | 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
+| 2026-11-03 21:56 | M0 | 架构设计（分层/8 个 SPM 包/领域模型/四条链路）与 ADR-001~011 | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md)、[`docs/DECISIONS.md`](DECISIONS.md) | ✅ |
+| 2026-11-03 22:02 | M0 | 光鸭 API 调研完成：22 接口、直链链路、gcid、错误码、10 项待验证；纠正 client_id 与 API 域名 | [`docs/api/GUANGYA_API.md`](api/GUANGYA_API.md) | ✅ |
+| 2026-11-03 22:08 | M0 | 第二轮需求确认：private 仓库、iOS 26.0+、未签名 IPA 自签、Bundle ID `com.lemonplayer.ios`、TMDB 后补、仅自签分发、先用官方 token 联调 | 对话结论 → ADR-012/013 | ✅ |
+| 2026-11-03 22:12 | M0 | 评估 swift-ios-skills（86 技能）：质量通过、许可 PolyForm Perimeter；因 DSH 不能热装 + shell 无法直连 GitHub，改为"索引 + 按需 web_fetch" | [`docs/tech/SKILLS.md`](tech/SKILLS.md) | ✅ |
+| 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
 
 ---
 

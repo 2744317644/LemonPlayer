@@ -61,6 +61,7 @@ secrets/
 # Generated / scratch
 tmp/
 temp/
+.tmp-*/
 scripts/out/
 *.log
 coverage/
