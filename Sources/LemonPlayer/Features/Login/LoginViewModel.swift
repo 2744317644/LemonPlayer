@@ -23,6 +23,9 @@ final class LoginViewModel {
 
     private(set) var phase: Phase = .loading
     private(set) var qrImage: UIImage?
+    /// 轮询次数/最近错误，用于界面显示"正在重试"而不是直接报错
+    private(set) var pollCount = 0
+    private(set) var lastError: String?
 
     private let auth: GuangyaAuthClient
     private let onAuthorized: @MainActor (TokenBundle) async -> Void
@@ -36,6 +39,8 @@ final class LoginViewModel {
     func start() async {
         phase = .loading
         qrImage = nil
+        pollCount = 0
+        lastError = nil
         do {
             let code = try await auth.requestDeviceCode()
             qrImage = QRCodeImage.make(from: code.qrContent)
@@ -78,9 +83,11 @@ final class LoginViewModel {
             if Task.isCancelled { return }
 
             do {
+                pollCount += 1
                 switch try await auth.poll(deviceCode: code.deviceCode) {
                 case .pending:
                     consecutiveFailures = 0
+                    lastError = nil
                     interval = baseInterval
                 case .authorized(let bundle):
                     Task { await DiagnosticsCenter.shared.log(.info, "auth", "扫码授权成功") }
@@ -93,6 +100,7 @@ final class LoginViewModel {
                     return
                 case .failed(let message):
                     consecutiveFailures += 1
+                    lastError = message
                     Task { await DiagnosticsCenter.shared.log(.warning, "auth", "轮询失败(\(consecutiveFailures))：\(message)") }
                     if consecutiveFailures >= 3 {
                         phase = .failed(message)
@@ -105,6 +113,7 @@ final class LoginViewModel {
                 // 网络抖动/从后台回来：不退出流程，退避后继续轮询
                 consecutiveFailures += 1
                 let message = Self.describe(error)
+                lastError = message
                 Task { await DiagnosticsCenter.shared.log(.warning, "auth", "轮询网络异常(\(consecutiveFailures))：\(message)") }
                 if consecutiveFailures >= 6 {
                     phase = .failed("网络异常，请检查网络后重试")

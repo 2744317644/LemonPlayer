@@ -5,12 +5,15 @@ struct LoginView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.scenePhase) private var scenePhase
     @State private var model: LoginViewModel?
+    @State private var showTokenSheet = false
 
     var body: some View {
         NavigationStack {
             Group {
                 if let model {
-                    LoginStatusView(model: model)
+                    LoginStatusView(model: model) {
+                        showTokenSheet = true
+                    }
                 } else {
                     ProgressView()
                 }
@@ -31,11 +34,17 @@ struct LoginView: View {
             guard newPhase == .active, let model else { return }
             Task { await model.retryIfNeeded() }
         }
+        .sheet(isPresented: $showTokenSheet) {
+            TokenLoginSheet { token in
+                await session.loginWithAccessToken(token)
+            }
+        }
     }
 }
 
 private struct LoginStatusView: View {
     let model: LoginViewModel
+    let onShowTokenLogin: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
@@ -65,6 +74,11 @@ private struct LoginStatusView: View {
                 Text(code.userCode)
                     .font(.system(.footnote, design: .monospaced))
                     .foregroundStyle(.secondary)
+
+                Text(pollStatus)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
                 Button("换一张二维码") {
                     Task { await model.start() }
                 }
@@ -82,6 +96,12 @@ private struct LoginStatusView: View {
                 Label(message, systemImage: "exclamationmark.triangle")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.red)
+                if let detail = model.lastError, !detail.isEmpty, detail != message {
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
                 Button("重试") {
                     Task { await model.start() }
                 }
@@ -93,6 +113,13 @@ private struct LoginStatusView: View {
 
             Spacer(minLength: 0)
 
+            Button {
+                onShowTokenLogin()
+            } label: {
+                Text("无法扫码？使用 Token 登录")
+                    .font(.footnote)
+            }
+
             Text("扫码即表示同意光鸭云盘的服务条款。凭据仅保存在本机 Keychain。")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -100,5 +127,72 @@ private struct LoginStatusView: View {
                 .padding(.horizontal)
         }
         .padding()
+    }
+
+    private var pollStatus: String {
+        if let error = model.lastError, !error.isEmpty {
+            return "网络波动，正在重试…（第 \(model.pollCount) 次）"
+        }
+        return "等待扫码确认…（已轮询 \(model.pollCount) 次）"
+    }
+}
+
+private struct TokenLoginSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var token = ""
+    @State private var errorMessage: String?
+    @State private var isSubmitting = false
+
+    let onSubmit: (String) async -> Bool
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("粘贴 access_token（JWT）", text: $token, axis: .vertical)
+                        .lineLimit(3...6)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                } header: {
+                    Text("Token 直登（临时方案）")
+                } footer: {
+                    Text("获取方式：浏览器登录 www.guangyupan.com → F12 → Network → 任一请求的 Authorization: Bearer 后面的 JWT。Token 会过期，仅用于临时联调。")
+                }
+
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                    }
+                }
+
+                Section {
+                    Button {
+                        Task {
+                            isSubmitting = true
+                            errorMessage = nil
+                            let success = await onSubmit(token)
+                            isSubmitting = false
+                            if success {
+                                dismiss()
+                            } else {
+                                errorMessage = "Token 无效或已过期，请重新获取"
+                            }
+                        }
+                    } label: {
+                        if isSubmitting {
+                            ProgressView()
+                        } else {
+                            Text("登录")
+                        }
+                    }
+                    .disabled(token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSubmitting)
+                }
+            }
+            .navigationTitle("Token 登录")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                Button("取消") { dismiss() }
+            }
+        }
     }
 }

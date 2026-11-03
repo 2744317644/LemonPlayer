@@ -86,6 +86,29 @@ final class SessionStore {
         state = .loggedOut
     }
 
+    /// 兜底登录：直接粘贴 access_token（JWT）。先探测 /user/me，成功才落库。
+    func loginWithAccessToken(_ rawToken: String) async -> Bool {
+        let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard token.split(separator: ".").count == 3 else { return false }
+        do {
+            let me = try await auth.me(accessToken: token)
+            let credentials = Credentials(
+                accessToken: token,
+                refreshToken: "",
+                expiresAt: Date().addingTimeInterval(3600),
+                subject: me.subject
+            )
+            volatileCredentials = credentials
+            try? await tokens.save(credentials)
+            state = .loggedIn(subject: me.subject)
+            Task { await DiagnosticsCenter.shared.log(.info, "auth", "Token 直登成功") }
+            return true
+        } catch {
+            Task { await DiagnosticsCenter.shared.log(.error, "auth", "Token 直登失败：\(error.localizedDescription)") }
+            return false
+        }
+    }
+
     /// 有效的 access_token（未登录/过期返回 nil）。M2 的浏览接口会用到。
     func currentAccessToken() async -> String? {
         guard let credentials = try? await tokens.load(), !credentials.isExpired() else {
