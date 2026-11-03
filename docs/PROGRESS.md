@@ -8,13 +8,13 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **M7 · 打磨与发布（55%）** |
-| 当前阶段目标 | rc4：登录三通道（扫码/浏览器授权页/Token）+ TMDB 兜底，等真机复测 |
-| 整体进度 | M0-M5 ✅ · M6 ✅60% · M7 ▓▓▓▓▓▓░░░░ 55% |
-| 构建状态 | ✅ CI 全绿 + Release 工作流实测通过（rc1 / rc2 / rc3） |
+| 当前里程碑 | **M7 · 打磨与发布（55%）** + M6 收官 |
+| 当前阶段目标 | rc5：后台下载 + 断点持久化；等真机复测登录 |
+| 整体进度 | M0-M5 ✅ · M6 ✅75% · M7 ▓▓▓▓▓▓░░░░ 55% |
+| 构建状态 | ✅ CI 全绿 + Release 工作流实测通过（rc1~rc4） |
 | 单测覆盖率 | 7 个包 75 个用例 |
-| 最新产物 | Release `v1.0.0-rc3`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc3 |
-| 下一步 | 用户装 rc3 复测：扫码（自动重试/换码）或 Token 直登 → 导出诊断日志（如仍失败）→ v1.0.0 |
+| 最新产物 | Release `v1.0.0-rc5`（待发布）：后台下载/断点续传 |
+| 下一步 | 用户复测登录（rc4 三通道）→ 后台下载真机验证 → v1.0.0 |
 | 阻塞项 | 真机登录问题待复测确认；PiP/AirPlay 为 P2 |
 
 ---
@@ -99,7 +99,8 @@
 | 2026-11-04 03:32 | M7 | 发布 `v1.0.0-rc2`（登录循环修复 + 诊断日志 + 字幕预览） | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc2 | ✅ |
 | 2026-11-04 03:45 | M2 | 登录兜底与可观测：Token 直登（JWT 校验 + `/user/me` 探测）、轮询次数/重试状态展示、失败页显示最近错误；CI 全绿（run 41695454877） | `Features/Login/**`、`SessionStore` | ✅ |
 | 2026-11-04 03:50 | M7 | 发布 `v1.0.0-rc3`（Token 直登 + 轮询可视化） | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc3 | ✅ |
-| 2026-11-04 04:00 | M2/M5 | 登录第三通道：设备码可复制 + 「浏览器打开授权页」（扫码不生效时手动授权）；TMDB 客户端（搜索/海报/年份）+ 设置页填 Key + 媒体库兜底匹配；本地 LemonMedia 15 用例通过 | `TMDBClient`、`LoginView`、`LibraryViewModel` | 🟡 CI 验证中 |
+| 2026-11-04 04:00 | M2/M5 | 登录第三通道：设备码可复制 + 「浏览器打开授权页」（扫码不生效时手动授权）；TMDB 客户端（搜索/海报/年份）+ 设置页填 Key + 媒体库兜底匹配；本地 LemonMedia 15 用例通过 | `TMDBClient`、`LoginView`、`LibraryViewModel` | ✅ |
+| 2026-11-04 04:10 | M6 | **后台下载**：DownloadManager 改 background URLSession（`sessionSendsLaunchEvents`）；resumeData 持久化（ResumeData 目录）支持重启续传；AppDelegate 接住 `handleEventsForBackgroundURLSession` completionHandler；本地 LemonDownloads 5 用例通过 | `LemonDownloads/**`、`AppDelegate` | 🟡 CI 验证中 |
 
 ---
 
