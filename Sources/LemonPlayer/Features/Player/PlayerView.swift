@@ -140,6 +140,8 @@ private struct PlayerContent: View {
                     Text("\(model.formattedPosition) / \(model.formattedDuration)")
                         .font(.caption.monospacedDigit())
 
+                    subtitleMenu
+
                     Menu {
                         ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { value in
                             Button {
@@ -163,6 +165,37 @@ private struct PlayerContent: View {
             .background(.black.opacity(0.55))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .padding()
+
+            if let notice = model.subtitleNotice {
+                Text(notice)
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                    .padding(.bottom, 8)
+            }
+        }
+    }
+
+    private var subtitleMenu: some View {
+        Menu {
+            Button("关闭字幕") {
+                model.disableSubtitles()
+            }
+            ForEach(model.subtitleCandidates) { candidate in
+                Button {
+                    Task { await model.attachCandidate(candidate) }
+                } label: {
+                    if candidate.fileName == model.attachedSubtitleName {
+                        Label("\(candidate.fileName) · \(candidate.language.displayName)", systemImage: "checkmark")
+                    } else {
+                        Text("\(candidate.fileName) · \(candidate.language.displayName)")
+                    }
+                }
+            }
+            if model.subtitleCandidates.isEmpty {
+                Text("同目录未找到字幕")
+            }
+        } label: {
+            Image(systemName: model.attachedSubtitleName == nil ? "captions.bubble" : "captions.bubble.fill")
         }
     }
 }
