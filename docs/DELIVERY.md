@@ -59,7 +59,7 @@ Swift / SwiftUI 原生 iOS 播放器：扫码登录**光鸭云盘**后直接浏�
 | 手势 / 全屏 | ✅ | 双击 ±10s、上下滑亮度/音量、全屏锁横屏 |
 | 网络自检 / 诊断日志 | ✅ | 连通性探测 + 环形日志（脱敏）导出 |
 | 隐私清单 / 许可 / 免责声明 | ✅ | `PrivacyInfo.xcprivacy` + 许可页 |
-| **画中画 / AirPlay** | ⏸️ P2 | VLCKit 无 AVPlayer 管线，已记录 ADR-003；后续可评估 AetherEngine/SwiftVLC |
+| **画中画 / AirPlay** | ✅ 部分 | MP4/MOV/M4V 走 AVPlayer 内核：原生画中画 + AirPlay 路由；MKV 走 VLCKit 不支持（ADR-018，后续评估桥接/换内核） |
 | iPad 分栏 | ⏸️ P2 | 当前 iPad 复用 iPhone 布局 |
 
 ---

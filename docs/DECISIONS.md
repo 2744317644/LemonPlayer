@@ -223,10 +223,26 @@
 
 ---
 
+## ADR-018 · 双内核：MP4/MOV 走 AVPlayer（原生 PiP/AirPlay），其余走 VLCKit
+
+- **状态**：已接受（2026-11-04）
+- **背景**：需求 F-PLAY-10/11 要求画中画与 AirPlay；VLCKit 无 AVPlayer 管线，无法直接支持。
+- **决策**：
+  - `PlaybackEngineFactory` 按扩展名分流：`mp4/mov/m4v/m4a/mp3` → `AVPlayerEngine`；其余 → `VLCKitEngine`；
+  - `AVPlayerEngine` 用 `AVPictureInPictureController(playerLayer:)` + `AVRoutePickerView`，并复用统一的 `PlaybackEngine` 协议；
+  - 协议新增 `supportsNativeASS`：AVPlayer 内核不渲染 ASS，改为自绘 overlay（保留样式/偏移/双语能力，牺牲特效）；
+  - MP4 的外部 SRT/VTT 继续由自绘 overlay 承担；MKV 保持 libass + overlay 双通道。
+- **后果**：
+  - ✅ 常见 MP4 内容获得原生画中画/AirPlay，且 HDR/硬件解码更省电；
+  - ❌ 同一部番若封装为 MKV 仍无 PiP/AirPlay；跨内核切换会让"当前内核"概念对用户可见（播放页无感知，仅能力差异）。
+- **备选**：全量 AVPlayer（不支持 MKV）；全量 VLCKit（无 PiP/AirPlay）；未来 AetherEngine（libass + 可桥接渲染）。
+
+---
+
 ## 待定 ADR 队列
 
 | 候选 | 说明 |
 |---|---|
-| ADR-018 | 海报与元数据缓存策略（URLCache vs 自建磁盘 LRU） |
-| ADR-019 | 画中画/AirPlay 技术路线（AetherEngine / AVSampleBufferDisplayLayer） |
-| ADR-020 | Bangumi 账号 OAuth 与追番进度同步 |
+| ADR-019 | 海报与元数据缓存策略（URLCache vs 自建磁盘 LRU） |
+| ADR-020 | MKV 的 PiP/AirPlay 技术路线（AetherEngine / AVSampleBufferDisplayLayer） |
+| ADR-021 | Bangumi 账号 OAuth 与追番进度同步 |
