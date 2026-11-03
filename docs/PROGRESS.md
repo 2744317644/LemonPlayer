@@ -8,13 +8,13 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **M3 · 播放内核 + 直链播放**（85%） |
-| 当前阶段目标 | 收尾 M3（上下滑手势/全屏/方向），随后进入 M4 字幕样式与按文件记忆 |
-| 整体进度 | M0 ✅ · M1 ✅ · M2 ✅ · M3 ▓▓▓▓▓▓▓▓░░ 85% · M4 ▓▓░░░░░░░░ 25% |
-| 构建状态 | ✅ CI 全绿（最近成功 run `41670556204`；本轮修复编译后重跑中） |
-| 单测覆盖率 | 5 个包 49 个用例（含 SRT/ASS 时间轴偏移） |
-| 最新产物 | IPA 17MB（MKV/HEVC 播放 + ASS libass + 字幕自动匹配/偏移 + 断点续播） |
-| 下一步 | 上下滑音量/亮度 + 全屏与方向锁定 → M4 样式/按文件记忆 → M5 Bangumi 媒体库 |
+| 当前里程碑 | **M4 · 外挂字幕**（50%）+ M3 收尾（85%） |
+| 当前阶段目标 | M3：上下滑音量/亮度、全屏/方向锁定；M5：Bangumi 媒体库启动 |
+| 整体进度 | M0 ✅ · M1 ✅ · M2 ✅ · M3 ✅85% · M4 ▓▓▓▓▓░░░░░ 50% |
+| 构建状态 | ✅ **CI 全绿**：run `41675119995`（test 5 包 + macOS 构建） |
+| 单测覆盖率 | 5 个包 53 个用例（时间轴/序列化/匹配/解析/编码） |
+| 最新产物 | IPA 17MB：MKV 播放 + SRT/VTT 自绘字幕（样式/双语/偏移/记忆）+ ASS libass |
+| 下一步 | 手势/全屏 → M5 Bangumi 客户端 + 文件名解析 → 海报墙 |
 | 阻塞项 | 真机验证需用户装包；无代码阻塞 |
 
 ---
@@ -27,7 +27,7 @@
 | M1 | 可编译骨架 + CI 出包 | ✅ 已完成 | 100% | 2026-11 |
 | M2 | 登录 + 网盘浏览 | ✅ 已完成 | 100% | 2026-12 |
 | M3 | 播放内核 + 直链播放 | 🚧 进行中 | 85% | 2026-12 |
-| M4 | 外挂字幕（核心差异） | 🚧 进行中 | 25% | 2027-01 |
+| M4 | 外挂字幕（核心差异） | 🚧 进行中 | 50% | 2027-01 |
 | M4 | 外挂字幕 | ⬜ 未开始 | 0% | 2027-01 |
 | M5 | 媒体库 + 剧集 | ⬜ 未开始 | 0% | 2027-01 |
 | M6 | 离线缓存 | ⬜ 未开始 | 0% | 2027-02 |
@@ -84,7 +84,8 @@
 | 2026-11-04 01:02 | M3 | **MobileVLCKit 3.7.5 接入成功**：Podfile、VLCKitEngine（drawable/状态/轨道）、播放页；CI 修 3 轮（API 形态、@MainActor 工厂、ENABLE_USER_SCRIPT_SANDBOXING）后全绿，IPA 17MB | `Podfile`、`Sources/LemonPlayer/Playback/**` | ✅ |
 | 2026-11-04 01:06 | M4 | 外挂字幕自动匹配打通：同目录列字幕 → SubtitleMatcher → 下载 → GBK/UTF-8 识别转码 → 注入 VLCKit；播放页字幕菜单 | `PlayerViewModel`、`PlayerView` | ✅ |
 | 2026-11-04 01:09 | M3 | 后台音频（AVAudioSession）+ 锁屏/控制中心（Now Playing + 远程命令）+ 双击 ±10s + 音轨菜单；CI 全绿（run 41670556204） | `NowPlayingController`、`PlayerView` | ✅ |
-| 2026-11-04 01:14 | M3/M4 | 断点续播（UserDefaults 进度存储，重进跳转/每 5s 落盘）、字幕延迟 ±0.1s（SRT 重序列化 / ASS 仅改时间戳）、直链失效自动重取（刷新 token + seek 回原位置）；本地 49 用例通过 | `PlaybackProgressStore`、`SubtitleSerializer`、`PlayerViewModel` | 🟡 CI 验证中 |
+| 2026-11-04 01:14 | M3/M4 | 断点续播（UserDefaults 进度存储，重进跳转/每 5s 落盘）、字幕延迟 ±0.1s（SRT 重序列化 / ASS 仅改时间戳）、直链失效自动重取（刷新 token + seek 回原位置）；本地 49 用例通过 | `PlaybackProgressStore`、`SubtitleSerializer`、`PlayerViewModel` | ✅ |
+| 2026-11-04 01:35 | M4 | **SRT/VTT 自绘字幕 + 样式面板**：字号/颜色/描边/背景/底边距实时生效；副字幕（双语）叠加；按文件记忆主/副字幕与偏移；SubtitleTimeline 二分查询 + 4 个测试；CI 全绿（run 41675119995） | `SubtitleOverlayView`、`SubtitleStyle`、`SubtitlePreferenceStore` | ✅ |
 | 2026-11-03 21:54 | M0 | 并行启动两项调研：光鸭 API 逆向、播放内核与 CI 方案 | `docs/api`、`docs/tech` | 🚧 |
 
 ---
