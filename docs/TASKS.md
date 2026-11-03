@@ -55,6 +55,10 @@
 | T-407b | 上下滑调音量/亮度、全屏与方向锁定 | M3 | P1 | Lead | `SystemControls.swift`、`PlayerView` |
 | T-501 | 文件名解析器（标题/季集/多命名规范）+ 5 个测试 | M5 | P0 | Lead | `Packages/LemonMedia/Sources/MediaNameParser.swift` |
 | T-502 | Bangumi 客户端（搜索/详情/剧集；UA + 1req/s 限流）+ 4 个解码测试 | M5 | P0 | Lead | `Packages/LemonMedia/Sources/Bangumi*.swift` |
+| T-503 | 刮削编排：解析 → 分组 → Bangumi 匹配 → 缓存（4 个测试） | M5 | P0 | Lead | `LibraryScraper`、`LibraryStore` |
+| T-504 | 首页海报墙（扫描/空态/失败态/海报网格） | M5 | P0 | Lead | `Features/Library/**` |
+| T-505 | 详情页 + 剧集列表（海报/年份/评分/播放） | M5 | P1 | Lead | `Features/Library/LibraryView.swift` |
+| T-506 | 剧集自动连播（播放队列 + didFinish） | M5 | P1 | Lead | `Features/Player/**` |
 
 ---
 
@@ -62,8 +66,8 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-503 | 刮削编排：解析 → 搜索 → 匹配 → 入库 → 缓存 | M5 | P0 | Lead | M5 下一步 | `Packages/LemonMedia/**`、`LemonPersistence/**` |
-| T-504 | 首页海报墙（继续观看/最近添加/分类） | M5 | P0 | Lead | T-503 | `Features/Library/**` |
+| T-507 | 播放历史 / 继续观看首页（读 PlaybackProgressStore） | M5 | P1 | Lead | M5 下一步 | `Features/Library/**`、`LemonPersistence/**` |
+| — | 详情页手动纠错（换匹配/改季集） | M5 | P2 | Lead | T-503 | `Features/Library/**` |
 
 ---
 
@@ -71,10 +75,9 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-505 | 详情页 + 剧集列表 + 手动纠错 | M5 | P1 | T-503 | `Features/Library/**` |
-| T-506 | 剧集自动连播 + 下一集预加载 | M5 | P1 | T-504 | `Features/Player/**` |
-| T-411 | 字幕样式预览页（静态帧 + 实时样式预览） | M4 | P1 | T-408 | `Features/Player/**` |
-| T-209 | iPad 分栏布局（NavigationSplitView） | M2 | P2 | T-206 | `Sources/LemonPlayer/Features/**` |
+| T-601 | 后台下载（URLSession background + 断点续传） | M6 | P0 | M6 启动 | `Packages/LemonDownloads/**` |
+| T-411 | 字幕样式预览页 | M4 | P1 | T-408 | `Features/Player/**` |
+| T-209 | iPad 分栏布局 | M2 | P2 | T-206 | `Sources/LemonPlayer/Features/**` |
 
 ---
 
