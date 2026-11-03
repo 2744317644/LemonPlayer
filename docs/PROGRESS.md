@@ -8,13 +8,13 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **M7 · 打磨与发布（60%）** + M6 收尾 |
-| 当前阶段目标 | rc7：媒体库匹配缓存 + 下载容量上限；等真机复测 |
-| 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ▓▓▓▓▓▓▓░░░ 60% |
-| 构建状态 | ✅ test 全绿、build/archive 成功；仅图床 artifact 上传偶发 GitHub 服务超时（Release 发布不受影响） |
-| 单测覆盖率 | 7 个包 75 个用例 |
-| 最新产物 | Release `v1.0.0-rc6`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc6 |
-| 下一步 | 用户复测：登录三通道 / 后台下载 / 播放字幕 → 修问题 → v1.0.0 |
+| 当前里程碑 | **M7 · 打磨与发布（65%）** |
+| 当前阶段目标 | rc8 已发布；等真机复测登录/播放/下载，随后 v1.0.0 |
+| 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ▓▓▓▓▓▓▓░░░ 65% |
+| 构建状态 | ✅ 常规 CI 全绿（Linux 单测 + macOS 构建/归档/Release）；UI 冒烟测试改为手动触发独立 job |
+| 单测覆盖率 | 7 个包 75 个用例 + 模拟器 UI 测试（手动） |
+| 最新产物 | Release `v1.0.0-rc8`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc8 |
+| 下一步 | 用户复测三通道登录 / 播放字幕 / 后台下载 → 修问题 → v1.0.0 |
 | 阻塞项 | 真机登录待确认；PiP/AirPlay 为 P2 |
 
 ---
@@ -103,7 +103,9 @@
 | 2026-11-04 04:10 | M6 | **后台下载**：DownloadManager 改 background URLSession（`sessionSendsLaunchEvents`）；resumeData 持久化（ResumeData 目录）支持重启续传；AppDelegate 接住 `handleEventsForBackgroundURLSession` completionHandler；本地 LemonDownloads 5 用例通过 | `LemonDownloads/**`、`AppDelegate` | ✅ |
 | 2026-11-04 04:20 | M7 | 可用性：设置页「测试光鸭 API 连通性」（无效 token 探测 401）、URLCache 海报缓存（64MB/512MB）、播放器无障碍标签、字幕样式面板实时预览 | `SettingsView`、`PlayerView`、`LemonPlayerApp` | ✅ |
 | 2026-11-04 04:35 | M7 | 发布 `v1.0.0-rc6`（网络自检/缓存/无障碍）；CI 构建成功、artifact 上传因 GitHub 服务超时重试失败，Release 上传正常 | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc6 | ✅ |
-| 2026-11-04 04:45 | M5/M6 | 媒体库匹配缓存（30 天/未命中 7 天，扫描不再重复打 Bangumi）；下载容量上限（2/5/10/20GB）超限自动清理最久未用；本地 Downloads/Media 测试全绿 | `LibraryMatchCache`、`DownloadManager.enforceStorageLimit` | 🟡 CI 验证中 |
+| 2026-11-04 04:45 | M5/M6 | 媒体库匹配缓存（30 天/未命中 7 天，扫描不再重复打 Bangumi）；下载容量上限（2/5/10/20GB）超限自动清理最久未用；本地 Downloads/Media 测试全绿 | `LibraryMatchCache`、`DownloadManager.enforceStorageLimit` | ✅ |
+| 2026-11-04 05:00 | M7 | 新增模拟器 UI 冒烟测试（XcodeGen `bundle.ui-testing` + LaunchSmokeTests）；headless Intel runner 模拟器引导不稳定，改为手动 workflow_dispatch 独立 job，常规流水线保持快绿 | `Tests/LemonPlayerUITests/**`、`build.yml` | ✅ |
+| 2026-11-04 05:05 | M7 | 发布 `v1.0.0-rc8`（匹配缓存/容量上限/UI 测试工程） | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0-rc8 | ✅ |
 
 ---
 

@@ -10,7 +10,7 @@
 | A-01 | 包内单测（7 包） | `swift test --package-path Packages/<X>` | 全绿（Linux 容器） |
 | A-02 | 模拟器构建 | `xcodebuild build -workspace ... -destination generic/platform=iOS Simulator` | 成功 |
 | A-03 | 未签名 IPA | `xcodebuild archive ... CODE_SIGNING_ALLOWED=NO` + Payload/zip | 产出 artifact |
-| A-04 | **UI 冒烟测试** | `xcodebuild test -only-testing:LemonPlayerUITests`（iPhone 17 模拟器） | App 启动并显示登录页 |
+| A-04 | **UI 冒烟测试** | GitHub Actions 手动触发 `build.yml`（job `ui-test`），或本地 `xcodebuild test -only-testing:LemonPlayerUITests` | App 启动并显示登录页 |
 
 ## 手工（真机）
 
