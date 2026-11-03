@@ -32,9 +32,11 @@
 | 项 | 状态 |
 |---|---|
 | 需求 / 目标 / 看板 / 进度 | ✅ 已建立 |
-| 光鸭 API 逆向文档 | ✅ 已产出（22 个接口 + 10 项待验证清单） |
-| 播放内核选型 | ✅ MobileVLCKit 3.7.5（libass），MPVKit 备选 |
-| 构建方案 | ✅ macos-26 + Xcode 26.6 → 未签名 IPA |
+| 光鸭 API 逆向文档 | ✅ 已产出（22 个接口 + 实测校正） |
+| 播放内核 | ✅ MobileVLCKit 3.7.5 已接入（libass、MKV/HEVC、17MB IPA） |
+| 构建方案 | ✅ macos-26-intel + Xcode 26.6 → 未签名 IPA（CI 全绿） |
+| 登录 + 网盘浏览 | ✅ M2：扫码登录、Keychain、列表/面包屑/排序/搜索 |
+| 播放 + 外挂字幕 | 🚧 M3/M4：直链播放、自动匹配、GBK 转码、锁屏控制（进行中） |
 | Xcode 工程 / CI | ✅ M1 通过：XcodeGen 工程 + Actions 出未签名 IPA |
 
 进度以 [`docs/PROGRESS.md`](docs/PROGRESS.md) 为唯一真相源；里程碑计划见 [`docs/GOALS.md`](docs/GOALS.md)。

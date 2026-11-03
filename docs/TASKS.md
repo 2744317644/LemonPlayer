@@ -40,6 +40,12 @@
 | T-206 | 浏览页：列表、面包屑、排序、下拉刷新、无限滚动 | M2 | P0 | Lead | `Sources/LemonPlayer/Features/Browse/**` |
 | T-303 | 直链获取与解析（signedURL 回退、Referer/UA、117 映射） | M3 | P0 | Lead | `Packages/LemonGuangya/Sources/Files/PlaybackLink.swift` |
 | T-302 | `PlaybackEngine` 协议 + 轨道/状态模型 + Mock 引擎（Swift Testing 4 用例） | M3 | P0 | Lead | `Packages/LemonPlayback/**` |
+| T-301 | MobileVLCKit 3.7.5 接入（Podfile + VLCKitEngine + CI workspace 构建） | M3 | P0 | Lead | `Podfile`、`Playback/VLCKitEngine.swift` |
+| T-304 | 播放器 UI：控制栏、进度条、倍速、双击快进退、字幕/音轨菜单 | M3 | P0 | Lead | `Features/Player/**` |
+| T-305 | 进度条与 seek（VLCKit time 映射、拖动） | M3 | P0 | Lead | `Features/Player/PlayerViewModel.swift` |
+| T-306 | 音轨切换菜单 | M3 | P0 | Lead | `Features/Player/PlayerView.swift` |
+| T-307 | 后台音频（AVAudioSession）+ 锁屏 Now Playing + 远程命令 | M3 | P0 | Lead | `Playback/NowPlayingController.swift` |
+| T-404/T-405 | 字幕同名自动匹配 + 编码识别（GBK→UTF-8）接入播放链路 | M4 | P0 | Lead | `PlayerViewModel`、`LemonSubtitle/**` |
 
 ---
 
@@ -47,8 +53,8 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 负责 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|---|
-| T-301 | 内核集成（MobileVLCKit 3.7.5，CocoaPods）与资源打包 | M3 | P0 | Lead | 下一步（Podfile + CI workspace） | `Podfile`、`project.yml`、`.github/workflows/build.yml` |
-| T-304 | 播放器 UI：手势、控制栏、进度条、倍速、轨道切换 | M3 | P0 | Lead | T-302 | `Sources/LemonPlayer/Features/Player/**` |
+| T-308 | 播放错误恢复：断网重连、签名过期重取、软解回退提示 | M3 | P0 | Lead | T-303 | `PlayerViewModel` |
+| — | 断点续播（F-PLAY-08 P0）：进度持久化 + 重进跳转 | M3 | P0 | Lead | 下一步 | `LemonPersistence/**`、`PlayerViewModel` |
 
 ---
 
@@ -56,8 +62,8 @@
 
 | 编号 | 任务 | 里程碑 | 优先级 | 依赖 | 写入范围 |
 |---|---|---|---|---|---|
-| T-304 | 播放器 UI：手势、控制栏、进度条、倍速、轨道切换 | M3 | P0 | T-302 | `Sources/LemonPlayer/Features/Player/**` |
-| T-307 | 后台音频 + 锁屏控制 | M3 | P0 | T-302 | `Packages/LemonPlayback/**`、App |
+| T-407 | 字幕样式/时间轴校准/双语/按文件记忆（M4 主体） | M4 | P0 | T-404 | `Features/Player/Subtitle/**` |
+| T-407b | 上下滑调音量/亮度、全屏与方向锁定 | M3 | P1 | T-304 | `Features/Player/**` |
 | T-209 | iPad 分栏布局（NavigationSplitView） | M2 | P2 | T-206 | `Sources/LemonPlayer/Features/**` |
 
 ---
