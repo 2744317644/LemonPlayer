@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// 转发 URLSession 下载回调（非隔离，回调里只做数据搬运，状态变更交回 actor）。
 final class DownloadSessionDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
@@ -27,7 +30,12 @@ final class DownloadSessionDelegate: NSObject, URLSessionDownloadDelegate, @unch
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         guard let error, let id = task.taskDescription else { return }
-        let resumeData = (error as NSError).userInfo[NSURLSessionDownloadTaskResumeData] as? Data
+        #if canImport(Darwin)
+        let resumeKey = NSURLSessionDownloadTaskResumeData
+        #else
+        let resumeKey = "NSURLSessionDownloadTaskResumeData"
+        #endif
+        let resumeData = (error as NSError).userInfo[resumeKey] as? Data
         let manager = self.manager
         Task { await manager?.handleError(id: id, message: error.localizedDescription, resumeData: resumeData) }
     }
@@ -53,19 +61,22 @@ public actor DownloadManager {
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 3600
         self.session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
-        self.delegate.manager = self
 
         try? FileManager.default.createDirectory(
             at: store.downloadsDirectory,
             withIntermediateDirectories: true
         )
+
+        var restoredRecords: [String: DownloadRecord] = [:]
         for record in store.load() {
             var restored = record
             if restored.state == .downloading || restored.state == .queued {
                 restored.state = .paused
             }
-            records[restored.id] = restored
+            restoredRecords[restored.id] = restored
         }
+        self.records = restoredRecords
+        self.delegate.manager = self
     }
 
     // MARK: - 查询
@@ -129,10 +140,11 @@ public actor DownloadManager {
 
     public func pause(id: String) {
         guard let task = tasks[id] else { return }
-        task.cancel { [weak self] data in
-            guard let data else { return }
-            Task { await self?.storeResumeData(data, id: id) }
-        }
+        tasks[id] = nil
+        task.cancel()
+        // 取消后 URLSession 会在 didCompleteWithError 里带上 resumeData（若可用）
+        updateState(id: id, to: .paused)
+        emit()
     }
 
     public func resume(id: String) async {
