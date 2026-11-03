@@ -16,10 +16,12 @@ final class DownloadsViewModel {
         records = await manager.snapshot()
         updateTotals()
         streamTask?.cancel()
+        let manager = self.manager
         streamTask = Task { [weak self] in
             for await list in await manager.updates() {
-                self?.records = list
-                self?.updateTotals()
+                guard let self else { return }
+                self.records = list
+                self.updateTotals()
             }
         }
     }
