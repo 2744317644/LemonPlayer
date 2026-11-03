@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import LemonCore
 
 /// 一次 HTTP 请求的不可变描述。
