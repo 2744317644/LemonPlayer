@@ -6,7 +6,7 @@ import WebKit
 /// 这里轮询读取并自动完成 App 登录。
 struct WebLoginView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var message = "在网页中完成登录，成功后会自动返回 App"
+    @State private var message = "在网页中登录（手机验证码 / 密码），成功后自动返回 App"
     @State private var isFinishing = false
 
     let onTokens: @MainActor (String, String) async -> TokenLoginResult
