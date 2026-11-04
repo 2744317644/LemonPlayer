@@ -173,3 +173,5 @@
 2. 读 `docs/TASKS.md` 的 Doing / Ready 列 → 知道接下来做什么。
 3. 读 `docs/GOALS.md` 当前里程碑的验收标准 → 知道做到什么程度算完成。
 4. 读 `docs/DECISIONS.md` → 知道哪些方案已定、不要再讨论。
+
+| 2026-11-06 00:20 | M2/M3 | **真实 token 实测通过**：列表 200（根目录 4 项）、子目录 200、直链 200（signedURL，CDN Range 206 可播）；修复两处解码：路径改 `/userres/v1`、成功响应无 `code` 需可选；Referer 改 www.guangyapan.com；图标改为 B 站粉播放电视（白底） | `GuangyaFileService`、`PlaybackLink`、`AppIcon` | ✅ |

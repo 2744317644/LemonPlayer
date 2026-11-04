@@ -737,3 +737,11 @@ curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' '<signedURL>'   # 看 
 | 8 | 设备码响应是否有 `data` 包裹 / `expired_token` 是否存在 | 扫码轮询健壮性 |
 | 9 | 删除/移动/复制的任务终态判定（`status==3` 是成功还是失败，两份实现冲突） | 写操作结果判定 |
 | 10 | `orderBy` 0/1/2/4 的具体排序字段 | 排序 UI |
+
+> **2026-11-05 真实 token 实测（v1.0.3 修复依据）**
+> - 请求：`POST https://api.guangyapan.com/userres/v1/file/get_file_list`，头 `Authorization: Bearer`、`dt: 4`，体 `{"page":0,"pageSize":20,"parentId":"","orderBy":0,"sortType":0}` → **200**
+> - 成功响应**只有 `msg` 与 `data`，没有 `code` 字段**：
+>   `{"msg":"success","data":{"total":4,"list":[{"fileId":"...","fileName":"番剧","resType":2,"dirType":1,"utime":...}]}}`
+> - 旧路径 `/nd.bizuserres.s/v1/...` 会返回非 JSON；客户端需按 `code == nil → 成功` 处理。
+> - 直链：`POST /userres/v1/get_res_download_url` 体 `{"fileId":"..."}` → `data.signedURL`（guangyacdn.com），带 `Referer: https://www.guangyapan.com/` 实测 `206` 可播。
+> - `parentId: "*"` + `fileTypes:[2]` 目前返回的是**目录**（并非全盘视频），媒体库全盘聚合需要改为递归遍历（v1.1 待办）。
