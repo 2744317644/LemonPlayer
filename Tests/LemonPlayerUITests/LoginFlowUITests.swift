@@ -26,18 +26,25 @@ final class LoginFlowUITests: XCTestCase {
             sleep(1)
         }
 
-        // 网页登录入口（WkWebView 加载 www.guangyapan.com/login）
+        // 网页登录入口（WkWebView 加载 www.guangyapan.com/oauth/login）
         let webButton = app.buttons["网页登录（推荐，可过验证码）"]
         if webButton.waitForExistence(timeout: 10) {
             webButton.tap()
-            sleep(10)
-            capture(app, "ui-login-03-web")
-            dump(app, "WEB_LOGIN")
-            print("WEBVIEW_COUNT: \(app.webViews.count)")
-            if app.webViews.count > 0 {
-                let web = app.webViews.firstMatch
-                print("WEBVIEW_FRAME: \(web.frame)")
-                print("WEBVIEW_TEXT_COUNT: \(web.staticTexts.count)")
+            sleep(8)
+            let webView = app.webViews.firstMatch
+            if webView.waitForExistence(timeout: 20) {
+                // 等官网登录表单（手机号/密码/验证码任一出现）
+                _ = webView.staticTexts["密码登录"].waitForExistence(timeout: 15)
+                capture(app, "ui-login-03-web")
+                dump(app, "WEB_LOGIN")
+                print("WEBVIEW_COUNT: \(webView.exists ? 1 : 0)")
+                print("WEBVIEW_FRAME: \(webView.frame)")
+                print("WEBVIEW_TEXT_COUNT: \(webView.staticTexts.count)")
+                print("WEBVIEW_TEXTFIELDS: \(webView.textFields.count), SECURE: \(webView.secureTextFields.count)")
+                let labels = webView.staticTexts.allElementsBoundByIndex.prefix(30).map { $0.label }
+                print("WEBVIEW_LABELS: \(labels)")
+            } else {
+                print("WEBVIEW_MISSING")
             }
             if app.buttons["取消"].firstMatch.exists {
                 app.buttons["取消"].firstMatch.tap()

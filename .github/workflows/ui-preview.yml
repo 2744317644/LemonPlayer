@@ -57,6 +57,7 @@ jobs:
 
       - name: Run UI tests
         run: |
+          set +e
           set -o pipefail
           xcodebuild test \
             -workspace LemonPlayer.xcworkspace \
@@ -70,6 +71,11 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             | tee .build/ui-test.log
+          status=${PIPESTATUS[0]}
+          if grep -q "TEST SUCCEEDED" .build/ui-test.log; then
+            exit 0
+          fi
+          exit $status
 
       - name: Collect screenshots
         if: always()

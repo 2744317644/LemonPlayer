@@ -72,8 +72,8 @@ private struct WebLoginWebView: UIViewRepresentable {
         webView.navigationDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
 
-        // 官网登录页（注意域名是 guangyapan.com，不是 guangyupan.com）
-        if let url = URL(string: "https://www.guangyapan.com/login") {
+        // 官网登录页（路由是 /oauth/login；/login 会落到营销首页）
+        if let url = URL(string: "https://www.guangyapan.com/oauth/login") {
             webView.load(URLRequest(url: url))
         }
         context.coordinator.startPolling(webView)
