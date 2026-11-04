@@ -190,6 +190,20 @@ x-device-id: <device_id>
 `unauthenticated` / `无效token` / `authorize failed` / `认证失败` / `invalid_grant` / `invalid token` / `invalid_token` / `token expiry`。
 依据：[S1 `_is_auth_invalid_result`](https://raw.githubusercontent.com/ShukeBta/Guangyadisk/main/plugins.v2/shukguangyadisk/guangya_client.py)
 
+#### ④ 账号密码登录（2026-11-05 发现）
+
+```http
+POST https://account.guangyapan.com/v1/auth/signin
+Content-Type: application/json
+
+{ "client_id": "aMe-8VSlkrbQXpUR", "username": "<手机号/邮箱/用户名>", "password": "<密码>" }
+```
+
+- 字段名必须是 **`username`**（用 `account` / `email` / `phone` 会返回 `username can not be empty`）。
+- 用假密码实测：HTTP 400 `{"error":"invalid_account_or_password","error_code":4022,"error_description":"verification failed"}` → 接口真实存在。
+- 成功响应应为 token（`access_token` / `refresh_token` / `expires_in`）；客户端用**宽容解析**兼容顶层与 `data` 嵌套两种形态。
+- ⚠️ 未用真实凭据验证成功路径；**LemonPlayer rc21 起提供「账号密码登录」通道**，失败会映射为「账号或密码错误」。
+
 ### 2.2 短信验证码登录（备选，4 步）
 
 AList 与两份 Python/TS SDK 都实现，链路一致：

@@ -36,6 +36,7 @@ Swift / SwiftUI 原生 iOS 播放器：扫码登录**光鸭云盘**后直接浏�
 | 需求 | 状态 | 说明 |
 |---|---|---|
 | 扫码登录（设备码 OAuth2） | ✅ | 含二维码自动换码、切后台网络重试、回前台自动恢复 |
+| 账号密码登录 | ✅ | `POST /v1/auth/signin`（username/password），比取 Token 简单（rc21） |
 | 浏览器授权页兜底 | ✅ | 显示/复制设备码，一键打开授权页 |
 | Token 直登 | ✅ | 粘贴 JWT，`/user/me` 探测后落库（临时联调通道） |
 | 登录态持久化 / 自动刷新 | ✅ | Keychain + single-flight refresh + 内存兜底 |
