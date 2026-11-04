@@ -1,0 +1,127 @@
+name: ui-preview
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ui-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest available Xcode
+        run: |
+          set -e
+          CHOICE="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [ -z "$CHOICE" ]; then
+            CHOICE="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          fi
+          echo "Using $CHOICE"
+          sudo xcode-select -s "$CHOICE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            Pods
+          key: pods-${{ hashFiles('Podfile') }}
+
+      - name: Generate project and install pods
+        run: |
+          xcodegen generate --spec project.yml
+          pod install
+          ls -la LemonPlayer.xcworkspace
+
+      - name: Pick newest iOS simulator and boot
+        id: sim
+        run: |
+          SELECTION="$(/usr/bin/python3 - <<'PY'
+import json, re, subprocess
+runtimes = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "runtimes", "-j"]))["runtimes"]
+def key(rt):
+    m = re.match(r"(\d+)(?:\.(\d+))?", rt.get("version", "0"))
+    return (int(m.group(1)), int(m.group(2) or 0)) if m else (0, 0)
+ios = sorted([r for r in runtimes if r.get("isAvailable") and r.get("platform") == "iOS"], key=key, reverse=True)
+if not ios:
+    raise SystemExit("no iOS runtime")
+rt = ios[0]
+devices = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "-j"]))["devices"].get(rt["identifier"], [])
+phones = [d for d in devices if d.get("isAvailable") and "iPhone" in d["name"]]
+pros = [d for d in phones if "Pro" in d["name"]]
+device = (pros or phones)[0]
+print(f"{device['udid']}\t{rt['version']}\t{device['name']}")
+PY
+          )"
+          IFS=$'\t' read -r DEVICE_ID IOS_VERSION DEVICE_NAME <<< "$SELECTION"
+          echo "selected iOS $IOS_VERSION — $DEVICE_NAME ($DEVICE_ID)"
+          xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          echo "device_id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Run UI tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -workspace LemonPlayer.xcworkspace \
+            -scheme LemonPlayer \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.device_id }}" \
+            -derivedDataPath .build/DerivedData \
+            -resultBundlePath .build/TestResults.xcresult \
+            -only-testing:LemonPlayerUITests \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | tee .build/ui-test.log
+
+      - name: Collect screenshots
+        if: always()
+        run: |
+          mkdir -p screenshots
+          find "$HOME/Library/Developer/CoreSimulator/Devices" -name 'ui-*.png' \
+            -exec cp {} screenshots/ \; 2>/dev/null || true
+          ls -la screenshots
+
+      - name: Collect app logs
+        if: always()
+        run: |
+          xcrun simctl spawn "${{ steps.sim.outputs.device_id }}" \
+            log show --last 10m --style compact \
+            --predicate 'process == "LemonPlayer"' \
+            > app.log 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-screenshots
+          path: screenshots
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-logs
+          path: |
+            .build/ui-test.log
+            app.log
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ui-test-failure
+          path: .build/TestResults.xcresult
+          retention-days: 14
