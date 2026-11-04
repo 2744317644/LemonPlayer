@@ -9,6 +9,7 @@ struct LoginView: View {
     @State private var showTokenSheet = false
     @State private var showDemo = false
     @State private var showAccountSheet = false
+    @State private var showWebLogin = false
 
     var body: some View {
         NavigationStack {
@@ -19,6 +20,7 @@ struct LoginView: View {
                         onOpenAuthorization: { url in openURL(url) },
                         onShowTokenLogin: { showTokenSheet = true },
                         onShowAccountLogin: { showAccountSheet = true },
+                        onShowWebLogin: { showWebLogin = true },
                         onShowDemo: { showDemo = true }
                     )
                 } else {
@@ -51,6 +53,11 @@ struct LoginView: View {
                 await session.signin(username: username, password: password)
             }
         }
+        .sheet(isPresented: $showWebLogin) {
+            WebLoginView { accessToken, refreshToken in
+                await session.loginWithTokens(accessToken: accessToken, refreshToken: refreshToken)
+            }
+        }
         .sheet(isPresented: $showDemo) {
             NavigationStack {
                 DemoPlayerView()
@@ -69,6 +76,7 @@ private struct LoginStatusView: View {
     let onOpenAuthorization: (URL) -> Void
     let onShowTokenLogin: () -> Void
     let onShowAccountLogin: () -> Void
+    let onShowWebLogin: () -> Void
     let onShowDemo: () -> Void
 
     var body: some View {
@@ -199,12 +207,20 @@ private struct LoginStatusView: View {
             Spacer(minLength: 0)
 
             Button {
+                onShowWebLogin()
+            } label: {
+                Label("网页登录（推荐，可过验证码）", systemImage: "safari")
+                    .font(.footnote)
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button {
                 onShowAccountLogin()
             } label: {
                 Label("使用账号密码登录", systemImage: "person.crop.circle")
                     .font(.footnote)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
 
             Button {
                 onShowTokenLogin()
@@ -240,13 +256,13 @@ private struct LoginStatusView: View {
         return nil
     }
 
-    /// 同一路径换成网页域名（account 是 API 域，不一定承载授权页）。
+    /// 同一路径换成网页域名（注意：官网是 guangyapan.com，不是 guangyupan.com）。
     private func webAuthorizationURL(for code: DeviceCode) -> URL? {
         guard let primary = authorizationURL(for: code),
               var components = URLComponents(url: primary, resolvingAgainstBaseURL: false) else {
             return nil
         }
-        components.host = "www.guangyupan.com"
+        components.host = "www.guangyapan.com"
         return components.url
     }
 

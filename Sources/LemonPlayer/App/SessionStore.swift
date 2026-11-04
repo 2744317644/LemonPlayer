@@ -127,6 +127,33 @@ final class SessionStore {
         return .success(subject ?? "已登录")
     }
 
+    /// 网页登录抓到的 token 直接落库（refresh_token 可用时保存）。
+    func loginWithTokens(accessToken: String, refreshToken: String, subject: String? = nil) async -> TokenLoginResult {
+        var resolvedSubject = subject
+        do {
+            resolvedSubject = try await auth.me(accessToken: accessToken).subject
+        } catch {
+            Task {
+                await DiagnosticsCenter.shared.log(
+                    .warning,
+                    "auth",
+                    "网页登录 /user/me 探测失败（继续登录）：\(error.localizedDescription)"
+                )
+            }
+        }
+        let credentials = Credentials(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            expiresAt: Date().addingTimeInterval(3600),
+            subject: resolvedSubject
+        )
+        volatileCredentials = credentials
+        try? await tokens.save(credentials)
+        state = .loggedIn(subject: resolvedSubject ?? "已登录")
+        Task { await DiagnosticsCenter.shared.log(.info, "auth", "网页登录成功") }
+        return .success(resolvedSubject ?? "已登录")
+    }
+
     /// 账号密码登录：/v1/auth/signin → token → /user/me 探针 → 落库。
     func signin(username: String, password: String) async -> TokenLoginResult {
         do {
