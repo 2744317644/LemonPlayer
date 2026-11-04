@@ -26,8 +26,6 @@ final class LoginViewModel {
     /// 轮询次数/最近错误，用于界面显示"正在重试"而不是直接报错
     private(set) var pollCount = 0
     private(set) var lastError: String?
-    /// 失败时自动跑一遍接口自检，直接把结果展示给用户
-    private(set) var diagnostics: [String] = []
 
     private let auth: GuangyaAuthClient
     private let onAuthorized: @MainActor (TokenBundle) async -> Void
@@ -43,7 +41,6 @@ final class LoginViewModel {
         qrImage = nil
         pollCount = 0
         lastError = nil
-        diagnostics = []
         do {
             let code = try await auth.requestDeviceCode()
             qrImage = QRCodeImage.make(from: code.qrContent)
@@ -56,35 +53,6 @@ final class LoginViewModel {
             let message = Self.describe(error)
             Task { await DiagnosticsCenter.shared.log(.error, "auth", "获取设备码失败：\(message)") }
             phase = .failed(message)
-            await runDiagnostics()
-        }
-    }
-
-    /// 失败时自动自检：设备码接口 + API 连通性，结果展示在登录页。
-    func runDiagnostics() async {
-        var lines: [String] = []
-
-        do {
-            let code = try await auth.requestDeviceCode()
-            lines.append("设备码接口：✅（有效期 \(code.expiresIn)s / 轮询 \(code.interval)s）")
-        } catch {
-            lines.append("设备码接口：❌ \(error.localizedDescription)")
-        }
-
-        do {
-            _ = try await auth.me(accessToken: "invalid-probe-token")
-            lines.append("API 连通：⚠️ 意外成功")
-        } catch {
-            if let guangya = error as? GuangyaError, guangya == .tokenExpired {
-                lines.append("API 连通：✅（401 属预期）")
-            } else {
-                lines.append("API 连通：❌ \(error.localizedDescription)")
-            }
-        }
-
-        diagnostics = lines
-        for line in lines {
-            Task { await DiagnosticsCenter.shared.log(.info, "auth", "自检：\(line)") }
         }
     }
 
@@ -149,7 +117,6 @@ final class LoginViewModel {
                 Task { await DiagnosticsCenter.shared.log(.warning, "auth", "轮询网络异常(\(consecutiveFailures))：\(message)") }
                 if consecutiveFailures >= 6 {
                     phase = .failed("网络异常，请检查网络后重试")
-                    await runDiagnostics()
                     return
                 }
                 interval = min(interval * 2, 6)
