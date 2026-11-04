@@ -84,7 +84,8 @@ private struct WebLoginWebView: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKNavigationDelegate {
         private let onCredentials: (String, String) -> Void
-        private var timer: Timer?
+        // Swift 6 的 deinit 是 nonisolated，Timer 非 Sendable，需要显式标注
+        nonisolated(unsafe) private var timer: Timer?
         private var finished = false
 
         init(onCredentials: @escaping (String, String) -> Void) {
