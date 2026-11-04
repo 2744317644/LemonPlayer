@@ -114,7 +114,18 @@ Swift / SwiftUI 原生 iOS 播放器：登录**光鸭云盘**后直接浏览、�
 
 ---
 
-## 8. 后续路线（v1.1+）
+## 8. 安全与隐私（v1.0.0 审查）
+
+| 项 | 实现 |
+|---|---|
+| 凭据存储 | Keychain，`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`（仅本机、解锁后可用） |
+| 密码 | 账号密码只在登录请求中使用，**不落盘**；仅保存 token |
+| 日志 | 诊断日志仅记录 method/host/path/status/耗时；导出前统一脱敏 Bearer/签名参数；不记录 header/body |
+| 网络出口 | 仅光鸭 API、Bangumi、TMDB（可选）、Apple 演示流；无第三方统计/广告 SDK |
+| 隐私 | `PrivacyInfo.xcprivacy`（文件时间/磁盘空间/启动时间 API 声明），无数据收集 |
+| 仓库 | 无 token/证书/密钥；`.gitignore` 排除本地探测脚本 |
+
+## 9. 后续路线（v1.1+）
 
 1. 真机问题修复 → v1.0.0 正式版
 2. 画中画/AirPlay 技术预研（AetherEngine / 自绘渲染 + AVSampleBufferDisplayLayer）
@@ -123,6 +134,6 @@ Swift / SwiftUI 原生 iOS 播放器：登录**光鸭云盘**后直接浏览、�
 
 ---
 
-## 9. 免责声明
+## 10. 免责声明
 
 光鸭云盘未提供公开开发者 API，本项目使用社区逆向接口，存在失效/限流/风控风险；仅用于播放你有权访问的个人媒体内容，请勿传播侵权内容。第三方组件（VLCKit/FFmpeg/libass）按其各自许可分发。
