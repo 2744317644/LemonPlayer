@@ -1,7 +1,8 @@
-# LemonPlayer 交付说明（v1.0.0-rc22）
+# LemonPlayer 交付说明（v1.0.0）
 
-> 更新：2026-11-05 · 状态：预发布（rc22），等真机回归后转 v1.0.0 正式版
+> 更新：2026-11-05 · 状态：**v1.0.0 已发布**（功能冻结，真机验收中）
 > 仓库：https://github.com/2744317644/LemonPlayer（private）
+> 正式包：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0
 
 ---
 
