@@ -1,13 +1,13 @@
-# LemonPlayer 交付说明（v1.0.0-rc8）
+# LemonPlayer 交付说明（v1.0.0-rc22）
 
-> 更新：2026-11-04 · 状态：预发布（rc8），等真机回归后转 v1.0.0 正式版
+> 更新：2026-11-05 · 状态：预发布（rc22），等真机回归后转 v1.0.0 正式版
 > 仓库：https://github.com/2744317644/LemonPlayer（private）
 
 ---
 
 ## 1. 这是什么
 
-Swift / SwiftUI 原生 iOS 播放器：扫码登录**光鸭云盘**后直接浏览、流式播放网盘里的 MKV/HEVC，外挂字幕（SRT/VTT/ASS 特效、自动匹配、GBK 识别、时间轴校准、样式、双语、按文件记忆）作为核心能力；附带 Bangumi 海报墙、剧集连播、断点续播、后台下载与离线播放。
+Swift / SwiftUI 原生 iOS 播放器：登录**光鸭云盘**后直接浏览、流式播放网盘里的 MKV/HEVC，外挂字幕（SRT/VTT/ASS 特效、自动匹配、GBK 识别、时间轴校准、样式、双语、按文件记忆、自定义字体）作为核心能力；附带 Bangumi 海报墙（TMDB 可选兜底）、剧集连播、断点续播、后台下载与离线播放。登录支持：账号密码 / 扫码（设备码）/ Token 直登 / 浏览器授权页兜底。
 
 - 最低系统：iOS 26.0（iPhone / iPad）
 - 构建：GitHub Actions（macos-26-intel + Xcode 26.6）→ 未签名 IPA

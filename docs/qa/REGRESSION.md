@@ -5,12 +5,12 @@
 
 ## 自动化（CI）
 
-| 编号 | 项目 | 命令 | 通过标准 |
-|---|---|---|---|
-| A-01 | 包内单测（7 包） | `swift test --package-path Packages/<X>` | 全绿（Linux 容器） |
-| A-02 | 模拟器构建 | `xcodebuild build -workspace ... -destination generic/platform=iOS Simulator` | 成功 |
-| A-03 | 未签名 IPA | `xcodebuild archive ... CODE_SIGNING_ALLOWED=NO` + Payload/zip | 产出 artifact |
-| A-04 | **UI 冒烟测试** | GitHub Actions 手动触发 `build.yml`（job `ui-test`），或本地 `xcodebuild test -only-testing:LemonPlayerUITests` | App 启动并显示登录页 |
+| 编号 | 项目 | 命令 | 通过标准 | 最近结果 |
+|---|---|---|---|---|
+| A-01 | 包内单测（7 包 / 86 用例） | `swift test --package-path Packages/<X>` | 全绿（Linux 容器） | ✅ 2026-11-05（WSL 全绿；CI run 41819209489） |
+| A-02 | 模拟器构建 | `xcodebuild build -workspace ... -destination generic/platform=iOS Simulator` | 成功 | ✅ 每次 push |
+| A-03 | 未签名 IPA | `xcodebuild archive ... CODE_SIGNING_ALLOWED=NO` + Payload/zip | 产出 artifact | ✅ rc1~rc22 |
+| A-04 | **UI 冒烟测试** | GitHub Actions 手动触发 `build.yml`（job `ui-test`），或本地 `xcodebuild test -only-testing:LemonPlayerUITests` | App 启动并显示登录页 | ⚠️ headless Intel runner 模拟器引导卡住，保留工程供本地 Mac |
 
 ## 手工（真机）
 
