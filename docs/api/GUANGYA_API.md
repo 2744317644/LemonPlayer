@@ -262,20 +262,23 @@ Content-Type: application/json
 
 ## 3. 文件接口（只读侧重点）
 
-### 3.1 路径前缀的两种写法（先看这个）
+### 3.1 路径前缀（2026-11-05 官方网页验证）
 
-同一批业务接口在真实实现中出现了两种前缀：
+同一批业务接口在真实实现中出现过两种前缀：
 
-- 带网关前缀：`https://api.guangyapan.com/nd.bizuserres.s/v1/...`（[S1/S2](https://raw.githubusercontent.com/ShukeBta/Guangyadisk/main/plugins.v2/shukguangyadisk/guangya_client.py)、[S5](https://github.com/alist-org/alist/blob/main/drivers/guangyapan/driver.go)、[S11](https://raw.githubusercontent.com/intellecat/guangya-node/HEAD/src/client.ts) 的写操作/详情/下载）
-- 无前缀：`https://api.guangyapan.com/userres/v1/file/get_file_list`（[S10](https://raw.githubusercontent.com/DDSRem-Dev/guangyaclient/master/guangyaclient/client.py) 与 [S11](https://raw.githubusercontent.com/intellecat/guangya-node/HEAD/src/client.ts) 的**列表接口**）
+- 带网关前缀：`https://api.guangyapan.com/nd.bizuserres.s/v1/...`（社区实现 S1/S5/S11）
+- 无前缀：`https://api.guangyapan.com/userres/v1/...`（社区 S10/S11 列表接口）
 
-两份实现都能跑通（都带真实联调记录），推测网关对 `v1` 路径做了兜底路由。**建议统一用 `/nd.bizuserres.s/v1/...`（三方一致）**，列表接口若 404 再回退到 `/userres/v1/...`。
-两种写法是否完全等价 — **【待验证】**。
+> **2026-11-05 用官方网页 JS 复核**：网页端实际调用的是
+> `POST https://api.guangyapan.com/userres/v1/file/get_file_list`
+> 与 `POST https://api.guangyapan.com/userres/v1/get_res_download_url`（无 `nd.bizuserres.s` 前缀）。
+> **带前缀的旧路径会返回非 JSON（客户端表现为「响应解析失败」）**。
+> LemonPlayer v1.0.3 起统一使用 `/userres/v1/...`。
 
 ### 3.2 目录列表（核心）
 
 ```http
-POST https://api.guangyapan.com/nd.bizuserres.s/v1/file/get_file_list
+POST https://api.guangyapan.com/userres/v1/file/get_file_list
 Authorization: Bearer <access_token>
 did: <device_id>
 dt: 4

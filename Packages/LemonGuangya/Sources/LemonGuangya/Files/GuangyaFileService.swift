@@ -46,7 +46,7 @@ public struct GuangyaFileService: Sendable {
         }
 
         let request = try HTTPRequest.json(
-            url: Self.apiBaseURL.appendingPathComponent("nd.bizuserres.s/v1/file/get_file_list"),
+            url: Self.apiBaseURL.appendingPathComponent("userres/v1/file/get_file_list"),
             headers: headers(accessToken: accessToken),
             body: Body(
                 parentId: parentID,
@@ -100,7 +100,7 @@ public struct GuangyaFileService: Sendable {
         }
 
         let request = try HTTPRequest.json(
-            url: Self.apiBaseURL.appendingPathComponent("nd.bizuserres.s/v1/file/get_res_download_url"),
+            url: Self.apiBaseURL.appendingPathComponent("userres/v1/get_res_download_url"),
             headers: headers(accessToken: accessToken),
             body: Body(fileId: fileID)
         )
@@ -130,9 +130,10 @@ public struct GuangyaFileService: Sendable {
             if response.statusCode == 401 {
                 throw GuangyaError.tokenExpired
             }
+            let snippet = Self.snippet(response.data)
             throw GuangyaError.requestFailed(
                 statusCode: response.statusCode,
-                message: "HTTP \(response.statusCode)"
+                message: "HTTP \(response.statusCode) \(snippet)"
             )
         }
 
@@ -140,7 +141,10 @@ public struct GuangyaFileService: Sendable {
         do {
             envelope = try JSONDecoder().decode(Envelope.self, from: response.data)
         } catch {
-            throw GuangyaError.api(code: -1, message: "响应解析失败")
+            throw GuangyaError.api(
+                code: -1,
+                message: "响应解析失败：\(Self.snippet(response.data))"
+            )
         }
 
         guard envelope.code == 0 else {
@@ -152,5 +156,11 @@ public struct GuangyaFileService: Sendable {
 
         let payload = envelope.data
         return (payload?.total ?? 0, payload?.list ?? [])
+    }
+
+    /// 响应体前 200 字符（诊断用，不含 token；token 在 header 里）。
+    private static func snippet(_ data: Data) -> String {
+        guard let text = String(data: data.prefix(200), encoding: .utf8) else { return "<binary>" }
+        return text.replacingOccurrences(of: "\n", with: " ")
     }
 }

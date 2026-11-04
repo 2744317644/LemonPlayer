@@ -8,14 +8,14 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **v1.0.2 已发布（登录页精简 + 网页登录）** |
-| 当前阶段目标 | 真机验收网页登录（手机验证码）→ 反馈修复 |
-| 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ✅90% · v1.0.0/v1.0.1/v1.0.2 已出包 |
-| 构建状态 | ✅ build CI 全绿；UI 模拟器工作流跑通（macos-15 + Xcode 26.3） |
+| 当前里程碑 | **v1.0.3 已发布（登录 + 文件接口修复）** |
+| 当前阶段目标 | 用户用网页登录进网盘；文件列表/播放验证 |
+| 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ✅90% · v1.0.0~v1.0.3 已出包 |
+| 构建状态 | ✅ build CI 全绿；UI 模拟器工作流可跑 |
 | 单测覆盖率 | 7 个包 **86 个用例**（1 skipped） |
-| 最新产物 | Release `v1.0.2`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.2 |
-| 下一步 | 用户装 v1.0.2 → 网页登录（手机验证码）→ 进入网盘验收 |
-| 阻塞项 | 账号密码纯 API 受风控（x-captcha-token）；MKV PiP/AirPlay P2 |
+| 最新产物 | Release `v1.0.3`：文件接口路径修正 + 复制 access_token 调试入口 |
+| 下一步 | 用户装 v1.0.3 → 网页登录 → 根目录/播放验证 |
+| 阻塞项 | MKV PiP/AirPlay P2 |
 
 ---
 
@@ -128,6 +128,7 @@
 | 2026-11-05 22:10 | M2 | **登录问题定位**（用户真机反馈）：官网 SDK signIn 必带 `x-captcha-token`（风控验证码），纯 API 密码登录无法通过；官网域名实为 `guangyapan.com`（此前兜底误写 `guangyupan.com` → nginx 404）；真实登录路由为 `/oauth/login` | `docs/api/GUANGYA_API.md` | ✅ |
 | 2026-11-05 22:30 | M2/M7 | 新增 **App 内网页登录**：WKWebView 打开 `/oauth/login`，用户完成手机验证码/密码登录后，轮询 localStorage `credentials_*` 自动抓 token；CI 模拟器实测页面加载成功（欢迎登录光鸭云盘 / 获取验证码 / 2 输入框），截图归档 `docs/screenshots/ui/` | `WebLoginView.swift`、`ui-preview.yml` | ✅ |
 | 2026-11-05 23:00 | M2 | 按用户反馈**精简登录页**：只保留扫码 / 网页登录 / 账号密码登录；去掉授权页、Token、演示入口与轮询文案；**点击二维码即刷新**；移除失败时自动自检；版本 1.0.2 | `LoginView.swift` | ✅ |
+| 2026-11-06 00:05 | M2 | **文件接口路径修正**：官方网页用 `/userres/v1/file/get_file_list` 与 `/userres/v1/get_res_download_url`，旧 `nd.bizuserres.s` 前缀返回非 JSON（用户看到的「响应解析失败」）；新增设置页调试区：复制 access_token + 测试根目录文件接口 | `GuangyaFileService`、`SettingsView` | ✅ |
 
 ---
 

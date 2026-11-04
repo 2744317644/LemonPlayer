@@ -18,6 +18,9 @@ struct SettingsView: View {
     @State private var deviceCodeProbe: String?
     @State private var storageLimitGB = UserDefaults.standard.integer(forKey: "lemonplayer.downloads.limitGB")
     @State private var fontCount = SubtitleFontStore.count
+    @State private var tokenCopyNotice: String?
+    @State private var fileTestResult: String?
+    @State private var isTestingFile = false
 
     var body: some View {
         Form {
@@ -140,6 +143,43 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("调试") {
+                Button {
+                    Task {
+                        if let token = try? await session.validAccessToken() {
+                            UIPasteboard.general.string = token
+                            tokenCopyNotice = "已复制 access_token（\(token.prefix(12))…）"
+                        } else {
+                            tokenCopyNotice = "未登录或 token 不可用"
+                        }
+                    }
+                } label: {
+                    Label("复制 access_token", systemImage: "key")
+                }
+                if let tokenCopyNotice {
+                    Text(tokenCopyNotice).font(.footnote).foregroundStyle(.secondary)
+                }
+
+                Button {
+                    Task { await testFileList() }
+                } label: {
+                    HStack {
+                        Text("测试根目录文件接口")
+                        Spacer()
+                        if isTestingFile { ProgressView() }
+                    }
+                }
+                .disabled(isTestingFile)
+                if let fileTestResult {
+                    Text(fileTestResult)
+                        .font(.footnote)
+                        .foregroundStyle(fileTestResult.hasPrefix("✅") ? .green : .red)
+                }
+                Text("排查用：复制 token 发给开发者，或查看文件接口原始响应片段。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("关于") {
                 LabeledContent("版本", value: LemonCore.version)
                 LabeledContent("构建", value: LemonCore.build)
@@ -169,6 +209,28 @@ struct SettingsView: View {
     private func refreshStorage() async {
         downloadedBytes = await DownloadManager.shared.totalDownloadedBytes()
         completedCount = await DownloadManager.shared.completedCount()
+    }
+
+    /// 直接打文件接口，展示原始响应片段（排查解析/路径问题）。
+    private func testFileList() async {
+        isTestingFile = true
+        fileTestResult = nil
+        defer { isTestingFile = false }
+        do {
+            let token = try await session.validAccessToken()
+            let service = GuangyaFileService(identity: session.identity)
+            let page = try await service.listFiles(
+                parentID: "",
+                page: 0,
+                pageSize: 20,
+                orderBy: 3,
+                sortType: 0,
+                accessToken: token
+            )
+            fileTestResult = "✅ 根目录 \(page.items.count) 项，total=\(page.total)"
+        } catch {
+            fileTestResult = "❌ \(error.localizedDescription)"
+        }
     }
 
     /// 用一个故意无效的 token 请求 /user/me：
