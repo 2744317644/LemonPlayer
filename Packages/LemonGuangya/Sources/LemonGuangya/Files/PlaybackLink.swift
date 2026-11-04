@@ -15,19 +15,19 @@ public struct PlaybackLink: Sendable, Equatable {
     /// 直链请求必须携带的头部：Referer 与浏览器 UA（两个参考实现都这么做）。
     public static func playbackHeaders() -> [String: String] {
         [
-            "Referer": "https://www.guangyupan.com/",
+            "Referer": "https://www.guangyapan.com/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
         ]
     }
 
-    /// 解析 `get_res_download_url` 的响应体（`{code,msg,data:{signedURL,downloadUrl}}`）。
+    /// 解析 `get_res_download_url` 的响应体（成功为 `{msg,data:{signedURL,downloadUrl}}`，无 code）。
     public static func decode(from data: Data) throws -> PlaybackLink {
         struct Envelope: Decodable {
             struct Payload: Decodable {
                 let signedURL: String?
                 let downloadUrl: String?
             }
-            let code: Int
+            let code: Int?
             let msg: String?
             let data: Payload?
         }
@@ -38,8 +38,9 @@ public struct PlaybackLink: Sendable, Equatable {
         } catch {
             throw GuangyaError.api(code: -1, message: "直链响应解析失败")
         }
-        guard envelope.code == 0 else {
-            throw envelope.code == 117 ? GuangyaError.tokenExpired : GuangyaError.api(code: envelope.code, message: envelope.msg ?? "未知错误")
+        let code = envelope.code ?? 0
+        guard code == 0 else {
+            throw code == 117 ? GuangyaError.tokenExpired : GuangyaError.api(code: code, message: envelope.msg ?? "未知错误")
         }
         // signedURL 为空串时也要回退 downloadUrl（实现用 `or`，不是 `??`）
         let rawURL: String? = {

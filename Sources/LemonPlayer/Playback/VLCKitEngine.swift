@@ -66,7 +66,7 @@ final class VLCKitEngine: NSObject, PlaybackEngine {
 
         let media = VLCMedia(url: source.url)
         media.addOption(":network-caching=1500")
-        media.addOption(":http-referrer=\(source.headers["Referer"] ?? "https://www.guangyupan.com/")")
+        media.addOption(":http-referrer=\(source.headers["Referer"] ?? "https://www.guangyapan.com/")")
         if let userAgent = source.headers["User-Agent"] {
             media.addOption(":http-user-agent=\(userAgent)")
         }

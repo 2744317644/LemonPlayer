@@ -120,7 +120,8 @@ public struct GuangyaFileService: Sendable {
             let list: [GuangyaFile]?
         }
 
-        let code: Int
+        // 成功响应通常没有 code 字段（只有 msg/data），错误响应才有 code
+        let code: Int?
         let msg: String?
         let data: Payload?
     }
@@ -147,11 +148,12 @@ public struct GuangyaFileService: Sendable {
             )
         }
 
-        guard envelope.code == 0 else {
-            if envelope.code == 117 {
+        let code = envelope.code ?? 0
+        guard code == 0 else {
+            if code == 117 {
                 throw GuangyaError.tokenExpired
             }
-            throw GuangyaError.api(code: envelope.code, message: envelope.msg ?? "未知错误")
+            throw GuangyaError.api(code: code, message: envelope.msg ?? "未知错误")
         }
 
         let payload = envelope.data
