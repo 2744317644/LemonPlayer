@@ -9,6 +9,7 @@ import LemonPersistence
 enum TokenLoginResult: Equatable {
     case success(String)
     case invalidFormat
+    case invalidCredentials
     case unauthorized
     case failed(String)
 }
@@ -123,6 +124,38 @@ final class SessionStore {
             }
             if let http = error as? HTTPError {
                 return .failed(http.localizedDescription)
+            }
+            return .failed(error.localizedDescription)
+        }
+    }
+
+    /// 账号密码登录：/v1/auth/signin → token → /user/me 探针 → 落库。
+    func signin(username: String, password: String) async -> TokenLoginResult {
+        do {
+            let bundle = try await auth.signin(username: username, password: password)
+            let me = try await auth.me(accessToken: bundle.accessToken)
+            let credentials = Credentials(
+                accessToken: bundle.accessToken,
+                refreshToken: bundle.refreshToken,
+                expiresAt: Date().addingTimeInterval(TimeInterval(bundle.expiresIn)),
+                subject: me.subject
+            )
+            volatileCredentials = credentials
+            try? await tokens.save(credentials)
+            state = .loggedIn(subject: me.subject)
+            Task { await DiagnosticsCenter.shared.log(.info, "auth", "账号密码登录成功") }
+            return .success(me.subject)
+        } catch {
+            Task { await DiagnosticsCenter.shared.log(.error, "auth", "账号密码登录失败：\(error.localizedDescription)") }
+            if let guangya = error as? GuangyaError {
+                switch guangya {
+                case .tokenExpired, .unauthorized:
+                    return .unauthorized
+                case .api(let code, _) where code == 4022:
+                    return .invalidCredentials
+                default:
+                    return .failed(guangya.localizedDescription)
+                }
             }
             return .failed(error.localizedDescription)
         }

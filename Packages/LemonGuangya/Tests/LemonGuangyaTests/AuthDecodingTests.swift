@@ -59,4 +59,30 @@ final class AuthDecodingTests: XCTestCase {
         XCTAssertTrue(identity.sign.hasPrefix("wdi10."))
         XCTAssertTrue(identity.sign.contains(identity.deviceID))
     }
+
+    func testLenientDecodeTopLevel() throws {
+        let json = #"""
+        {"access_token":"a1","refresh_token":"r1","expires_in":60,"sub":"u1"}
+        """#
+        let bundle = try TokenBundle.decodeLenient(from: Data(json.utf8))
+        XCTAssertEqual(bundle.accessToken, "a1")
+        XCTAssertEqual(bundle.refreshToken, "r1")
+        XCTAssertEqual(bundle.expiresIn, 60)
+        XCTAssertEqual(bundle.subject, "u1")
+    }
+
+    func testLenientDecodeNestedData() throws {
+        let json = #"""
+        {"code":0,"data":{"access_token":"a2","refresh_token":"r2","expires_in":120,"sub":"u2"}}
+        """#
+        let bundle = try TokenBundle.decodeLenient(from: Data(json.utf8))
+        XCTAssertEqual(bundle.accessToken, "a2")
+        XCTAssertEqual(bundle.refreshToken, "r2")
+        XCTAssertEqual(bundle.expiresIn, 120)
+        XCTAssertEqual(bundle.subject, "u2")
+    }
+
+    func testLenientDecodeMissingTokenThrows() {
+        XCTAssertThrowsError(try TokenBundle.decodeLenient(from: Data("{}".utf8)))
+    }
 }

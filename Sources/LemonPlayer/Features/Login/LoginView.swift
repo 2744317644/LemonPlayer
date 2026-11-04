@@ -8,6 +8,7 @@ struct LoginView: View {
     @State private var model: LoginViewModel?
     @State private var showTokenSheet = false
     @State private var showDemo = false
+    @State private var showAccountSheet = false
 
     var body: some View {
         NavigationStack {
@@ -17,6 +18,7 @@ struct LoginView: View {
                         model: model,
                         onOpenAuthorization: { url in openURL(url) },
                         onShowTokenLogin: { showTokenSheet = true },
+                        onShowAccountLogin: { showAccountSheet = true },
                         onShowDemo: { showDemo = true }
                     )
                 } else {
@@ -44,6 +46,11 @@ struct LoginView: View {
                 await session.loginWithAccessToken(token)
             }
         }
+        .sheet(isPresented: $showAccountSheet) {
+            AccountLoginSheet { username, password in
+                await session.signin(username: username, password: password)
+            }
+        }
         .sheet(isPresented: $showDemo) {
             NavigationStack {
                 DemoPlayerView()
@@ -61,6 +68,7 @@ private struct LoginStatusView: View {
     let model: LoginViewModel
     let onOpenAuthorization: (URL) -> Void
     let onShowTokenLogin: () -> Void
+    let onShowAccountLogin: () -> Void
     let onShowDemo: () -> Void
 
     var body: some View {
@@ -191,6 +199,14 @@ private struct LoginStatusView: View {
             Spacer(minLength: 0)
 
             Button {
+                onShowAccountLogin()
+            } label: {
+                Label("使用账号密码登录", systemImage: "person.crop.circle")
+                    .font(.footnote)
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button {
                 onShowTokenLogin()
             } label: {
                 Text("无法扫码？使用 Token 登录")
@@ -307,6 +323,8 @@ private struct TokenLoginSheet: View {
                                 dismiss()
                             case .invalidFormat:
                                 errorMessage = "格式不对：需要三段由 . 分隔的 JWT（以 eyJ 开头）"
+                            case .invalidCredentials:
+                                errorMessage = "账号或密码错误"
                             case .unauthorized:
                                 errorMessage = "Token 无效或已过期，请重新获取（401/117）"
                             case .failed(let reason):
@@ -324,6 +342,82 @@ private struct TokenLoginSheet: View {
                 }
             }
             .navigationTitle("Token 登录")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                Button("取消") { dismiss() }
+            }
+        }
+    }
+}
+
+private struct AccountLoginSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var username = ""
+    @State private var password = ""
+    @State private var errorMessage: String?
+    @State private var isSubmitting = false
+
+    let onSubmit: (String, String) async -> TokenLoginResult
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("账号（手机号 / 邮箱 / 用户名）", text: $username)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.emailAddress)
+                    SecureField("密码", text: $password)
+                } header: {
+                    Text("账号密码登录")
+                } footer: {
+                    Text("使用你在光鸭云盘注册的账号。密码仅用于换取 token，不会保存密码本身；token 保存在本机 Keychain。")
+                }
+
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                    }
+                }
+
+                Section {
+                    Button {
+                        Task {
+                            isSubmitting = true
+                            errorMessage = nil
+                            let result = await onSubmit(
+                                username.trimmingCharacters(in: .whitespacesAndNewlines),
+                                password
+                            )
+                            isSubmitting = false
+                            switch result {
+                            case .success:
+                                dismiss()
+                            case .invalidCredentials:
+                                errorMessage = "账号或密码错误"
+                            case .invalidFormat:
+                                errorMessage = "账号格式不正确"
+                            case .unauthorized:
+                                errorMessage = "登录被拒绝，请稍后重试"
+                            case .failed(let reason):
+                                errorMessage = "登录失败：\(reason)"
+                            }
+                        }
+                    } label: {
+                        if isSubmitting {
+                            ProgressView()
+                        } else {
+                            Text("登录")
+                        }
+                    }
+                    .disabled(
+                        username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            || password.isEmpty
+                            || isSubmitting
+                    )
+                }
+            }
+            .navigationTitle("账号登录")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 Button("取消") { dismiss() }

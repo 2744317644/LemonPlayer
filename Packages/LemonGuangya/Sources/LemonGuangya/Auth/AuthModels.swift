@@ -71,6 +71,38 @@ public struct TokenBundle: Codable, Sendable, Equatable {
         self.tokenType = tokenType
         self.subject = subject
     }
+
+    /// 宽容解析：登录接口（signin / device token）不同版本可能把 token 放在顶层或 `data` 里。
+    public static func decodeLenient(from data: Data) throws -> TokenBundle {
+        if let bundle = try? JSONDecoder().decode(TokenBundle.self, from: data),
+           !bundle.accessToken.isEmpty {
+            return bundle
+        }
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw GuangyaError.api(code: -1, message: "登录响应无法解析")
+        }
+
+        func find(_ key: String, in dictionary: [String: Any], depth: Int = 0) -> Any? {
+            if let value = dictionary[key] { return value }
+            guard depth < 3 else { return nil }
+            for (_, value) in dictionary {
+                if let nested = value as? [String: Any],
+                   let found = find(key, in: nested, depth: depth + 1) {
+                    return found
+                }
+            }
+            return nil
+        }
+
+        guard let access = (find("access_token", in: object) ?? find("accessToken", in: object)) as? String,
+              !access.isEmpty else {
+            throw GuangyaError.api(code: -1, message: "登录响应缺少 access_token")
+        }
+        let refresh = (find("refresh_token", in: object) ?? find("refreshToken", in: object)) as? String ?? ""
+        let expires = (find("expires_in", in: object) ?? find("expiresIn", in: object)) as? Int ?? 3600
+        let subject = (find("sub", in: object) ?? find("subject", in: object)) as? String
+        return TokenBundle(accessToken: access, refreshToken: refresh, expiresIn: expires, subject: subject)
+    }
 }
 
 /// 当前用户（`GET /v1/user/me`）。仅 `sub` 字段可靠，其余字段未验证，不建模。

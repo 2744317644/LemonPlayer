@@ -86,7 +86,39 @@ public struct GuangyaAuthClient: Sendable {
         return DevicePollResult.decode(data: response.data, statusCode: response.statusCode)
     }
 
-    // MARK: - ③ 刷新 token（refresh_token 可能轮换，必须回存）
+    // MARK: - ③ 账号密码登录（/v1/auth/signin，字段：client_id + username + password）
+
+    public func signin(username: String, password: String) async throws -> TokenBundle {
+        struct Body: Encodable {
+            let clientID = GuangyaAuthClient.clientID
+            let username: String
+            let password: String
+
+            enum CodingKeys: String, CodingKey {
+                case clientID = "client_id"
+                case username
+                case password
+            }
+        }
+
+        let request = try HTTPRequest.json(
+            url: Self.accountBaseURL.appendingPathComponent("v1/auth/signin"),
+            headers: accountHeaders,
+            body: Body(username: username, password: password)
+        )
+        let response = try await http.send(request)
+        guard response.isSuccess else {
+            let raw = Self.message(from: response.data)
+            // 4022 = invalid_account_or_password
+            if raw.contains("invalid_account_or_password") || raw.contains("verification failed") {
+                throw GuangyaError.api(code: 4022, message: "账号或密码错误")
+            }
+            throw GuangyaError.requestFailed(statusCode: response.statusCode, message: raw)
+        }
+        return try TokenBundle.decodeLenient(from: response.data)
+    }
+
+    // MARK: - ④ 刷新 token（refresh_token 可能轮换，必须回存）
 
     public func refresh(refreshToken: String) async throws -> TokenBundle {
         struct Body: Encodable {
