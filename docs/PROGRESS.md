@@ -124,6 +124,7 @@
 | 2026-11-05 19:20 | M2 | 登录容错：`/user/me` 探针失败不再阻断（token 仍落库）；signin 成功日志记录 token 长度/refresh 有无；发布 `v1.0.0-rc22` | Release `v1.0.0-rc22` | ✅ |
 | 2026-11-05 19:35 | 发布 | 发布前自检：7 包 **86 用例全绿**（1 skipped）；DELIVERY/REGRESSION/README 状态对齐 rc22，准备 v1.0.0 冻结 | `docs/**` | ✅ |
 | 2026-11-05 20:05 | 发布 | 后台下载会话冷启动恢复修复；CI 全绿后打 **`v1.0.0` 正式版**（非预发布，IPA 17.7MB + SHA256） | https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0 | ✅ |
+| 2026-11-05 20:40 | 收口 | **目标收口**：v1.0.0 交付完成；安全/隐私审查通过；遗留 P2（MKV PiP/AirPlay）进入 v1.1 候选，不阻塞交付 | `docs/DELIVERY.md` | ✅ |
 
 ---
 
