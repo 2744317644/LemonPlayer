@@ -95,56 +95,74 @@ final class SessionStore {
         state = .loggedOut
     }
 
-    /// 兜底登录：直接粘贴 access_token（JWT）。先探测 /user/me，成功才落库。
+    /// 兜底登录：直接粘贴 access_token（JWT）。
+    /// 只强校验 JWT 形态；/user/me 失败不阻断（可能只是探针接口限制）。
     func loginWithAccessToken(_ rawToken: String) async -> TokenLoginResult {
         let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
         guard token.split(separator: ".").count == 3 else { return .invalidFormat }
+
+        var subject: String?
         do {
-            let me = try await auth.me(accessToken: token)
-            let credentials = Credentials(
-                accessToken: token,
-                refreshToken: "",
-                expiresAt: Date().addingTimeInterval(3600),
-                subject: me.subject
-            )
-            volatileCredentials = credentials
-            try? await tokens.save(credentials)
-            state = .loggedIn(subject: me.subject)
-            Task { await DiagnosticsCenter.shared.log(.info, "auth", "Token 直登成功") }
-            return .success(me.subject)
+            subject = try await auth.me(accessToken: token).subject
         } catch {
-            Task { await DiagnosticsCenter.shared.log(.error, "auth", "Token 直登失败：\(error.localizedDescription)") }
-            if let guangya = error as? GuangyaError {
-                switch guangya {
-                case .tokenExpired, .unauthorized:
-                    return .unauthorized
-                default:
-                    return .failed(guangya.localizedDescription)
-                }
+            Task {
+                await DiagnosticsCenter.shared.log(
+                    .warning,
+                    "auth",
+                    "Token 直登 /user/me 探测失败（继续登录）：\(error.localizedDescription)"
+                )
             }
-            if let http = error as? HTTPError {
-                return .failed(http.localizedDescription)
-            }
-            return .failed(error.localizedDescription)
         }
+
+        let credentials = Credentials(
+            accessToken: token,
+            refreshToken: "",
+            expiresAt: Date().addingTimeInterval(3600),
+            subject: subject
+        )
+        volatileCredentials = credentials
+        try? await tokens.save(credentials)
+        state = .loggedIn(subject: subject ?? "已登录")
+        Task { await DiagnosticsCenter.shared.log(.info, "auth", "Token 直登成功") }
+        return .success(subject ?? "已登录")
     }
 
     /// 账号密码登录：/v1/auth/signin → token → /user/me 探针 → 落库。
     func signin(username: String, password: String) async -> TokenLoginResult {
         do {
             let bundle = try await auth.signin(username: username, password: password)
-            let me = try await auth.me(accessToken: bundle.accessToken)
+
+            // 探针失败不阻断：token 可能对 /user/me 不可见，但文件接口仍可用
+            var subject: String? = bundle.subject
+            do {
+                subject = try await auth.me(accessToken: bundle.accessToken).subject
+            } catch {
+                Task {
+                    await DiagnosticsCenter.shared.log(
+                        .warning,
+                        "auth",
+                        "signin 后 /user/me 探测失败（继续登录）：\(error.localizedDescription)"
+                    )
+                }
+            }
+
             let credentials = Credentials(
                 accessToken: bundle.accessToken,
                 refreshToken: bundle.refreshToken,
                 expiresAt: Date().addingTimeInterval(TimeInterval(bundle.expiresIn)),
-                subject: me.subject
+                subject: subject
             )
             volatileCredentials = credentials
             try? await tokens.save(credentials)
-            state = .loggedIn(subject: me.subject)
-            Task { await DiagnosticsCenter.shared.log(.info, "auth", "账号密码登录成功") }
-            return .success(me.subject)
+            state = .loggedIn(subject: subject ?? "已登录")
+            Task {
+                await DiagnosticsCenter.shared.log(
+                    .info,
+                    "auth",
+                    "账号密码登录成功（token \(bundle.accessToken.count) 字符，refresh \(bundle.refreshToken.isEmpty ? "无" : "有")）"
+                )
+            }
+            return .success(subject ?? "已登录")
         } catch {
             Task { await DiagnosticsCenter.shared.log(.error, "auth", "账号密码登录失败：\(error.localizedDescription)") }
             if let guangya = error as? GuangyaError {
