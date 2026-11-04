@@ -7,16 +7,18 @@ struct LoginView: View {
     @Environment(\.openURL) private var openURL
     @State private var model: LoginViewModel?
     @State private var showTokenSheet = false
+    @State private var showDemo = false
 
     var body: some View {
         NavigationStack {
             Group {
                 if let model {
-                    LoginStatusView(model: model) { url in
-                        openURL(url)
-                    } onShowTokenLogin: {
-                        showTokenSheet = true
-                    }
+                    LoginStatusView(
+                        model: model,
+                        onOpenAuthorization: { url in openURL(url) },
+                        onShowTokenLogin: { showTokenSheet = true },
+                        onShowDemo: { showDemo = true }
+                    )
                 } else {
                     ProgressView()
                 }
@@ -42,6 +44,16 @@ struct LoginView: View {
                 await session.loginWithAccessToken(token)
             }
         }
+        .sheet(isPresented: $showDemo) {
+            NavigationStack {
+                DemoPlayerView()
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("关闭") { showDemo = false }
+                        }
+                    }
+            }
+        }
     }
 }
 
@@ -49,6 +61,7 @@ private struct LoginStatusView: View {
     let model: LoginViewModel
     let onOpenAuthorization: (URL) -> Void
     let onShowTokenLogin: () -> Void
+    let onShowDemo: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
@@ -158,12 +171,18 @@ private struct LoginStatusView: View {
                     }
                     .buttonStyle(.borderedProminent)
 
-                    Button("复制诊断信息") {
-                        let text = (model.diagnostics + [message]).joined(separator: "\n")
-                        UIPasteboard.general.string = text
+                    Button("改用 Token 登录") {
+                        onShowTokenLogin()
                     }
                     .buttonStyle(.bordered)
                 }
+
+                Button("复制诊断信息") {
+                    let text = (model.diagnostics + [message]).joined(separator: "\n")
+                    UIPasteboard.general.string = text
+                }
+                .font(.footnote)
+                .buttonStyle(.borderless)
 
             case .success:
                 ProgressView("登录成功，正在进入…")
@@ -177,6 +196,14 @@ private struct LoginStatusView: View {
                 Text("无法扫码？使用 Token 登录")
                     .font(.footnote)
             }
+
+            Button {
+                onShowDemo()
+            } label: {
+                Label("无需登录，先体验播放器", systemImage: "play.rectangle")
+                    .font(.footnote)
+            }
+            .buttonStyle(.bordered)
 
             Text("扫码即表示同意光鸭云盘的服务条款。凭据仅保存在本机 Keychain。")
                 .font(.caption2)
