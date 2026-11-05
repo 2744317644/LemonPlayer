@@ -4,7 +4,7 @@ import LemonNetwork
 /// 光鸭文件接口（只读侧）。
 public struct GuangyaFileService: Sendable {
     public static let apiBaseURL = URL(string: "https://api.guangyapan.com")!
-    public static let webReferer = "https://www.guangyupan.com/"
+    public static let webReferer = "https://www.guangyapan.com/"
 
     private let http: HTTPClient
     private let identity: DeviceIdentity
