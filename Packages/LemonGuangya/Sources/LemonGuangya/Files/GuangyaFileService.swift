@@ -34,6 +34,7 @@ public struct GuangyaFileService: Sendable {
         orderBy: Int = 3,
         sortType: Int = 1,
         fileTypes: [Int] = [],
+        resType: Int? = nil,
         accessToken: String
     ) async throws -> FileListPage {
         struct Body: Encodable {
@@ -43,6 +44,7 @@ public struct GuangyaFileService: Sendable {
             let orderBy: Int
             let sortType: Int
             let fileTypes: [Int]
+            let resType: Int?
         }
 
         let request = try HTTPRequest.json(
@@ -54,7 +56,8 @@ public struct GuangyaFileService: Sendable {
                 pageSize: pageSize,
                 orderBy: orderBy,
                 sortType: sortType,
-                fileTypes: fileTypes
+                fileTypes: fileTypes,
+                resType: resType
             )
         )
         let response = try await http.send(request)
@@ -62,14 +65,14 @@ public struct GuangyaFileService: Sendable {
         return FileListPage(total: envelope.total, items: envelope.items)
     }
 
-    /// 全盘视频聚合（`parentId: "*"` + `fileTypes: [2]`）。
-    /// 用于媒体库扫描；大账号注意调用量，默认最多 20 页（2000 个视频）。
+    /// 全盘视频聚合：优先 `parentId:"*" + resType:1 + fileTypes:[2]`；
+    /// 若服务端返回的仍是目录（旧行为），回退为递归遍历。
     public func listAllVideos(
         pageSize: Int = 100,
         maxPages: Int = 20,
         accessToken: String
     ) async throws -> [GuangyaFile] {
-        var results: [GuangyaFile] = []
+        var aggregated: [GuangyaFile] = []
         var page = 0
         while page < maxPages {
             let current = try await listFiles(
@@ -79,13 +82,67 @@ public struct GuangyaFileService: Sendable {
                 orderBy: 3,
                 sortType: 1,
                 fileTypes: [2],
+                resType: 1,
                 accessToken: accessToken
             )
-            results.append(contentsOf: current.items)
-            if !current.hasMore(pageSize: pageSize, accumulated: results.count) {
+            let videos = current.items.filter { !$0.isFolder && $0.kind == .video }
+            aggregated.append(contentsOf: videos)
+            if current.items.count < pageSize || aggregated.count >= 5000 {
                 break
             }
             page += 1
+        }
+        if !aggregated.isEmpty {
+            return aggregated
+        }
+        return try await recursiveVideos(
+            pageSize: pageSize,
+            maxPages: maxPages,
+            accessToken: accessToken
+        )
+    }
+
+    /// 递归遍历目录兜底（聚合视图不可用/返回目录时）。
+    private func recursiveVideos(
+        pageSize: Int,
+        maxPages: Int,
+        accessToken: String
+    ) async throws -> [GuangyaFile] {
+        var results: [GuangyaFile] = []
+        var queue: [String] = [""]
+        var visited = Set<String>()
+
+        while !queue.isEmpty {
+            if Task.isCancelled || results.count >= 5000 { break }
+            let parent = queue.removeFirst()
+            guard visited.insert(parent).inserted, visited.count <= 600 else { continue }
+
+            var page = 0
+            while page < maxPages {
+                let current: FileListPage
+                do {
+                    current = try await listFiles(
+                        parentID: parent,
+                        page: page,
+                        pageSize: pageSize,
+                        orderBy: 3,
+                        sortType: 0,
+                        accessToken: accessToken
+                    )
+                } catch {
+                    // 单个目录失败不阻断整体扫描
+                    break
+                }
+                for item in current.items {
+                    if item.isFolder {
+                        queue.append(item.id)
+                    } else if item.kind == .video {
+                        results.append(item)
+                    }
+                }
+                if current.items.count < pageSize || results.count >= 5000 { break }
+                page += 1
+            }
         }
         return results
     }
@@ -137,14 +194,19 @@ public struct GuangyaFileService: Sendable {
                 message: "HTTP \(response.statusCode) \(snippet)"
             )
         }
+        return try Self.parseFileListResponse(response.data)
+    }
 
+    /// 纯解析（可单测）：成功响应 `{msg,data:{total,list}}` 没有 `code`；
+    /// 错误响应才有 `code`（117 = token 失效）。
+    static func parseFileListResponse(_ data: Data) throws -> (total: Int, items: [GuangyaFile]) {
         let envelope: Envelope
         do {
-            envelope = try JSONDecoder().decode(Envelope.self, from: response.data)
+            envelope = try JSONDecoder().decode(Envelope.self, from: data)
         } catch {
             throw GuangyaError.api(
                 code: -1,
-                message: "响应解析失败：\(Self.snippet(response.data))"
+                message: "响应解析失败：\(Self.snippet(data))"
             )
         }
 

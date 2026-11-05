@@ -83,4 +83,28 @@ final class FilesDecodingTests: XCTestCase {
         let full = FileListPage(total: 500, items: Array(repeating: GuangyaFile(id: "y", parentID: "", name: "y", size: 0, kind: .other), count: 100))
         XCTAssertTrue(full.hasMore(pageSize: 100, accumulated: 100))
     }
+
+    /// 2026-11-05 真实响应：成功时没有 code 字段，只有 msg/data
+    func testParseRealSuccessResponseWithoutCode() throws {
+        let json = #"""
+        {"msg":"success","data":{"total":2,"list":[
+          {"fileId":"1947716972652265556","fileName":"番剧","resType":2,"dirType":1,"utime":1790428322},
+          {"fileId":"1953324602431963199","fileName":"第01话.mkv","parentId":"1947716972652265556","resType":1,"fileType":2,"fileSize":123,"utime":1790428323}
+        ]}}
+        """#
+        let page = try GuangyaFileService.parseFileListResponse(Data(json.utf8))
+        XCTAssertEqual(page.total, 2)
+        XCTAssertEqual(page.items.count, 2)
+        XCTAssertEqual(page.items[0].kind, .folder)
+        XCTAssertEqual(page.items[1].kind, .video)
+        XCTAssertEqual(page.items[1].name, "第01话.mkv")
+    }
+
+    /// 错误响应仍带 code（117 = token 失效）
+    func testParseErrorResponseCode() {
+        let json = #"{"code":117,"msg":"无效token","data":null}"#
+        XCTAssertThrowsError(try GuangyaFileService.parseFileListResponse(Data(json.utf8))) { error in
+            XCTAssertEqual(error as? GuangyaError, .tokenExpired)
+        }
+    }
 }
