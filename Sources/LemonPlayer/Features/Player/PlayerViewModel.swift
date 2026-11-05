@@ -49,6 +49,8 @@ final class PlayerViewModel {
     @ObservationIgnored private let subtitleStyleStore = SubtitleStyleStore()
     @ObservationIgnored private var progressTask: Task<Void, Never>?
     @ObservationIgnored private var noticeTask: Task<Void, Never>?
+    /// seek 后 1.2s 内不用引擎时间覆盖 UI（避免进度条被弹回原位置）
+    @ObservationIgnored private var seekGuardUntil: Date?
     @ObservationIgnored private var subtitleFiles: [GuangyaFile] = []
     @ObservationIgnored private var primaryCues: [SubtitleCue] = []
     @ObservationIgnored private var secondaryCues: [SubtitleCue] = []
@@ -132,6 +134,7 @@ final class PlayerViewModel {
     }
 
     func seek(to value: Double) {
+        seekGuardUntil = Date().addingTimeInterval(1.2)
         Task { [weak self] in
             guard let self else { return }
             await self.engine.seek(to: value)
@@ -486,7 +489,12 @@ final class PlayerViewModel {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard let self else { return }
-                self.currentTime = self.engine.currentTime
+                if let guardUntil = self.seekGuardUntil, Date() > guardUntil {
+                    self.seekGuardUntil = nil
+                }
+                if self.seekGuardUntil == nil {
+                    self.currentTime = self.engine.currentTime
+                }
                 if self.duration == 0 {
                     self.duration = self.engine.duration
                 }

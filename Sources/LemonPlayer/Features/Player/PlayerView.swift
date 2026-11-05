@@ -164,14 +164,6 @@ private struct PlayerContent: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture {
-            if activePanel != nil {
-                activePanel = nil
-                return
-            }
-            withAnimation { showControls.toggle() }
-            if showControls { scheduleHide() }
-        }
         .onAppear {
             // 进入播放默认横屏（全屏）
             OrientationManager.lock(to: .landscape)
@@ -207,6 +199,9 @@ private struct PlayerContent: View {
         HStack(spacing: 0) {
             Color.clear
                 .contentShape(Rectangle())
+                .onTapGesture {
+                    handleSurfaceTap()
+                }
                 .onTapGesture(count: 2) {
                     model.togglePlay()
                     showControls = true
@@ -215,6 +210,9 @@ private struct PlayerContent: View {
                 .gesture(verticalDrag(side: .brightness))
             Color.clear
                 .contentShape(Rectangle())
+                .onTapGesture {
+                    handleSurfaceTap()
+                }
                 .onTapGesture(count: 2) {
                     model.togglePlay()
                     showControls = true
@@ -222,6 +220,15 @@ private struct PlayerContent: View {
                 }
                 .gesture(verticalDrag(side: .volume))
         }
+    }
+
+    private func handleSurfaceTap() {
+        if activePanel != nil {
+            withAnimation { activePanel = nil }
+            return
+        }
+        withAnimation { showControls.toggle() }
+        if showControls { scheduleHide() }
     }
 
     private func verticalDrag(side: GestureSide) -> some Gesture {
@@ -407,7 +414,7 @@ private struct PlayerContent: View {
                         scheduleHide()
                     }
                 )
-                .frame(height: 22)
+                .frame(height: 34)
 
                 Text(model.formattedDuration)
                     .font(.caption.monospacedDigit())
@@ -559,7 +566,7 @@ private struct PlayerContent: View {
     private var speedPanel: some View {
         VStack(alignment: .leading, spacing: 2) {
             ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { value in
-                panelRowButton("\((value), specifier: "%g")x") {
+                panelRowButton(String(format: "%gx", value)) {
                     model.setRate(Float(value))
                 }
             }
@@ -687,7 +694,7 @@ private struct PlayerProgressBar: View {
             }
             .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
-            .gesture(
+            .highPriorityGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         let fraction = min(max(value.location.x / width, 0), 1)
