@@ -108,9 +108,21 @@ final class VLCKitEngine: NSObject, PlaybackEngine {
     }
 
     func addExternalSubtitle(url: URL, encoding: String.Encoding?) async throws {
-        player.addPlaybackSlave(url, type: .subtitle, enforce: false)
+        // 刚 load 完 VLC 还没进入可播放状态，此时挂字幕会被忽略：最多等 3 秒
+        var waited = 0.0
+        while !stateValue.isActive, waited < 3 {
+            try? await Task.sleep(for: .milliseconds(200))
+            waited += 0.2
+        }
+        // 播放中热挂字幕用 enforce: true，否则部分容器（MKV）不会立即生效
+        player.addPlaybackSlave(url, type: .subtitle, enforce: true)
         externalSubtitleURLs.append(url)
         refreshTracks()
+
+        // 部分容器不会自动选中外部字幕轨，显式切到最后一个（刚挂上的）字幕轨
+        if let track = subtitleTracksValue.last {
+            player.currentVideoSubTitleIndex = track.id
+        }
     }
 
     func removeExternalSubtitles() {

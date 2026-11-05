@@ -48,6 +48,7 @@ final class PlayerViewModel {
     @ObservationIgnored private let subtitlePreferenceStore = SubtitlePreferenceStore()
     @ObservationIgnored private let subtitleStyleStore = SubtitleStyleStore()
     @ObservationIgnored private var progressTask: Task<Void, Never>?
+    @ObservationIgnored private var noticeTask: Task<Void, Never>?
     @ObservationIgnored private var subtitleFiles: [GuangyaFile] = []
     @ObservationIgnored private var primaryCues: [SubtitleCue] = []
     @ObservationIgnored private var secondaryCues: [SubtitleCue] = []
@@ -111,16 +112,23 @@ final class PlayerViewModel {
     // MARK: - 控制
 
     func togglePlay() {
-        switch engine.state {
-        case .playing:
+        // 以本地 isPlaying 为准：VLCKit 在缓冲/seek 时状态会短暂变化，
+        // 不能依赖 engine.state == .playing 判断当前是否在播放。
+        if isPlaying {
             engine.pause()
             isPlaying = false
-        case .paused, .ready:
+        } else {
             engine.play()
             isPlaying = true
-        default:
-            break
         }
+    }
+
+    /// App 退到后台：暂停并落盘进度（如需后台音频可后续加开关）。
+    func pauseForBackground() {
+        guard isPlaying else { return }
+        engine.pause()
+        isPlaying = false
+        saveProgress()
     }
 
     func seek(to value: Double) {
@@ -147,6 +155,17 @@ final class PlayerViewModel {
         await engine.seek(to: saved.position)
         currentTime = saved.position
         resumeNotice = "已跳转到上次位置 \(Self.format(saved.position))"
+        scheduleNoticeClear()
+    }
+
+    /// 提示 4 秒后自动消失（避免每次点屏幕都看到「已跳转到上次位置」）。
+    private func scheduleNoticeClear() {
+        noticeTask?.cancel()
+        noticeTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            self?.resumeNotice = nil
+        }
     }
 
     private func saveProgress() {
@@ -469,7 +488,14 @@ final class PlayerViewModel {
                 if self.duration == 0 {
                     self.duration = self.engine.duration
                 }
-                self.isPlaying = (self.engine.state == .playing)
+                switch self.engine.state {
+                case .playing:
+                    self.isPlaying = true
+                case .paused, .ended:
+                    self.isPlaying = false
+                default:
+                    break // 缓冲/准备中保持原状态，避免播放中错误显示“播放”图标
+                }
                 self.refreshOverlayLines()
 
                 if self.engine.state == .ended {

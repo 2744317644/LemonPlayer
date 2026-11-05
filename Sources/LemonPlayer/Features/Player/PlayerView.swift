@@ -66,6 +66,7 @@ struct PlayerView: View {
 
 private struct PlayerContent: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     let model: PlayerViewModel
     let title: String
     @State private var showControls = true
@@ -81,6 +82,15 @@ private struct PlayerContent: View {
     private enum GestureSide {
         case brightness
         case volume
+    }
+
+    /// 左侧边缘右滑退出播放器（导航栏已隐藏，需要自己实现返回手势）。
+    private var edgeSwipe: some Gesture {
+        DragGesture(minimumDistance: 20, coordinateSpace: .global)
+            .onEnded { value in
+                guard value.startLocation.x < 48, value.translation.width > 80 else { return }
+                dismiss()
+            }
     }
 
     var body: some View {
@@ -140,10 +150,22 @@ private struct PlayerContent: View {
             }
             if showControls { scheduleHide() }
         }
-        .onAppear { scheduleHide() }
+        .onAppear {
+            // 进入播放默认横屏（全屏）
+            OrientationManager.lock(to: .landscape)
+            scheduleHide()
+        }
+        .onDisappear {
+            OrientationManager.lock(to: .portrait)
+        }
         .onChange(of: model.isPlaying) { _, playing in
             if playing { scheduleHide() }
         }
+        .onChange(of: scenePhase) { _, phase in
+            // 退到后台自动暂停（避免“退出软件还在播”）
+            if phase == .background { model.pauseForBackground() }
+        }
+        .simultaneousGesture(edgeSwipe)
         .sheet(isPresented: $showStyleSheet) {
             SubtitleStyleSheet(style: model.subtitleStyle) { style in
                 model.updateStyle(style)
@@ -343,13 +365,15 @@ private struct PlayerContent: View {
         VStack(spacing: 10) {
             if let notice = model.subtitleNotice {
                 Text(notice)
-                    .font(.caption2)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.orange)
+                    .multilineTextAlignment(.center)
             }
             if let resume = model.resumeNotice {
                 Text(resume)
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
             }
 
             HStack(spacing: 10) {
@@ -382,7 +406,10 @@ private struct PlayerContent: View {
                     .frame(width: 44, alignment: .trailing)
             }
 
+            // 底部按钮居中（VidHub 风格）
             HStack(spacing: 26) {
+                Spacer(minLength: 0)
+
                 Button {
                     model.seek(to: max(0, model.currentTime - 10))
                     scheduleHide()
@@ -411,13 +438,14 @@ private struct PlayerContent: View {
                 }
                 .accessibilityLabel("字幕样式")
 
-                Spacer()
-
-                Text(model.isOverlaySubtitleActive ? "字幕：自绘" : (model.attachedSubtitleName == nil ? "字幕：关" : "字幕：内核"))
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.6))
+                Spacer(minLength: 0)
             }
             .foregroundStyle(.white)
+
+            Text(model.isOverlaySubtitleActive ? "字幕：自绘" : (model.attachedSubtitleName == nil ? "字幕：关" : "字幕：内核"))
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.55))
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(.horizontal, 18)
         .padding(.bottom, 14)
