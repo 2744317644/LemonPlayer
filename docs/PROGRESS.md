@@ -8,12 +8,12 @@
 
 | 项目 | 值 |
 |---|---|
-| 当前里程碑 | **v1.0.3 已发布** |
+| 当前里程碑 | **v1.0.4 已发布（沉浸式播放页）** |
 | 当前阶段目标 | 用户用网页登录进网盘；文件列表/播放验证 |
 | 整体进度 | M0-M5 ✅ · M6 ✅80% · M7 ✅90% · v1.0.0~v1.0.3 已出包 |
 | 构建状态 | ✅ build CI 全绿；UI 模拟器工作流可跑 |
 | 单测覆盖率 | 7 个包 **86 个用例**（1 skipped） |
-| 最新产物 | Release `v1.0.3`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.3 |
+| 最新产物 | Release `v1.0.4`：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.4 |
 | 下一步 | 用户装 v1.0.3 验收：网页登录 → 网盘/播放/字幕 |
 | 阻塞项 | MKV PiP/AirPlay P2 |
 
@@ -179,3 +179,5 @@
 | 2026-11-06 18:40 | M2/M5 | 仓库转 **public**（Actions 免费）；媒体库聚合改 `resType:1` + 递归兜底；Referer 域名修正；完成代码 review 并输出 `docs/qa/CODE_REVIEW.md`；全包 89 用例通过 | `docs/qa/CODE_REVIEW.md` | ✅ |
 
 | 2026-11-06 18:55 | M7 | 仓库 public 后免费 runner 生效；v1.0.3 发布（文件接口/Referer/媒体库聚合/登录页精简/新图标/调试入口）；代码 review 归档 | Release `v1.0.3` | ✅ |
+
+| 2026-11-06 22:30 | M3/M4 | 用户反馈修复：播放页隐藏 TabBar/导航栏/状态栏，控制层改 VidHub 风格（顶部标题/返回/投屏，中央播放，底部时间轴+快进快退+倍速/音轨/字幕/样式，3 秒自动隐藏）；字幕下载加 Accept/Range 容错并回传 HTTP 状态；版本 1.0.4 | Release `v1.0.4` | ✅ |
