@@ -4,15 +4,22 @@ struct RootView: View {
     @Environment(SessionStore.self) private var session
 
     var body: some View {
-        Group {
-            switch session.state {
-            case .checking:
-                ProgressView("检查登录状态…")
-                    .task { await session.restore() }
-            case .loggedOut, .failed:
-                LoginView()
-            case .loggedIn:
-                MainTabView()
+        if ProcessInfo.processInfo.arguments.contains("-demoPlayer") {
+            // UI 测试 / 截图用：直接进演示播放，不用登录
+            NavigationStack {
+                DemoPlayerView()
+            }
+        } else {
+            Group {
+                switch session.state {
+                case .checking:
+                    ProgressView("检查登录状态…")
+                        .task { await session.restore() }
+                case .loggedOut, .failed:
+                    LoginView()
+                case .loggedIn:
+                    MainTabView()
+                }
             }
         }
     }
