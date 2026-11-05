@@ -110,6 +110,42 @@ public enum SeriesFolderResolver {
         return lastSeen
     }
 
+    /// 判断文件名是否是 OP/ED/NCOP/NCED/PV/CM/SP 这类附属视频（不是正片）。
+    public static func isNoiseFile(_ fileName: String) -> Bool {
+        let lower = fileName.lowercased()
+        let base = lower.split(separator: ".").dropLast().joined(separator: ".")
+
+        // 取文件名里所有 [..]/【..】/(..) 的内容 + 整体分词
+        var candidates: [String] = []
+        if let regex = try? NSRegularExpression(pattern: #"[\[【（(]([^\]】）)]+)[\]】）)]"#) {
+            let ns = base as NSString
+            let matches = regex.matches(in: base, range: NSRange(location: 0, length: ns.length))
+            candidates = matches.map { ns.substring(with: $0.range(at: 1)) }
+        }
+        candidates.append(base)
+
+        let noise = Set([
+            "ncop", "nced", "op", "ops", "ed", "eds", "pv", "cm",
+            "menu", "sp", "sps", "preview", "sample", "trailer", "teaser", "nc"
+        ])
+        for candidate in candidates {
+            let tokens = candidate
+                .split { !$0.isLetter && !$0.isNumber }
+                .map { $0.lowercased() }
+            if tokens.contains(where: { noise.contains($0) }) {
+                return true
+            }
+            // NCOP01 / NCED02 / OP01 / ED02 这种连写（区分 Opera 之类的普通单词）
+            if candidate.range(
+                of: #"^(ncop|nced|op|ed|sp|pv|cm)\d{0,3}(?:[\s\-_]|$)"#,
+                options: .regularExpression
+            ) != nil {
+                return true
+            }
+        }
+        return false
+    }
+
     /// 把目录名清洗成可搜索的标题：去组名/画质/季集标记。
     public static func cleanTitle(_ raw: String) -> String {
         var text = raw

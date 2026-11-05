@@ -2,6 +2,7 @@ import SwiftUI
 import AVKit
 import UniformTypeIdentifiers
 import LemonGuangya
+import LemonMedia
 import LemonPlayback
 import LemonSubtitle
 
@@ -30,7 +31,17 @@ struct PlayerView: View {
     var body: some View {
         Group {
             if let model {
-                PlayerContent(model: model, title: currentFile?.name ?? "播放")
+                PlayerContent(
+                    model: model,
+                    title: currentFile?.name ?? "播放",
+                    episodes: files,
+                    currentIndex: index,
+                    onSelectEpisode: { selected in
+                        guard selected != index, files.indices.contains(selected) else { return }
+                        model.stop()
+                        index = selected
+                    }
+                )
             } else {
                 ProgressView("准备播放…")
             }
@@ -69,7 +80,11 @@ private struct PlayerContent: View {
     @Environment(\.scenePhase) private var scenePhase
     let model: PlayerViewModel
     let title: String
+    let episodes: [GuangyaFile]
+    let currentIndex: Int
+    let onSelectEpisode: (Int) -> Void
     @State private var showControls = true
+    @State private var isLocked = false
     @State private var showFontImporter = false
     @State private var activePanel: PlayerPanel?
     @State private var hud: String?
@@ -82,6 +97,7 @@ private struct PlayerContent: View {
         case audio
         case speed
         case style
+        case episodes
 
         var id: String { rawValue }
     }
@@ -95,7 +111,9 @@ private struct PlayerContent: View {
     private var edgeSwipe: some Gesture {
         DragGesture(minimumDistance: 20, coordinateSpace: .global)
             .onEnded { value in
-                guard value.startLocation.x < 48, value.translation.width > 80 else { return }
+                guard !isLocked,
+                      value.startLocation.x < 48,
+                      value.translation.width > 80 else { return }
                 dismiss()
             }
     }
@@ -132,39 +150,43 @@ private struct PlayerContent: View {
             }
 
             if model.phase == .ready {
-                subtitleOverlay
+                if isLocked {
+                    lockOverlay
+                } else {
+                    subtitleOverlay
 
-                gestureLayer
+                    gestureLayer
 
-                if let hud {
-                    Text(hud)
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(.black.opacity(0.65))
-                        .clipShape(Capsule())
-                        .transition(.opacity)
-                        .animation(.easeOut(duration: 0.15), value: hud)
-                }
-
-                controls
-                    .opacity(showControls ? 1 : 0)
-                    .allowsHitTesting(showControls)
-                    .animation(.easeInOut(duration: 0.2), value: showControls)
-
-                if let panel = activePanel {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            panelCard(panel)
-                                .padding(.trailing, 18)
-                                .padding(.bottom, 132)
-                        }
+                    if let hud {
+                        Text(hud)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(.black.opacity(0.65))
+                            .clipShape(Capsule())
+                            .transition(.opacity)
+                            .animation(.easeOut(duration: 0.15), value: hud)
                     }
-                    .transition(.opacity)
-                    .animation(.easeOut(duration: 0.18), value: activePanel)
+
+                    controls
+                        .opacity(showControls ? 1 : 0)
+                        .allowsHitTesting(showControls)
+                        .animation(.easeInOut(duration: 0.2), value: showControls)
+
+                    if let panel = activePanel {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                panelCard(panel)
+                                    .padding(.trailing, 18)
+                                    .padding(.bottom, 132)
+                            }
+                        }
+                        .transition(.opacity)
+                        .animation(.easeOut(duration: 0.18), value: activePanel)
+                    }
                 }
             }
         }
@@ -200,28 +222,59 @@ private struct PlayerContent: View {
         }
     }
 
+    /// 锁屏后只保留解锁按钮（VidHub 左侧锁屏）。
+    private var lockOverlay: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Button {
+                    withAnimation { isLocked = false; showControls = true }
+                    scheduleHide()
+                } label: {
+                    Image(systemName: "lock.fill")
+                        .font(.title3)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .frame(width: 44, height: 44)
+                        .background(.black.opacity(0.4), in: Circle())
+                }
+                .accessibilityLabel("解锁屏幕")
+                .padding(.leading, 18)
+                Spacer()
+            }
+            Spacer()
+        }
+    }
+
     private var gestureLayer: some View {
         HStack(spacing: 0) {
+            // 左侧双击快退 + 上下滑动亮度
             Color.clear
                 .contentShape(Rectangle())
-                .simultaneousGesture(surfaceTapGesture)
+                .simultaneousGesture(tapZone { model.seek(to: max(0, model.currentTime - 10)); scheduleHide() })
                 .gesture(verticalDrag(side: .brightness))
+            // 中间双击播放/暂停
             Color.clear
                 .contentShape(Rectangle())
-                .simultaneousGesture(surfaceTapGesture)
+                .simultaneousGesture(tapZone {
+                    model.togglePlay()
+                    showControls = true
+                    scheduleHide()
+                })
+            // 右侧双击快进 + 上下滑动音量
+            Color.clear
+                .contentShape(Rectangle())
+                .simultaneousGesture(tapZone { model.seek(to: min(model.duration, model.currentTime + 10)); scheduleHide() })
                 .gesture(verticalDrag(side: .volume))
         }
     }
 
-    /// 双击播放/暂停，单击显示/隐藏控制层（互斥，避免双击时同时触发单击）。
-    private var surfaceTapGesture: some Gesture {
+    /// VidHub 手势：双击执行 doubleTap，单击显示/隐藏控制层。
+    private func tapZone(doubleTap: @escaping () -> Void) -> some Gesture {
         ExclusiveGesture(TapGesture(count: 2), TapGesture())
             .onEnded { value in
                 switch value {
                 case .first:
-                    model.togglePlay()
-                    showControls = true
-                    scheduleHide()
+                    doubleTap()
                 case .second:
                     handleSurfaceTap()
                 }
@@ -320,12 +373,22 @@ private struct PlayerContent: View {
     }
 
     private var controls: some View {
-        VStack(spacing: 0) {
-            topBar
-            Spacer()
-            centerPlayButton
-            Spacer()
-            bottomBar
+        ZStack {
+            VStack(spacing: 0) {
+                topBar
+                Spacer()
+                if !model.isPlaying {
+                    centerPlayButton
+                }
+                Spacer()
+                bottomBar
+            }
+
+            HStack {
+                sideControls
+                Spacer()
+            }
+            .padding(.leading, 18)
         }
         .background(
             LinearGradient(
@@ -344,38 +407,70 @@ private struct PlayerContent: View {
         .animation(.easeInOut(duration: 0.2), value: showControls)
     }
 
-    private var topBar: some View {
-        HStack(spacing: 14) {
+    /// 左侧竖排（VidHub）：锁屏、选集。
+    private var sideControls: some View {
+        VStack(spacing: 22) {
             Button {
-                dismiss()
+                withAnimation { isLocked = true; showControls = false; activePanel = nil }
             } label: {
-                Image(systemName: "chevron.left")
+                Image(systemName: "lock.open")
                     .font(.title3)
-                    .frame(width: 32, height: 32)
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 40, height: 40)
+                    .background(.black.opacity(0.28), in: Circle())
             }
-            .accessibilityLabel("返回")
+            .accessibilityLabel("锁定屏幕")
+
+            if episodes.count > 1 {
+                Button {
+                    openPanel(.episodes)
+                } label: {
+                    Image(systemName: "list.bullet")
+                        .font(.title3)
+                        .foregroundStyle(.white.opacity(0.85))
+                        .frame(width: 40, height: 40)
+                        .background(.black.opacity(0.28), in: Circle())
+                }
+                .accessibilityLabel("选集")
+            }
+        }
+    }
+
+    private var topBar: some View {
+        ZStack {
+            HStack(spacing: 14) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title3)
+                        .frame(width: 32, height: 32)
+                }
+                .accessibilityLabel("返回")
+
+                Spacer()
+
+                if model.isAVPlayerEngine {
+                    AirPlayRouteView()
+                        .frame(width: 26, height: 26)
+
+                    if model.isPiPAvailable {
+                        Button {
+                            model.togglePiP()
+                        } label: {
+                            Image(systemName: "pip")
+                                .font(.title3)
+                        }
+                        .accessibilityLabel("画中画")
+                    }
+                }
+            }
 
             Text(title)
                 .font(.subheadline.weight(.medium))
                 .lineLimit(1)
                 .foregroundStyle(.white.opacity(0.9))
-
-            Spacer()
-
-            if model.isAVPlayerEngine {
-                AirPlayRouteView()
-                    .frame(width: 26, height: 26)
-
-                if model.isPiPAvailable {
-                    Button {
-                        model.togglePiP()
-                    } label: {
-                        Image(systemName: "pip")
-                            .font(.title3)
-                    }
-                    .accessibilityLabel("画中画")
-                }
-            }
+                .padding(.horizontal, 80)
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 18)
@@ -512,6 +607,8 @@ private struct PlayerContent: View {
                 speedPanel
             case .style:
                 stylePanel
+            case .episodes:
+                episodesPanel
             }
         }
         .frame(width: 320, alignment: .leading)
@@ -519,6 +616,41 @@ private struct PlayerContent: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
         .environment(\.colorScheme, .dark)
         .shadow(color: .black.opacity(0.35), radius: 24, y: 8)
+    }
+
+    /// 同文件夹选集（VidHub 左侧选集）。
+    private var episodesPanel: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("选集（\(currentIndex + 1)/\(episodes.count)）")
+                .font(.headline)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 4)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(episodes.enumerated()), id: \.offset) { offset, episode in
+                        Button {
+                            activePanel = nil
+                            onSelectEpisode(offset)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: offset == currentIndex ? "play.circle.fill" : "circle")
+                                    .font(.footnote)
+                                Text(SeriesFolderResolver.cleanTitle(episode.name))
+                                    .font(.subheadline)
+                                    .lineLimit(1)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 7)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .frame(maxHeight: 300)
+        }
     }
 
     private var subtitlePanel: some View {

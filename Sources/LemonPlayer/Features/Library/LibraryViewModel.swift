@@ -81,7 +81,12 @@ final class LibraryViewModel {
             let videoFiles = media.files.filter { $0.kind == .video }
             statusMessage = "找到 \(videoFiles.count) 个视频（\(media.folders.count) 个目录），正在匹配…"
 
-            let inputs = videoFiles.map { file -> VideoFile in
+            let inputs = videoFiles.compactMap { file -> VideoFile? in
+                // NCOP/NCED/OP/ED/SPs 等附属视频不算正片
+                if SeriesFolderResolver.isNoiseFile(file.name) { return nil }
+                if let parent = folderMap[file.parentID], SeriesFolderResolver.isNoiseFolder(parent.name) {
+                    return nil
+                }
                 let resolved = SeriesFolderResolver.resolveSeriesFolder(
                     forFileParent: file.parentID,
                     folders: folderMap
@@ -130,12 +135,17 @@ final class LibraryViewModel {
                     let names = subjects.map(\.displayName)
                     if let index = TitleMatcher.pickBest(title: title, candidates: names) {
                         let subject = subjects[index]
+                        let episodeTitles = await Self.fetchEpisodeTitles(
+                            client: client,
+                            subjectID: subject.id
+                        )
                         let match = LibraryMatch(
                             bangumiID: subject.id,
                             title: subject.displayName,
                             coverURL: subject.coverURL?.absoluteString,
                             year: Int(String(subject.date?.prefix(4) ?? "")),
-                            score: subject.rating?.score
+                            score: subject.rating?.score,
+                            episodeTitles: episodeTitles
                         )
                         await cache.store(match, for: title)
                         return match
@@ -175,6 +185,27 @@ final class LibraryViewModel {
         } catch {
             phase = .failed(error.localizedDescription)
         }
+    }
+
+    /// 拉取 Bangumi 分集标题（中文优先），失败返回空字典。
+    nonisolated private static func fetchEpisodeTitles(
+        client: BangumiClient,
+        subjectID: Int
+    ) async -> [Int: String] {
+        guard let episodes = try? await client.episodes(subjectID: subjectID, type: 0) else {
+            return [:]
+        }
+        var titles: [Int: String] = [:]
+        for episode in episodes {
+            // ep 是本季内集数（文件按本季编号），sort 是全系列连续集数
+            let number = Int(episode.ep ?? episode.sort ?? 0)
+            guard number > 0 else { continue }
+            let name = (episode.nameCN?.isEmpty == false ? episode.nameCN : episode.name)
+            if let name, !name.isEmpty {
+                titles[number] = name
+            }
+        }
+        return titles
     }
 
     /// 罗马音/英文名常见的标点差异：给出 2 个候选关键词。

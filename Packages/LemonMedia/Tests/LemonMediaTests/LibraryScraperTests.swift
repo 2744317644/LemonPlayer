@@ -45,6 +45,39 @@ final class LibraryScraperTests: XCTestCase {
         XCTAssertEqual(series[0].episodes.count, 1)
     }
 
+    /// 识别到 Bangumi 后，剧集显示名用中文分集标题。
+    func testBuildUsesBangumiEpisodeTitles() async {
+        let files = [
+            file("1", "Show - 01.mkv"),
+            file("2", "Show - 02.mkv"),
+            file("3", "Show - 03.mkv")
+        ]
+        let series = await LibraryScraper.build(files: files) { _ in
+            LibraryMatch(
+                bangumiID: 42,
+                title: "番剧",
+                coverURL: nil,
+                year: 2024,
+                score: 8.1,
+                episodeTitles: [1: "第一次见面", 2: "第二集标题"]
+            )
+        }
+        XCTAssertEqual(series[0].episodes[0].displayName, "第一次见面")
+        XCTAssertEqual(series[0].episodes[1].displayName, "第二集标题")
+        XCTAssertEqual(series[0].episodes[2].displayName, "第3话")
+    }
+
+    /// NCOP/NCED/OP/ED/SP 这类文件不应该算正片。
+    func testNoiseVideoFiles() {
+        XCTAssertTrue(SeriesFolderResolver.isNoiseFile("[NCOP] MyGO!!!!!.mkv"))
+        XCTAssertTrue(SeriesFolderResolver.isNoiseFile("[NCED] 孤独摇滚!.mkv"))
+        XCTAssertTrue(SeriesFolderResolver.isNoiseFile("OP01.mkv"))
+        XCTAssertTrue(SeriesFolderResolver.isNoiseFile("ED02.mkv"))
+        XCTAssertTrue(SeriesFolderResolver.isNoiseFile("SP01 - Menu.mkv"))
+        XCTAssertFalse(SeriesFolderResolver.isNoiseFile("[DBD-Raws][孤独摇滚!][01][1080P].mkv"))
+        XCTAssertFalse(SeriesFolderResolver.isNoiseFile("Sousou no Frieren - 03.mkv"))
+    }
+
     func testEmptyInput() async {
         let series = await LibraryScraper.build(files: []) { _ in nil }
         XCTAssertTrue(series.isEmpty)

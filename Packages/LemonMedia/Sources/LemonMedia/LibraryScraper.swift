@@ -30,15 +30,19 @@ public struct SeriesEpisode: Codable, Hashable, Sendable, Identifiable {
     public let episode: Int?
     public let fileName: String
     public let parentID: String
+    /// Bangumi 的中文分集标题；没有时回退到「第 X 话」。
+    public let title: String?
 
-    public init(id: String, episode: Int?, fileName: String, parentID: String) {
+    public init(id: String, episode: Int?, fileName: String, parentID: String, title: String? = nil) {
         self.id = id
         self.episode = episode
         self.fileName = fileName
         self.parentID = parentID
+        self.title = title
     }
 
     public var displayName: String {
+        if let title, !title.isEmpty { return title }
         if let episode { return "第\(episode)话" }
         return fileName
     }
@@ -80,14 +84,26 @@ public struct LibraryMatch: Sendable, Equatable, Codable {
     public let coverURL: String?
     public let year: Int?
     public let score: Double?
+    /// Bangumi 每集标题（集数 → 中文标题）。
+    public let episodeTitles: [Int: String]?
 
-    public init(bangumiID: Int?, title: String, coverURL: String?, year: Int?, score: Double?) {
+    public init(
+        bangumiID: Int?,
+        title: String,
+        coverURL: String?,
+        year: Int?,
+        score: Double?,
+        episodeTitles: [Int: String]? = nil
+    ) {
         self.bangumiID = bangumiID
         self.title = title
         self.coverURL = coverURL
         self.year = year
         self.score = score
+        self.episodeTitles = episodeTitles
     }
+
+    public var titles: [Int: String] { episodeTitles ?? [:] }
 }
 
 /// 刮削编排：文件名解析 → 按标题/季分组 → Bangumi 匹配 → 生成媒体库条目。
@@ -155,6 +171,7 @@ public enum LibraryScraper {
             if Task.isCancelled { break }
             onProgress?(index, groups.count)
             let matched = await match(group.title)
+            let episodeTitles = matched?.titles ?? [:]
             let episodes = group.files
                 .map { file -> SeriesEpisode in
                     let parsed = MediaNameParser.parse(file.name)
@@ -162,7 +179,8 @@ public enum LibraryScraper {
                         id: file.id,
                         episode: parsed.episode,
                         fileName: file.name,
-                        parentID: file.parentID
+                        parentID: file.parentID,
+                        title: parsed.episode.flatMap { episodeTitles[$0] }
                     )
                 }
                 .sorted {

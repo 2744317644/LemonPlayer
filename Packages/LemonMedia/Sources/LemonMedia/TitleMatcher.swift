@@ -97,7 +97,11 @@ public enum TitleMatcher {
             }
         }
 
-        guard let bestIndex, bestScore >= 0.55 else { return nil }
+        guard let bestIndex, bestScore >= 0.55 else {
+            // 罗马音/英文标题与中文条目名相似度天然很低：信任 Bangumi 搜索排序取第一条
+            let hasHan = title.range(of: #"\p{Han}"#, options: .regularExpression) != nil
+            return (!hasHan && !candidates.isEmpty) ? 0 : nil
+        }
 
         if let season, season > 1 {
             let candidate = candidates[bestIndex]

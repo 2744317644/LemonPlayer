@@ -76,6 +76,20 @@ VIDEO_EXTS = {
 }
 
 
+def is_noise_file(name: str) -> bool:
+    """NCOP/NCED/OP/ED/PV/CM/SP/Menu 这类附属视频不算正片。"""
+    base = name.rsplit(".", 1)[0]
+    candidates = re.findall(r"[\[【（(]([^\]】）)]+)[\]】）)]", base) + [base]
+    for candidate in candidates:
+        lowered = candidate.lower()
+        tokens = [t for t in re.split(r"[^0-9a-z]+", lowered) if t]
+        if any(t in NOISE_TOKENS for t in tokens):
+            return True
+        if re.match(r"^(ncop|nced|op|ed|sp|pv|cm)\d{0,3}(?:[\s\-_]|$)", lowered):
+            return True
+    return False
+
+
 def is_video_file(node: Node) -> bool:
     if node.file_type == 2:
         return True
@@ -91,6 +105,7 @@ class SeriesGroup:
     files: list[Node] = field(default_factory=list)
     bangumi_id: int | None = None
     bangumi_title: str | None = None
+    episode_titles: dict[int, str] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------- 目录规则
@@ -286,6 +301,9 @@ def pick_best_bangumi(
             best = item
             best_score = score
     if best is None or best_score < 0.55:
+        # 罗马音/英文标题与中文条目名相似度天然很低：信任 Bangumi 搜索排序取第一条
+        if candidates and not re.search(r"[\u4e00-\u9fff]", title):
+            return candidates[0]
         return None
 
     # 想要第 N 季却只匹配到“明确是其他季”的条目：宁可判未匹配
@@ -440,6 +458,70 @@ def bangumi_search(keyword: str, retries: int = 2) -> list[dict[str, Any]]:
     return []
 
 
+# ---------------------------------------------------------------- 分集标题
+
+FXBGM = "https://fxbgm.tv"
+
+
+def fetch_episode_titles(subject_id: int) -> dict[int, str]:
+    """拉 Bangumi 分集中文标题：优先 fxbgm /p1/，失败回退官方 /v0/。
+
+    参考 C:\\Users\\柠墨白\\WorkBuddy\\script\\bangumi_episodes.py。
+    """
+    for api in ("v0", "p1"):
+        try:
+            if api == "p1":
+                url = f"{FXBGM}/p1/subjects/{subject_id}/episodes?limit=100&offset=0"
+            else:
+                url = f"https://api.bgm.tv/v0/episodes?subject_id={subject_id}&type=0&limit=100&offset=0"
+            request = urllib.request.Request(url, headers={
+                "User-Agent": UA,
+                "Accept": "application/json, text/plain, */*",
+                "Referer": FXBGM + "/",
+            })
+            with urllib.request.urlopen(request, timeout=20) as response:
+                data = json.loads(response.read().decode("utf-8"))
+            rows = data if isinstance(data, list) else (data.get("data") or [])
+            titles: dict[int, str] = {}
+            for row in rows:
+                if int(row.get("type") or 0) != 0:
+                    continue
+                # ep 是本季内的集数（1..N），sort 是全系列连续集数；文件按本季编号，优先 ep
+                number = row.get("ep")
+                if number in (None, ""):
+                    number = row.get("sort")
+                try:
+                    number = int(float(number))
+                except (TypeError, ValueError):
+                    continue
+                name = (row.get("nameCN") or row.get("name_cn") or row.get("name") or "").strip()
+                if number > 0 and name:
+                    titles[number] = name
+            if titles:
+                return titles
+        except Exception:
+            continue
+    return {}
+
+
+def parse_episode_number(name: str) -> int | None:
+    base = name.rsplit(".", 1)[0]
+    patterns = [
+        r"\[(\d{1,4})(?:v\d)?\]",
+        r"(?:^|[^0-9])E(?:P)?(\d{1,4})(?:[^0-9]|$)",
+        r"第(\d{1,4})[话話集]",
+        r"[\s\-_](\d{1,4})(?:v\d)?(?:[^0-9]|$)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, base, flags=re.IGNORECASE)
+        if match:
+            try:
+                return int(match.group(1))
+            except ValueError:
+                continue
+    return None
+
+
 # ---------------------------------------------------------------- 演练
 
 def mock_tree() -> tuple[dict[str, Node], list[Node]]:
@@ -457,10 +539,14 @@ def mock_tree() -> tuple[dict[str, Node], list[Node]]:
     folder("mygo_fonts", "Fonts", "bangdream")
     folder("mygo_op", "OP", "bangdream")
     folder("mygo_sps", "SPs", "bangdream")
+    folder("mygo_ncop", "NCOP", "bangdream")
+    folder("mygo_nced", "NCED", "bangdream")
     for i in range(1, 4):
         file(f"mygo_{i}", f"[Nekomoe kissaten&VCB-Studio] BanG Dream! It's MyGO!!!!! [{i:02d}][Ma10p_1080p][x265_flac].mkv", "bangdream")
     file("mygo_font", "FZLanTingHei.ttf", "mygo_fonts")
     file("mygo_op1", "[NCOP] MyGO!!!!!.mkv", "mygo_op")
+    file("mygo_ncop1", "[NCOP] MyGO!!!!! 01.mkv", "mygo_ncop")
+    file("mygo_nced1", "[NCED] MyGO!!!!! 01.mkv", "mygo_nced")
     file("mygo_sp1", "[SP01] Menu.mkv", "mygo_sps")
 
     folder("frieren", "Sousou no Frieren", "root_anime")
@@ -486,6 +572,8 @@ def build_groups(nodes: dict[str, Node], files: list[Node]) -> list[SeriesGroup]
     groups: dict[str, SeriesGroup] = {}
     for node in files:
         if not is_video_file(node):
+            continue
+        if is_noise_file(node.name):
             continue
         # OP/ED/SPs/Fonts 等附属目录里的视频不是正片
         direct_parent = nodes.get(node.parent_id)
@@ -576,7 +664,12 @@ def main() -> int:
             if matched:
                 group.bangumi_id = matched.get("id")
                 group.bangumi_title = matched.get("name_cn") or matched.get("name")
+                if group.bangumi_id:
+                    group.episode_titles = fetch_episode_titles(int(group.bangumi_id))
             print(f"  {group.title} -> {group.bangumi_title or '未匹配'} (id={group.bangumi_id})")
+            if group.episode_titles:
+                sample = list(group.episode_titles.items())[:3]
+                print("      分集标题：" + " | ".join(f"{n:02d} {t}" for n, t in sample))
 
     out_base = Path(args.out)
     out_base.parent.mkdir(parents=True, exist_ok=True)
@@ -588,6 +681,14 @@ def main() -> int:
                 "title": group.title,
                 "folder": group.folder_name,
                 "files": [f.name for f in group.files],
+                "episodes": [
+                    {
+                        "episode": parse_episode_number(f.name),
+                        "title": group.episode_titles.get(parse_episode_number(f.name) or 0),
+                        "file": f.name,
+                    }
+                    for f in group.files
+                ],
                 "bangumi_id": group.bangumi_id,
                 "bangumi_title": group.bangumi_title,
             }
@@ -604,7 +705,11 @@ def main() -> int:
         md.append(f"- 识别：{group.bangumi_title or '未匹配'}（Bangumi id: {group.bangumi_id}）")
         md.append(f"- 来源目录：{group.folder_name}")
         md.append("")
-        md.extend(f"  - {f.name}" for f in group.files[:5])
+        for file in group.files[:8]:
+            number = parse_episode_number(file.name)
+            title = group.episode_titles.get(number or 0)
+            label = f"{number:02d} {title}" if number and title else file.name
+            md.append(f"  - {label}")
         md.append("")
     out_base.with_suffix(".md").write_text("\n".join(md), encoding="utf-8")
     print(f"\n报告：{out_base.with_suffix('.md')} / {out_base.with_suffix('.json')}")
