@@ -135,11 +135,12 @@ final class PlayerViewModel {
 
     func seek(to value: Double) {
         seekGuardUntil = Date().addingTimeInterval(1.2)
+        // 先更新 UI，再让引擎跳转（进度条点击/拖动立即反馈）
+        currentTime = value
+        refreshOverlayLines()
         Task { [weak self] in
             guard let self else { return }
             await self.engine.seek(to: value)
-            self.currentTime = value
-            self.refreshOverlayLines()
             self.saveProgress()
         }
     }

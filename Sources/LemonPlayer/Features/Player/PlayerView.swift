@@ -145,9 +145,13 @@ private struct PlayerContent: View {
                         .background(.black.opacity(0.65))
                         .clipShape(Capsule())
                         .transition(.opacity)
+                        .animation(.easeOut(duration: 0.15), value: hud)
                 }
 
                 controls
+                    .opacity(showControls ? 1 : 0)
+                    .allowsHitTesting(showControls)
+                    .animation(.easeInOut(duration: 0.2), value: showControls)
 
                 if let panel = activePanel {
                     VStack {
@@ -160,6 +164,7 @@ private struct PlayerContent: View {
                         }
                     }
                     .transition(.opacity)
+                    .animation(.easeOut(duration: 0.18), value: activePanel)
                 }
             }
         }
@@ -173,7 +178,7 @@ private struct PlayerContent: View {
             OrientationManager.lock(to: .portrait)
         }
         .onChange(of: model.isPlaying) { _, playing in
-            if playing { scheduleHide() }
+            if playing, activePanel == nil { scheduleHide() }
         }
         .onChange(of: scenePhase) { _, phase in
             // 退到后台自动暂停；回前台保持横屏（否则从桌面返回会变竖屏）
@@ -199,36 +204,43 @@ private struct PlayerContent: View {
         HStack(spacing: 0) {
             Color.clear
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    handleSurfaceTap()
-                }
-                .onTapGesture(count: 2) {
-                    model.togglePlay()
-                    showControls = true
-                    scheduleHide()
-                }
+                .simultaneousGesture(surfaceTapGesture)
                 .gesture(verticalDrag(side: .brightness))
             Color.clear
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    handleSurfaceTap()
-                }
-                .onTapGesture(count: 2) {
+                .simultaneousGesture(surfaceTapGesture)
+                .gesture(verticalDrag(side: .volume))
+        }
+    }
+
+    /// 双击播放/暂停，单击显示/隐藏控制层（互斥，避免双击时同时触发单击）。
+    private var surfaceTapGesture: some Gesture {
+        ExclusiveGesture(TapGesture(count: 2), TapGesture())
+            .onEnded { value in
+                switch value {
+                case .first:
                     model.togglePlay()
                     showControls = true
                     scheduleHide()
+                case .second:
+                    handleSurfaceTap()
                 }
-                .gesture(verticalDrag(side: .volume))
-        }
+            }
     }
 
     private func handleSurfaceTap() {
         if activePanel != nil {
             withAnimation { activePanel = nil }
+            scheduleHide()
             return
         }
         withAnimation { showControls.toggle() }
         if showControls { scheduleHide() }
+    }
+
+    private func openPanel(_ panel: PlayerPanel) {
+        hideTask?.cancel()
+        withAnimation { activePanel = panel }
     }
 
     private func verticalDrag(side: GestureSide) -> some Gesture {
@@ -450,8 +462,7 @@ private struct PlayerContent: View {
                 .accessibilityLabel("快进 10 秒")
 
                 Button {
-                    activePanel = .speed
-                    scheduleHide()
+                    openPanel(.speed)
                 } label: {
                     Text("\(Double(model.rate), specifier: "%g")x")
                         .font(.caption.weight(.semibold))
@@ -459,24 +470,21 @@ private struct PlayerContent: View {
                 .accessibilityLabel("播放速度")
 
                 Button {
-                    activePanel = .audio
-                    scheduleHide()
+                    openPanel(.audio)
                 } label: {
                     Image(systemName: "waveform")
                 }
                 .accessibilityLabel("音轨")
 
                 Button {
-                    activePanel = .subtitles
-                    scheduleHide()
+                    openPanel(.subtitles)
                 } label: {
                     Image(systemName: model.attachedSubtitleName == nil ? "captions.bubble" : "captions.bubble.fill")
                 }
                 .accessibilityLabel("字幕")
 
                 Button {
-                    activePanel = .style
-                    scheduleHide()
+                    openPanel(.style)
                 } label: {
                     Image(systemName: "textformat.size")
                 }
@@ -544,7 +552,7 @@ private struct PlayerContent: View {
                     .padding(.horizontal, 8)
             }
             Divider().padding(.vertical, 4)
-            panelRowButton("字幕设置（字号 / 边距）") { activePanel = .style }
+            panelRowButton("字幕设置（字号 / 边距）") { openPanel(.style) }
             panelRowButton("导入 ASS 字体…") { showFontImporter = true }
         }
     }
@@ -634,7 +642,6 @@ private struct PlayerContent: View {
     private func panelRowButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button {
             action()
-            scheduleHide()
         } label: {
             Text(title)
                 .font(.subheadline)
@@ -655,12 +662,6 @@ private struct PlayerContent: View {
             withAnimation { showControls = false }
         }
     }
-
-    private func toggleFullscreen() {
-        // 播放器始终横屏，不再切竖屏
-        OrientationManager.lock(to: .landscape)
-    }
-
 
 }
 
@@ -713,77 +714,6 @@ private struct PlayerProgressBar: View {
     }
 }
 
-
-private struct SubtitleStyleSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var style: SubtitleStyle
-    private let onApply: (SubtitleStyle) -> Void
-
-    init(style: SubtitleStyle, onApply: @escaping (SubtitleStyle) -> Void) {
-        _style = State(initialValue: style)
-        self.onApply = onApply
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("预览") {
-                    ZStack {
-                        Color.black
-                        SubtitleOverlayView(
-                            lines: ["示例字幕：这是预览效果 Sample"],
-                            style: style
-                        )
-                        .padding(.vertical, 8)
-                    }
-                    .frame(height: 96)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .listRowInsets(EdgeInsets())
-                }
-
-                Section("字号") {
-                    HStack {
-                        Slider(value: Binding(get: { style.fontSize }, set: { style.fontSize = $0; onApply(style) }), in: 14...40)
-                        Text("\(Int(style.fontSize))")
-                            .monospacedDigit()
-                            .frame(width: 32)
-                    }
-                }
-
-                Section("文字颜色") {
-                    ColorPicker("颜色", selection: Binding(
-                        get: { Color(hex: style.textColorHex) },
-                        set: { style.textColorHex = $0.hexString; onApply(style) }
-                    ))
-                }
-
-                Section("描边宽度") {
-                    Slider(value: Binding(get: { style.outlineWidth }, set: { style.outlineWidth = $0; onApply(style) }), in: 0...5)
-                }
-
-                Section("背景不透明度") {
-                    Slider(value: Binding(get: { style.backgroundOpacity }, set: { style.backgroundOpacity = $0; onApply(style) }), in: 0...0.9)
-                }
-
-                Section("底部边距") {
-                    Slider(value: Binding(get: { style.bottomInset }, set: { style.bottomInset = $0; onApply(style) }), in: 20...240)
-                }
-
-                Section {
-                    Button("恢复默认") {
-                        style = .default
-                        onApply(style)
-                    }
-                }
-            }
-            .navigationTitle("字幕样式")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                Button("完成") { dismiss() }
-            }
-        }
-    }
-}
 
 #Preview {
     NavigationStack {

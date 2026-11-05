@@ -4,18 +4,19 @@ import SwiftUI
 
 /// 强制屏幕方向（iOS 16+）。用于全屏播放。
 @MainActor
+@MainActor
 enum OrientationManager {
+    /// AppDelegate 通过它回答 `supportedInterfaceOrientationsFor`：
+    /// 播放页锁 landscape 时，即使系统开了「竖屏锁定」也会以横屏呈现。
+    private(set) static var currentMask: UIInterfaceOrientationMask = .portrait
+
     static func lock(to mask: UIInterfaceOrientationMask?) {
+        currentMask = mask ?? .all
         guard let scene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .first else { return }
 
-        if let mask {
-            scene.requestGeometryUpdate(.iOS(interfaceOrientations: mask))
-        } else {
-            scene.requestGeometryUpdate(.iOS(interfaceOrientations: .all))
-        }
-
+        scene.requestGeometryUpdate(.iOS(interfaceOrientations: currentMask))
         // 让 root VC 重新询问 supportedInterfaceOrientations
         scene.windows.first?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
     }

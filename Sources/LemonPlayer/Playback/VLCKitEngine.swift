@@ -122,6 +122,16 @@ final class VLCKitEngine: NSObject, PlaybackEngine {
         // 部分容器不会自动选中外部字幕轨，显式切到最后一个（刚挂上的）字幕轨
         if let track = subtitleTracksValue.last {
             player.currentVideoSubTitleIndex = track.id
+        } else {
+            // VLC 异步解析字幕文件，稍后重试一次选轨
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(350))
+                guard let self else { return }
+                self.refreshTracks()
+                if let track = self.subtitleTracksValue.last {
+                    self.player.currentVideoSubTitleIndex = track.id
+                }
+            }
         }
     }
 
