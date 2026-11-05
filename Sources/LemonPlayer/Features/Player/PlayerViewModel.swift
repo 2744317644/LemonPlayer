@@ -281,9 +281,26 @@ final class PlayerViewModel {
         do {
             let token = try await session.validAccessToken()
             let link = try await service.playbackURL(fileID: subtitleFile.id, accessToken: token)
-            let response = try await http.send(HTTPRequest(url: link.url, headers: link.headers))
+
+            // CDN 对 Accept/Referer 敏感：先按 */* + Range 请求，失败再退普通 GET
+            var headers = link.headers
+            headers["Accept"] = "*/*"
+            headers["Range"] = "bytes=0-"
+            var response = try await http.send(HTTPRequest(url: link.url, headers: headers))
+            if !response.isSuccess {
+                headers.removeValue(forKey: "Range")
+                response = try await http.send(HTTPRequest(url: link.url, headers: headers))
+            }
             guard response.isSuccess else {
-                subtitleNotice = "字幕下载失败"
+                let status = response.statusCode
+                subtitleNotice = "字幕下载失败（HTTP \(status)）"
+                Task {
+                    await DiagnosticsCenter.shared.log(
+                        .error,
+                        "subtitle",
+                        "\(subtitleFile.name) 下载失败 HTTP \(status) host=\(link.url.host ?? "?")"
+                    )
+                }
                 return
             }
 

@@ -30,13 +30,16 @@ struct PlayerView: View {
     var body: some View {
         Group {
             if let model {
-                PlayerContent(model: model)
+                PlayerContent(model: model, title: currentFile?.name ?? "播放")
             } else {
                 ProgressView("准备播放…")
             }
         }
         .navigationTitle(currentFile?.name ?? "播放")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
+        .statusBarHidden(true)
         .task(id: index) {
             model?.stop()
             model = nil
@@ -62,7 +65,9 @@ struct PlayerView: View {
 }
 
 private struct PlayerContent: View {
+    @Environment(\.dismiss) private var dismiss
     let model: PlayerViewModel
+    let title: String
     @State private var showControls = true
     @State private var showStyleSheet = false
     @State private var showFontImporter = false
@@ -70,6 +75,8 @@ private struct PlayerContent: View {
     @State private var hud: String?
     @State private var dragStartBrightness: Double?
     @State private var dragStartVolume: Float?
+    @State private var scrubValue: Double?
+    @State private var hideTask: Task<Void, Never>?
 
     private enum GestureSide {
         case brightness
@@ -84,6 +91,7 @@ private struct PlayerContent: View {
                 .frame(width: 0, height: 0)
 
             surface
+                .ignoresSafeArea()
 
             if model.phase == .loading {
                 ProgressView("获取播放地址…")
@@ -123,16 +131,19 @@ private struct PlayerContent: View {
                 }
 
                 controls
-                    .opacity(showControls ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.2), value: showControls)
             }
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            showControls.toggle()
+            withAnimation {
+                showControls.toggle()
+            }
+            if showControls { scheduleHide() }
         }
-        .toolbar(isFullscreen ? .hidden : .visible, for: .navigationBar)
-        .statusBarHidden(isFullscreen)
+        .onAppear { scheduleHide() }
+        .onChange(of: model.isPlaying) { _, playing in
+            if playing { scheduleHide() }
+        }
         .sheet(isPresented: $showStyleSheet) {
             SubtitleStyleSheet(style: model.subtitleStyle) { style in
                 model.updateStyle(style)
@@ -243,120 +254,201 @@ private struct PlayerContent: View {
     }
 
     private var controls: some View {
-        VStack {
+        VStack(spacing: 0) {
+            topBar
+            Spacer()
+            centerPlayButton
+            Spacer()
+            bottomBar
+        }
+        .background(
+            LinearGradient(
+                stops: [
+                    .init(color: .black.opacity(0.7), location: 0),
+                    .init(color: .clear, location: 0.22),
+                    .init(color: .clear, location: 0.62),
+                    .init(color: .black.opacity(0.8), location: 1)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
+        .opacity(showControls ? 1 : 0)
+        .animation(.easeInOut(duration: 0.2), value: showControls)
+    }
+
+    private var topBar: some View {
+        HStack(spacing: 14) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.title3)
+                    .frame(width: 32, height: 32)
+            }
+            .accessibilityLabel("返回")
+
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .lineLimit(1)
+                .foregroundStyle(.white.opacity(0.9))
+
             Spacer()
 
-            VStack(spacing: 10) {
+            if model.isAVPlayerEngine {
+                AirPlayRouteView()
+                    .frame(width: 26, height: 26)
+
+                if model.isPiPAvailable {
+                    Button {
+                        model.togglePiP()
+                    } label: {
+                        Image(systemName: "pip")
+                            .font(.title3)
+                    }
+                    .accessibilityLabel("画中画")
+                }
+            }
+
+            Button {
+                toggleFullscreen()
+            } label: {
+                Image(systemName: isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                    .font(.title3)
+            }
+            .accessibilityLabel(isFullscreen ? "退出全屏" : "全屏")
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 18)
+        .padding(.top, 12)
+    }
+
+    private var centerPlayButton: some View {
+        Button {
+            model.togglePlay()
+            scheduleHide()
+        } label: {
+            Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.white)
+                .frame(width: 84, height: 84)
+                .background(.black.opacity(0.35))
+                .clipShape(Circle())
+        }
+        .accessibilityLabel(model.isPlaying ? "暂停" : "播放")
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 10) {
+            if let notice = model.subtitleNotice {
+                Text(notice)
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            }
+            if let resume = model.resumeNotice {
+                Text(resume)
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.75))
+            }
+
+            HStack(spacing: 10) {
+                Text(model.formattedPosition)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 44, alignment: .leading)
+
                 Slider(
                     value: Binding(
-                        get: { model.currentTime },
-                        set: { model.seek(to: $0) }
+                        get: { scrubValue ?? model.currentTime },
+                        set: { scrubValue = $0 }
                     ),
-                    in: 0...max(model.duration, 1)
+                    in: 0...max(model.duration, 1),
+                    onEditingChanged: { editing in
+                        if !editing, let value = scrubValue {
+                            model.seek(to: value)
+                            scrubValue = nil
+                        }
+                        if editing { scheduleHide() }
+                    }
                 )
                 .tint(.yellow)
                 .accessibilityLabel("播放进度")
                 .accessibilityValue("\(model.formattedPosition) / \(model.formattedDuration)")
 
-                HStack(spacing: 16) {
-                    Button {
-                        model.seek(to: max(0, model.currentTime - 10))
-                    } label: {
-                        Image(systemName: "gobackward.10")
-                    }
-                    .accessibilityLabel("快退 10 秒")
+                Text(model.formattedDuration)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 44, alignment: .trailing)
+            }
 
-                    Button {
-                        model.togglePlay()
-                    } label: {
-                        Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.title2)
-                    }
-                    .accessibilityLabel(model.isPlaying ? "暂停" : "播放")
-
-                    Button {
-                        model.seek(to: min(model.duration, model.currentTime + 10))
-                    } label: {
-                        Image(systemName: "goforward.10")
-                    }
-                    .accessibilityLabel("快进 10 秒")
-
-                    Spacer()
-
-                    Text("\(model.formattedPosition) / \(model.formattedDuration)")
-                        .font(.caption.monospacedDigit())
-
-                    subtitleMenu
-
-                    Button {
-                        showStyleSheet = true
-                    } label: {
-                        Image(systemName: "textformat.size")
-                    }
-                    .accessibilityLabel("字幕样式")
-
-                    Button {
-                        toggleFullscreen()
-                    } label: {
-                        Image(systemName: isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
-                    }
-                    .accessibilityLabel(isFullscreen ? "退出全屏" : "全屏")
-
-                    if model.isAVPlayerEngine {
-                        AirPlayRouteView()
-                            .frame(width: 28, height: 28)
-                            .accessibilityLabel("AirPlay")
-
-                        if model.isPiPAvailable {
-                            Button {
-                                model.togglePiP()
-                            } label: {
-                                Image(systemName: "pip")
-                            }
-                            .accessibilityLabel("画中画")
-                        }
-                    }
-
-                    audioTrackMenu
-
-                    Menu {
-                        ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { value in
-                            Button {
-                                model.setRate(Float(value))
-                            } label: {
-                                if Float(value) == model.rate {
-                                    Label("\(value, specifier: "%g")x", systemImage: "checkmark")
-                                } else {
-                                    Text("\(value, specifier: "%g")x")
-                                }
-                            }
-                        }
-                    } label: {
-                        Text("\(Double(model.rate), specifier: "%g")x")
-                            .font(.caption)
-                    }
-                    .accessibilityLabel("播放速度 \(Double(model.rate), specifier: "%g") 倍")
+            HStack(spacing: 26) {
+                Button {
+                    model.seek(to: max(0, model.currentTime - 10))
+                    scheduleHide()
+                } label: {
+                    Image(systemName: "gobackward.10")
                 }
-                .foregroundStyle(.white)
-            }
-            .padding()
-            .background(.black.opacity(0.55))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .padding()
+                .accessibilityLabel("快退 10 秒")
 
-            if let notice = model.subtitleNotice {
-                Text(notice)
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
-                    .padding(.bottom, 8)
-            }
+                Button {
+                    model.seek(to: min(model.duration, model.currentTime + 10))
+                    scheduleHide()
+                } label: {
+                    Image(systemName: "goforward.10")
+                }
+                .accessibilityLabel("快进 10 秒")
 
-            if let resume = model.resumeNotice {
-                Text(resume)
+                speedMenu
+                audioTrackMenu
+                subtitleMenu
+
+                Button {
+                    showStyleSheet = true
+                    scheduleHide()
+                } label: {
+                    Image(systemName: "textformat.size")
+                }
+                .accessibilityLabel("字幕样式")
+
+                Spacer()
+
+                Text(model.isOverlaySubtitleActive ? "字幕：自绘" : (model.attachedSubtitleName == nil ? "字幕：关" : "字幕：内核"))
                     .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.8))
-                    .padding(.bottom, 8)
+                    .foregroundStyle(.white.opacity(0.6))
             }
+            .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 14)
+    }
+
+    private var speedMenu: some View {
+        Menu {
+            ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { value in
+                Button {
+                    model.setRate(Float(value))
+                } label: {
+                    if Float(value) == model.rate {
+                        Label("\(value, specifier: "%g")x", systemImage: "checkmark")
+                    } else {
+                        Text("\(value, specifier: "%g")x")
+                    }
+                }
+            }
+        } label: {
+            Text("\(Double(model.rate), specifier: "%g")x")
+                .font(.caption.weight(.semibold))
+        }
+        .accessibilityLabel("播放速度 \(Double(model.rate), specifier: "%g") 倍")
+    }
+
+    private func scheduleHide() {
+        hideTask?.cancel()
+        hideTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            withAnimation { showControls = false }
         }
     }
 
