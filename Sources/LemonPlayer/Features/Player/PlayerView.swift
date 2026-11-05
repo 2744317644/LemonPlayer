@@ -70,14 +70,21 @@ private struct PlayerContent: View {
     let model: PlayerViewModel
     let title: String
     @State private var showControls = true
-    @State private var showStyleSheet = false
     @State private var showFontImporter = false
-    @State private var isFullscreen = false
+    @State private var activePanel: PlayerPanel?
     @State private var hud: String?
     @State private var dragStartBrightness: Double?
     @State private var dragStartVolume: Float?
-    @State private var scrubValue: Double?
     @State private var hideTask: Task<Void, Never>?
+
+    enum PlayerPanel: String, Identifiable {
+        case subtitles
+        case audio
+        case speed
+        case style
+
+        var id: String { rawValue }
+    }
 
     private enum GestureSide {
         case brightness
@@ -141,13 +148,28 @@ private struct PlayerContent: View {
                 }
 
                 controls
+
+                if let panel = activePanel {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            panelCard(panel)
+                                .padding(.trailing, 18)
+                                .padding(.bottom, 132)
+                        }
+                    }
+                    .transition(.opacity)
+                }
             }
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            withAnimation {
-                showControls.toggle()
+            if activePanel != nil {
+                activePanel = nil
+                return
             }
+            withAnimation { showControls.toggle() }
             if showControls { scheduleHide() }
         }
         .onAppear {
@@ -162,15 +184,14 @@ private struct PlayerContent: View {
             if playing { scheduleHide() }
         }
         .onChange(of: scenePhase) { _, phase in
-            // 退到后台自动暂停（避免“退出软件还在播”）
-            if phase == .background { model.pauseForBackground() }
-        }
-        .simultaneousGesture(edgeSwipe)
-        .sheet(isPresented: $showStyleSheet) {
-            SubtitleStyleSheet(style: model.subtitleStyle) { style in
-                model.updateStyle(style)
+            // 退到后台自动暂停；回前台保持横屏（否则从桌面返回会变竖屏）
+            if phase == .background {
+                model.pauseForBackground()
+            } else if phase == .active {
+                OrientationManager.lock(to: .landscape)
             }
         }
+        .simultaneousGesture(edgeSwipe)
         .fileImporter(
             isPresented: $showFontImporter,
             allowedContentTypes: [.font],
@@ -187,13 +208,17 @@ private struct PlayerContent: View {
             Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) {
-                    model.seek(to: max(0, model.currentTime - 10))
+                    model.togglePlay()
+                    showControls = true
+                    scheduleHide()
                 }
                 .gesture(verticalDrag(side: .brightness))
             Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) {
-                    model.seek(to: min(model.duration, model.currentTime + 10))
+                    model.togglePlay()
+                    showControls = true
+                    scheduleHide()
                 }
                 .gesture(verticalDrag(side: .volume))
         }
@@ -332,14 +357,6 @@ private struct PlayerContent: View {
                     .accessibilityLabel("画中画")
                 }
             }
-
-            Button {
-                toggleFullscreen()
-            } label: {
-                Image(systemName: isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
-                    .font(.title3)
-            }
-            .accessibilityLabel(isFullscreen ? "退出全屏" : "全屏")
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 18)
@@ -382,23 +399,15 @@ private struct PlayerContent: View {
                     .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 44, alignment: .leading)
 
-                Slider(
-                    value: Binding(
-                        get: { scrubValue ?? model.currentTime },
-                        set: { scrubValue = $0 }
-                    ),
-                    in: 0...max(model.duration, 1),
-                    onEditingChanged: { editing in
-                        if !editing, let value = scrubValue {
-                            model.seek(to: value)
-                            scrubValue = nil
-                        }
-                        if editing { scheduleHide() }
+                PlayerProgressBar(
+                    current: model.currentTime,
+                    duration: model.duration,
+                    onSeek: { value in
+                        model.seek(to: value)
+                        scheduleHide()
                     }
                 )
-                .tint(.yellow)
-                .accessibilityLabel("播放进度")
-                .accessibilityValue("\(model.formattedPosition) / \(model.formattedDuration)")
+                .frame(height: 22)
 
                 Text(model.formattedDuration)
                     .font(.caption.monospacedDigit())
@@ -406,7 +415,6 @@ private struct PlayerContent: View {
                     .frame(width: 44, alignment: .trailing)
             }
 
-            // 底部按钮居中（VidHub 风格）
             HStack(spacing: 26) {
                 Spacer(minLength: 0)
 
@@ -419,6 +427,14 @@ private struct PlayerContent: View {
                 .accessibilityLabel("快退 10 秒")
 
                 Button {
+                    model.togglePlay()
+                    scheduleHide()
+                } label: {
+                    Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
+                }
+                .accessibilityLabel(model.isPlaying ? "暂停" : "播放")
+
+                Button {
                     model.seek(to: min(model.duration, model.currentTime + 10))
                     scheduleHide()
                 } label: {
@@ -426,50 +442,203 @@ private struct PlayerContent: View {
                 }
                 .accessibilityLabel("快进 10 秒")
 
-                speedMenu
-                audioTrackMenu
-                subtitleMenu
+                Button {
+                    activePanel = .speed
+                    scheduleHide()
+                } label: {
+                    Text("\(Double(model.rate), specifier: "%g")x")
+                        .font(.caption.weight(.semibold))
+                }
+                .accessibilityLabel("播放速度")
 
                 Button {
-                    showStyleSheet = true
+                    activePanel = .audio
+                    scheduleHide()
+                } label: {
+                    Image(systemName: "waveform")
+                }
+                .accessibilityLabel("音轨")
+
+                Button {
+                    activePanel = .subtitles
+                    scheduleHide()
+                } label: {
+                    Image(systemName: model.attachedSubtitleName == nil ? "captions.bubble" : "captions.bubble.fill")
+                }
+                .accessibilityLabel("字幕")
+
+                Button {
+                    activePanel = .style
                     scheduleHide()
                 } label: {
                     Image(systemName: "textformat.size")
                 }
-                .accessibilityLabel("字幕样式")
+                .accessibilityLabel("字幕设置")
 
                 Spacer(minLength: 0)
             }
             .foregroundStyle(.white)
-
-            Text(model.isOverlaySubtitleActive ? "字幕：自绘" : (model.attachedSubtitleName == nil ? "字幕：关" : "字幕：内核"))
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.55))
-                .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(.horizontal, 18)
         .padding(.bottom, 14)
     }
 
-    private var speedMenu: some View {
-        Menu {
+    // MARK: - 右侧弹出面板
+
+    @ViewBuilder
+    private func panelCard(_ panel: PlayerPanel) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            switch panel {
+            case .subtitles:
+                subtitlePanel
+            case .audio:
+                audioPanel
+            case .speed:
+                speedPanel
+            case .style:
+                stylePanel
+            }
+        }
+        .frame(width: 320, alignment: .leading)
+        .padding(8)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+        .environment(\.colorScheme, .dark)
+        .shadow(color: .black.opacity(0.35), radius: 24, y: 8)
+    }
+
+    private var subtitlePanel: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            panelRowButton("关闭字幕") { model.disableSubtitles() }
+            Divider().padding(.vertical, 4)
+            panelRowButton("字幕延迟 -0.1s") { Task { await model.adjustSubtitleOffset(-0.1) } }
+            panelRowButton("字幕延迟 +0.1s") { Task { await model.adjustSubtitleOffset(0.1) } }
+            panelRowButton("重置延迟（当前 \(String(format: "%+.1f", model.subtitleOffsetValue))s）") {
+                Task { await model.resetSubtitleOffset() }
+            }
+            Divider().padding(.vertical, 4)
+            ForEach(model.subtitleCandidates) { candidate in
+                HStack {
+                    Text("\(candidate.fileName) · \(candidate.language.displayName)")
+                        .font(.subheadline)
+                        .lineLimit(1)
+                    Spacer()
+                    Button("主") { Task { await model.attachCandidate(candidate) } }
+                        .buttonStyle(.bordered)
+                    Button("副") { Task { await model.attachSecondary(candidate) } }
+                        .buttonStyle(.bordered)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+            }
+            if model.subtitleCandidates.isEmpty {
+                Text("同目录未找到字幕")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+            }
+            Divider().padding(.vertical, 4)
+            panelRowButton("字幕设置（字号 / 边距）") { activePanel = .style }
+            panelRowButton("导入 ASS 字体…") { showFontImporter = true }
+        }
+    }
+
+    private var audioPanel: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(model.engine.audioTracks) { track in
+                panelRowButton(track.name) { model.engine.selectAudioTrack(id: track.id) }
+            }
+            if model.engine.audioTracks.isEmpty {
+                Text("无音轨信息")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+            }
+        }
+    }
+
+    private var speedPanel: some View {
+        VStack(alignment: .leading, spacing: 2) {
             ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { value in
-                Button {
+                panelRowButton("\((value), specifier: "%g")x") {
                     model.setRate(Float(value))
-                } label: {
-                    if Float(value) == model.rate {
-                        Label("\(value, specifier: "%g")x", systemImage: "checkmark")
-                    } else {
-                        Text("\(value, specifier: "%g")x")
-                    }
                 }
             }
-        } label: {
-            Text("\(Double(model.rate), specifier: "%g")x")
-                .font(.caption.weight(.semibold))
         }
-        .accessibilityLabel("播放速度 \(Double(model.rate), specifier: "%g") 倍")
     }
+
+    private var stylePanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("字幕设置")
+                .font(.headline)
+                .padding(.horizontal, 8)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("字号")
+                    Spacer()
+                    Text("\(Int(model.subtitleStyle.fontSize))")
+                        .monospacedDigit()
+                }
+                .font(.subheadline)
+                Slider(
+                    value: Binding(
+                        get: { model.subtitleStyle.fontSize },
+                        set: { newValue in
+                            var style = model.subtitleStyle
+                            style.fontSize = newValue
+                            model.updateStyle(style)
+                        }
+                    ),
+                    in: 14...40
+                )
+                .tint(.yellow)
+            }
+            .padding(.horizontal, 8)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("底部边距")
+                    Spacer()
+                    Text("\(Int(model.subtitleStyle.bottomInset))")
+                        .monospacedDigit()
+                }
+                .font(.subheadline)
+                Slider(
+                    value: Binding(
+                        get: { model.subtitleStyle.bottomInset },
+                        set: { newValue in
+                            var style = model.subtitleStyle
+                            style.bottomInset = newValue
+                            model.updateStyle(style)
+                        }
+                    ),
+                    in: 0...240
+                )
+                .tint(.yellow)
+            }
+            .padding(.horizontal, 8)
+
+            panelRowButton("恢复默认") {
+                model.updateStyle(.default)
+            }
+        }
+    }
+
+    private func panelRowButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button {
+            action()
+            scheduleHide()
+        } label: {
+            Text(title)
+                .font(.subheadline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
 
     private func scheduleHide() {
         hideTask?.cancel()
@@ -481,72 +650,62 @@ private struct PlayerContent: View {
     }
 
     private func toggleFullscreen() {
-        withAnimation {
-            isFullscreen.toggle()
-        }
-        OrientationManager.lock(to: isFullscreen ? .landscape : .portrait)
-        showControls = !isFullscreen
+        // 播放器始终横屏，不再切竖屏
+        OrientationManager.lock(to: .landscape)
     }
 
-    private var audioTrackMenu: some View {
-        Menu {
-            ForEach(model.engine.audioTracks) { track in
-                Button(track.name) {
-                    model.engine.selectAudioTrack(id: track.id)
-                }
-            }
-            if model.engine.audioTracks.isEmpty {
-                Text("无音轨信息")
-            }
-        } label: {
-            Image(systemName: "waveform")
-        }
-        .accessibilityLabel("音轨")
-    }
 
-    private var subtitleMenu: some View {
-        Menu {
-            Button("关闭字幕") {
-                model.disableSubtitles()
+}
+
+/// 自定义进度条：点击任意位置直接跳转，拖动实时预览。
+private struct PlayerProgressBar: View {
+    let current: Double
+    let duration: Double
+    let onSeek: (Double) -> Void
+
+    @State private var dragValue: Double?
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = max(proxy.size.width, 1)
+            let total = max(duration, 1)
+            let progress = min(max((dragValue ?? current) / total, 0), 1)
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(.white.opacity(0.25))
+                    .frame(height: 4)
+
+                Capsule()
+                    .fill(.yellow)
+                    .frame(width: width * progress, height: 4)
+
+                Circle()
+                    .fill(.white)
+                    .frame(width: 16, height: 16)
+                    .offset(x: max(0, min(width - 16, width * progress - 8)))
             }
-            Divider()
-            Button("字幕延迟 +0.1s") {
-                Task { await model.adjustSubtitleOffset(0.1) }
-            }
-            Button("字幕延迟 -0.1s") {
-                Task { await model.adjustSubtitleOffset(-0.1) }
-            }
-            Button("重置延迟") {
-                Task { await model.resetSubtitleOffset() }
-            }
-            Text("当前延迟 \(String(format: "%+.1f", model.subtitleOffsetValue))s")
-            Divider()
-            ForEach(model.subtitleCandidates) { candidate in
-                Menu("\(candidate.fileName) · \(candidate.language.displayName)") {
-                    Button("设为主字幕") {
-                        Task { await model.attachCandidate(candidate) }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let fraction = min(max(value.location.x / width, 0), 1)
+                        dragValue = fraction * total
                     }
-                    Button("设为副字幕") {
-                        Task { await model.attachSecondary(candidate) }
+                    .onEnded { value in
+                        let fraction = min(max(value.location.x / width, 0), 1)
+                        let target = fraction * total
+                        dragValue = nil
+                        onSeek(target)
                     }
-                }
-            }
-            if model.subtitleCandidates.isEmpty {
-                Text("同目录未找到字幕")
-            }
-            Divider()
-            Button("导入 ASS 字体…") {
-                showFontImporter = true
-            }
-            if SubtitleFontStore.count > 0 {
-                Text("已导入 \(SubtitleFontStore.count) 个字体（重播生效）")
-            }
-        } label: {
-            Image(systemName: model.attachedSubtitleName == nil ? "captions.bubble" : "captions.bubble.fill")
+            )
         }
-        .accessibilityLabel("字幕")
+        .accessibilityLabel("播放进度")
+        .accessibilityValue("\(Int(current)) / \(Int(duration)) 秒")
     }
 }
+
 
 private struct SubtitleStyleSheet: View {
     @Environment(\.dismiss) private var dismiss

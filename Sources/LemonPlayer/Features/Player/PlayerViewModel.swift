@@ -418,6 +418,8 @@ final class PlayerViewModel {
         do {
             let shifted = ASSSubtitleShifter.shift(rawText, after: mergedOffset)
             let tempURL = try writeTemporarySubtitle(text: shifted, fileName: subtitleFile.name)
+            // 先清掉旧的外部字幕，避免反复调延迟时叠加多条字幕
+            engine.removeExternalSubtitles()
             try await engine.addExternalSubtitle(url: tempURL, encoding: .utf8)
             attachedSubtitleName = subtitleFile.name
             activeSubtitleLines = []
