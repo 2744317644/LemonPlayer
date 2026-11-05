@@ -4,7 +4,6 @@ import SwiftUI
 
 /// 强制屏幕方向（iOS 16+）。用于全屏播放。
 @MainActor
-@MainActor
 enum OrientationManager {
     /// AppDelegate 通过它回答 `supportedInterfaceOrientationsFor`：
     /// 播放页锁 landscape 时，即使系统开了「竖屏锁定」也会以横屏呈现。
