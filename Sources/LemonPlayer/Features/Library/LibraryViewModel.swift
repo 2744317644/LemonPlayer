@@ -178,7 +178,7 @@ final class LibraryViewModel {
     }
 
     /// 罗马音/英文名常见的标点差异：给出 2 个候选关键词。
-    private static func searchKeywords(for title: String) -> [String] {
+    nonisolated private static func searchKeywords(for title: String) -> [String] {
         var keywords: [String] = []
         let cleaned = SeriesFolderResolver.cleanTitle(title)
         if !cleaned.isEmpty { keywords.append(cleaned) }
