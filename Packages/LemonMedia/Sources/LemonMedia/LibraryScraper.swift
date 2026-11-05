@@ -5,11 +5,22 @@ public struct VideoFile: Codable, Hashable, Sendable {
     public let id: String
     public let name: String
     public let parentID: String
+    /// 由 `SeriesFolderResolver` 解析出的番剧目录（最底层非附属目录）。
+    public let seriesFolderID: String?
+    public let seriesFolderName: String?
 
-    public init(id: String, name: String, parentID: String) {
+    public init(
+        id: String,
+        name: String,
+        parentID: String,
+        seriesFolderID: String? = nil,
+        seriesFolderName: String? = nil
+    ) {
         self.id = id
         self.name = name
         self.parentID = parentID
+        self.seriesFolderID = seriesFolderID
+        self.seriesFolderName = seriesFolderName
     }
 }
 
@@ -96,15 +107,27 @@ public enum LibraryScraper {
         for file in files {
             let parsed = MediaNameParser.parse(file.name)
             guard !parsed.title.isEmpty else { continue }
-            let normalized = parsed.title
-                .lowercased()
-                .replacingOccurrences(of: " ", with: "")
-                .replacingOccurrences(of: "_", with: "")
+
+            // 优先用「番剧目录」分组：同目录下的 01/02/... 归为同一部番
+            let folderID = file.seriesFolderID
+            let folderName = file.seriesFolderName.map(SeriesFolderResolver.cleanTitle)
+            let normalized: String
+            let title: String
+            if let folderID, !folderID.isEmpty {
+                normalized = "folder:\(folderID)"
+                title = (folderName?.isEmpty == false ? folderName! : parsed.title)
+            } else {
+                normalized = parsed.title
+                    .lowercased()
+                    .replacingOccurrences(of: " ", with: "")
+                    .replacingOccurrences(of: "_", with: "")
+                title = parsed.title
+            }
             let season = parsed.season ?? 1
             let key = "\(normalized)#\(season)"
             buckets[key, default: []].append(file)
             if meta[key] == nil {
-                meta[key] = (parsed.title, parsed.season)
+                meta[key] = (title, parsed.season)
             }
         }
 

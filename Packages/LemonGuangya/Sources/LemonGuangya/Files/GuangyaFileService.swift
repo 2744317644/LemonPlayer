@@ -65,6 +65,73 @@ public struct GuangyaFileService: Sendable {
         return FileListPage(total: envelope.total, items: envelope.items)
     }
 
+    /// 全盘媒体扫描结果：目录（用于还原番剧目录层级）+ 文件。
+    public struct MediaScanResult: Sendable {
+        public let folders: [GuangyaFile]
+        public let files: [GuangyaFile]
+
+        public init(folders: [GuangyaFile], files: [GuangyaFile]) {
+            self.folders = folders
+            self.files = files
+        }
+
+        public var videos: [GuangyaFile] {
+            files.filter { $0.kind == .video }
+        }
+    }
+
+    /// 递归扫描全盘：返回目录树节点 + 文件（媒体库刮削用）。
+    public func listAllMedia(
+        pageSize: Int = 100,
+        maxPages: Int = 30,
+        maxFolders: Int = 600,
+        maxFiles: Int = 20000,
+        accessToken: String
+    ) async throws -> MediaScanResult {
+        var folders: [GuangyaFile] = []
+        var files: [GuangyaFile] = []
+        var queue: [String] = [""]
+        var visited = Set<String>()
+
+        while !queue.isEmpty {
+            if Task.isCancelled || folders.count >= maxFolders || files.count >= maxFiles { break }
+            let parent = queue.removeFirst()
+            guard visited.insert(parent).inserted else { continue }
+
+            var page = 0
+            while page < maxPages {
+                let current: FileListPage
+                do {
+                    current = try await listFiles(
+                        parentID: parent,
+                        page: page,
+                        pageSize: pageSize,
+                        orderBy: 3,
+                        sortType: 0,
+                        accessToken: accessToken
+                    )
+                } catch {
+                    break
+                }
+
+                for item in current.items {
+                    if item.isFolder {
+                        if folders.count < maxFolders {
+                            folders.append(item)
+                            queue.append(item.id)
+                        }
+                    } else if files.count < maxFiles {
+                        files.append(item)
+                    }
+                }
+
+                if current.items.count < pageSize || files.count >= maxFiles { break }
+                page += 1
+            }
+        }
+        return MediaScanResult(folders: folders, files: files)
+    }
+
     /// 全盘视频聚合：优先 `parentId:"*" + resType:1 + fileTypes:[2]`；
     /// 若服务端返回的仍是目录（旧行为），回退为递归遍历。
     public func listAllVideos(
@@ -95,56 +162,8 @@ public struct GuangyaFileService: Sendable {
         if !aggregated.isEmpty {
             return aggregated
         }
-        return try await recursiveVideos(
-            pageSize: pageSize,
-            maxPages: maxPages,
-            accessToken: accessToken
-        )
-    }
-
-    /// 递归遍历目录兜底（聚合视图不可用/返回目录时）。
-    private func recursiveVideos(
-        pageSize: Int,
-        maxPages: Int,
-        accessToken: String
-    ) async throws -> [GuangyaFile] {
-        var results: [GuangyaFile] = []
-        var queue: [String] = [""]
-        var visited = Set<String>()
-
-        while !queue.isEmpty {
-            if Task.isCancelled || results.count >= 5000 { break }
-            let parent = queue.removeFirst()
-            guard visited.insert(parent).inserted, visited.count <= 600 else { continue }
-
-            var page = 0
-            while page < maxPages {
-                let current: FileListPage
-                do {
-                    current = try await listFiles(
-                        parentID: parent,
-                        page: page,
-                        pageSize: pageSize,
-                        orderBy: 3,
-                        sortType: 0,
-                        accessToken: accessToken
-                    )
-                } catch {
-                    // 单个目录失败不阻断整体扫描
-                    break
-                }
-                for item in current.items {
-                    if item.isFolder {
-                        queue.append(item.id)
-                    } else if item.kind == .video {
-                        results.append(item)
-                    }
-                }
-                if current.items.count < pageSize || results.count >= 5000 { break }
-                page += 1
-            }
-        }
-        return results
+        let media = try await listAllMedia(pageSize: pageSize, maxPages: maxPages, accessToken: accessToken)
+        return media.videos
     }
 
     // MARK: - 播放直链
