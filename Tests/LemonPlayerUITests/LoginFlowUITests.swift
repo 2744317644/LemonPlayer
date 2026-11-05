@@ -27,7 +27,7 @@ final class LoginFlowUITests: XCTestCase {
         }
 
         // 网页登录入口（WkWebView 加载 www.guangyapan.com/oauth/login）
-        let webButton = app.buttons["网页登录（推荐，可过验证码）"]
+        let webButton = app.buttons["网页登录"]
         if webButton.waitForExistence(timeout: 10) {
             webButton.tap()
             sleep(8)
