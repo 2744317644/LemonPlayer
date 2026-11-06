@@ -47,7 +47,7 @@ struct WebLoginView: View {
                             message = "凭据格式异常，请重试"
                         }
                     }
-                }
+                })
                 .id(reloadID)
             }
             .navigationTitle("网页登录")
