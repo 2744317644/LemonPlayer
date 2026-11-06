@@ -48,4 +48,19 @@ final class SubtitleMatcherTests: XCTestCase {
         let result = SubtitleMatcher.candidates(videoName: "Show.mkv", subtitleNames: ["Show.mkv", "cover.jpg", "Show.srt"])
         XCTAssertEqual(result.map(\.fileName), ["Show.srt"])
     }
+
+    func testLanguagePreferenceBreaksTie() {
+        let candidates = SubtitleMatcher.candidates(
+            videoName: "Show - 01.mkv",
+            subtitleNames: [
+                "Show - 01.eng.srt",
+                "Show - 01.chs.srt",
+                "Show - 01.cht.srt"
+            ]
+        )
+        // 同分同格式时：简中 > 繁中 > 英文
+        XCTAssertEqual(candidates.first?.language, .chineseSimplified)
+        XCTAssertEqual(candidates.last?.language, .english)
+    }
+
 }

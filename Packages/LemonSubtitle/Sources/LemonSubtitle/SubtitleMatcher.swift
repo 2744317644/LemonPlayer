@@ -107,6 +107,10 @@ public enum SubtitleMatcher {
 
         return results.sorted {
             if $0.score != $1.score { return $0.score > $1.score }
+            // 同分时按语言偏好：简中 > 繁中 > 未知 > 日语 > 英语
+            let lhs = languagePriority($0.language)
+            let rhs = languagePriority($1.language)
+            if lhs != rhs { return lhs > rhs }
             return $0.fileName.localizedStandardCompare($1.fileName) == .orderedAscending
         }
     }
@@ -198,6 +202,17 @@ public enum SubtitleMatcher {
             }
         }
         return .unknown
+    }
+
+    /// 同分时的语言偏好（越大越优先）。
+    public static func languagePriority(_ language: SubtitleLanguage) -> Int {
+        switch language {
+        case .chineseSimplified: return 5
+        case .chineseTraditional: return 4
+        case .unknown: return 3
+        case .japanese: return 2
+        case .english: return 1
+        }
     }
 
     public static func formatOf(_ name: String) -> SubtitleFormat {

@@ -730,7 +730,15 @@ private struct PlayerContent: View {
 
     private var subtitlePanel: some View {
         VStack(alignment: .leading, spacing: 2) {
+            Text(model.attachedSubtitleName.map { "当前：\($0)" } ?? "当前：关闭")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 2)
+
             panelRowButton("关闭字幕") { model.disableSubtitles() }
+            panelRowButton("重新匹配同目录字幕") { Task { await model.autoAttachSubtitle() } }
             Divider().padding(.vertical, 4)
             panelRowButton("字幕延迟 -0.1s") { Task { await model.adjustSubtitleOffset(-0.1) } }
             panelRowButton("字幕延迟 +0.1s") { Task { await model.adjustSubtitleOffset(0.1) } }
@@ -761,6 +769,12 @@ private struct PlayerContent: View {
             Divider().padding(.vertical, 4)
             panelRowButton("字幕设置（字号 / 边距）") { openPanel(.style) }
             panelRowButton("导入 ASS 字体…") { showFontImporter = true }
+            if SubtitleFontStore.count > 0 {
+                Text("已导入字体 \(SubtitleFontStore.count) 个（重播生效）")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+            }
         }
     }
 

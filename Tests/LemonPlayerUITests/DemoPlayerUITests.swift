@@ -30,6 +30,13 @@ final class DemoPlayerUITests: XCTestCase {
             save(XCUIScreen.main.screenshot(), name: "ui-player-02")
         }
 
+        // 打开「字幕设置」面板（字号/底部边距）
+        if app.buttons["字幕设置"].waitForExistence(timeout: 2) {
+            app.buttons["字幕设置"].tap()
+            sleep(1)
+            save(XCUIScreen.main.screenshot(), name: "ui-player-03")
+        }
+
         print("=== PLAYER_TREE ===")
         print(app.debugDescription)
         print("=== END PLAYER_TREE ===")
