@@ -27,7 +27,7 @@
 | M4 | LemonGuangya | 光鸭接入：登录态、文件列表、播放地址、字幕文件、开发者 API（可选） | ⚠️ 可用 | M1/M2 | `GuangyaFileService`、`PlaybackLink`、`GuangyaFile` |
 | M5 | LemonMedia | 文件名解析、目录→番剧规则、标题清洗、Bangumi/TMDB 匹配、分集标题、缓存 | ⚠️ 可用 | M1/M2 | `MediaNameParser`、`SeriesFolderResolver`、`TitleMatcher`、`LibraryScraper`、`BangumiClient` |
 | M6 | LemonSubtitle | SRT/VTT/ASS 解析、匹配、ASS 时间轴位移、样式、字体存储 | ⚠️ 部分 | M1 | `SubtitleParser`、`SubtitleMatcher`、`SubtitleStyle` |
-| M7 | LemonPlayback | 播放引擎抽象、AVPlayer/VLCKit 实现、轨道、NowPlaying、方向/音量 | ⚠️ 部分 | M1 | `PlaybackEngine`、`AVPlayerEngine`、`VLCKitEngine`、`SystemControls` |
+| M7 | LemonPlayback | 引擎抽象、状态机、seekSafe、AVPlayer/VLCKit、轨道、NowPlaying | ✅ Step4 完成 | M1 | `PlaybackEngine`、`AVPlayerEngine`、`VLCKitEngine`、`SystemControls` |
 | M8 | LemonDownloads | 后台 URLSession 下载、断点续传、任务持久化 | ⚠️ 部分 | M2/M3 | `Packages/LemonDownloads` |
 
 ### App 层（Sources/LemonPlayer，需真机/模拟器验收）

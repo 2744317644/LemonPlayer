@@ -17,6 +17,44 @@ public enum PlaybackState: Equatable, Sendable {
         case .idle, .preparing, .ended, .failed: return false
         }
     }
+
+    public var isBuffering: Bool {
+        if case .buffering = self { return true }
+        return false
+    }
+
+    public var isPlaying: Bool {
+        if case .playing = self { return true }
+        return false
+    }
+
+    public var isTerminal: Bool {
+        switch self {
+        case .ended, .failed: return true
+        default: return false
+        }
+    }
+
+    public var displayName: String {
+        switch self {
+        case .idle: return "空闲"
+        case .preparing: return "准备中"
+        case .ready: return "就绪"
+        case .playing: return "播放中"
+        case .paused: return "已暂停"
+        case .buffering(let progress): return String(format: "缓冲中 %.0f%%", progress * 100)
+        case .ended: return "已结束"
+        case .failed(let message): return "失败：\(message)"
+        }
+    }
+}
+
+public extension PlaybackEngine {
+    /// 按 duration 夹取后的 seek（各引擎实现只需处理播放器本身）。
+    func seekSafe(to time: TimeInterval) async {
+        let upperBound = duration > 0 ? duration : time
+        await seek(to: min(max(0, time), upperBound))
+    }
 }
 
 /// 可播放源（直链 + 请求头 + 标题）。

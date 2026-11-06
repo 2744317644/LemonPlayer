@@ -61,4 +61,31 @@ struct PlaybackEngineTests {
         engine.play()
         #expect(engine.state == .idle)
     }
+
+    @Test("状态辅助属性")
+    func stateHelpers() {
+        #expect(PlaybackState.playing.isPlaying)
+        #expect(!PlaybackState.paused.isPlaying)
+        #expect(PlaybackState.buffering(progress: 0.4).isBuffering)
+        #expect(PlaybackState.ended.isTerminal)
+        #expect(PlaybackState.failed("x").isTerminal)
+        #expect(!PlaybackState.ready.isTerminal)
+        #expect(PlaybackState.buffering(progress: 0.5).displayName.contains("缓冲"))
+    }
+
+    @Test("seekSafe 会夹取到 0…duration")
+    func seekSafeClamps() async throws {
+        let engine = MockPlaybackEngine()
+        try await engine.load(PlaybackSource(url: URL(string: "https://example.com/a.mkv")!))
+
+        await engine.seekSafe(to: -5)
+        #expect(engine.currentTime == 0)
+
+        await engine.seekSafe(to: 120)
+        #expect(engine.currentTime == 120)
+
+        await engine.seekSafe(to: 9_999)
+        #expect(engine.currentTime == 3600)
+    }
+
 }

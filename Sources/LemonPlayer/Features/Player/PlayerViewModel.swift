@@ -40,6 +40,8 @@ final class PlayerViewModel {
     private(set) var activeSubtitleLines: [String] = []
     /// 播放结束（用于剧集自动连播）
     private(set) var didFinish = false
+    /// 引擎缓冲中（UI 显示转圈）。
+    private(set) var isBuffering = false
 
     @ObservationIgnored private let session: SessionStore
     @ObservationIgnored private let service: GuangyaFileService
@@ -141,7 +143,15 @@ final class PlayerViewModel {
         refreshOverlayLines()
         Task { [weak self] in
             guard let self else { return }
-            await self.engine.seek(to: value)
+            await self.engine.seekSafe(to: value)
+            // seek 精度校验：偏差过大时记日志（VLC 在缓冲/关键帧附近可能跳不准）
+            if self.duration > 0, abs(self.engine.currentTime - value) > 3 {
+                await DiagnosticsCenter.shared.log(
+                    .warning,
+                    "player",
+                    "\(self.file.name) seek 偏差：目标 \(Int(value))s，实际 \(Int(self.engine.currentTime))s"
+                )
+            }
             self.saveProgress()
         }
     }
@@ -281,6 +291,13 @@ final class PlayerViewModel {
                 await attach(matched, asSecondary: false)
             }
         } catch {
+            Task {
+                await DiagnosticsCenter.shared.log(
+                    .warning,
+                    "subtitle",
+                    "\(self.file.name) 字幕匹配失败：\(LemonError.wrap(error).diagnosticDescription)"
+                )
+            }
             subtitleNotice = "字幕匹配失败（不影响播放）"
         }
     }
@@ -361,7 +378,15 @@ final class PlayerViewModel {
             }
             await persistPreference()
         } catch {
-            subtitleNotice = "字幕加载失败：\(error.localizedDescription)"
+            let lemon = LemonError.wrap(error)
+            Task {
+                await DiagnosticsCenter.shared.log(
+                    .error,
+                    "subtitle",
+                    "\(subtitleFile.name) 字幕加载失败：\(lemon.diagnosticDescription)"
+                )
+            }
+            subtitleNotice = "字幕加载失败：\(lemon.errorDescription ?? lemon.diagnosticDescription)"
         }
     }
 
@@ -431,7 +456,15 @@ final class PlayerViewModel {
             attachedSubtitleName = subtitleFile.name
             activeSubtitleLines = []
         } catch {
-            subtitleNotice = "字幕加载失败：\(error.localizedDescription)"
+            let lemon = LemonError.wrap(error)
+            Task {
+                await DiagnosticsCenter.shared.log(
+                    .error,
+                    "subtitle",
+                    "\(subtitleFile.name) 字幕加载失败：\(lemon.diagnosticDescription)"
+                )
+            }
+            subtitleNotice = "字幕加载失败：\(lemon.errorDescription ?? lemon.diagnosticDescription)"
         }
     }
 
@@ -502,6 +535,7 @@ final class PlayerViewModel {
                 if self.duration == 0 {
                     self.duration = self.engine.duration
                 }
+                self.isBuffering = self.engine.state.isBuffering
                 switch self.engine.state {
                 case .playing:
                     self.isPlaying = true

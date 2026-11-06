@@ -157,6 +157,14 @@ private struct PlayerContent: View {
 
                     gestureLayer
 
+                    if model.isBuffering {
+                        ProgressView()
+                            .tint(.white)
+                            .scaleEffect(1.3)
+                            .transition(.opacity)
+                            .animation(.easeInOut(duration: 0.2), value: model.isBuffering)
+                    }
+
                     if let hud {
                         Text(hud)
                             .font(.headline)

@@ -52,9 +52,11 @@
 - 字幕同目录列出（交给 A5）
 - 验收：根目录 → 多层目录 → 播放 → 返回位置保持
 
-## Step 4：播放内核 M7（2–3 天）
+## Step 4：播放内核 M7（2–3 天）✅ 已完成（2026-11-07）
 
 **目标**：AVPlayer 与 VLCKit 行为一致。
+
+**已完成**：`PlaybackState` 增加 isBuffering/isTerminal/displayName；`seekSafe` 统一夹取；seek 后校验偏差写日志；缓冲中显示转圈；字幕挂载失败写诊断日志（带错误类型/状态码）；后台暂停/音频会话保持。测试 +2。
 
 - 状态机统一（loading/ready/playing/paused/buffering/ended/failed）
 - seek 精度与防回弹（已有 seek guard，补测试）

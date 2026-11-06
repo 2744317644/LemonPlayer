@@ -46,8 +46,8 @@ targets:
       path: Sources/LemonPlayer/Info.plist
       properties:
         CFBundleDisplayName: LemonPlayer
-        CFBundleShortVersionString: "1.2.0"
-        CFBundleVersion: "11"
+        CFBundleShortVersionString: "1.3.0"
+        CFBundleVersion: "12"
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
