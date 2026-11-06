@@ -69,7 +69,7 @@ final class SessionStore {
         } catch {
             // 刷新失败：区分「登录态失效」与「网络异常」，后者保留 token 以便重试。
             let lemon = LemonError.wrap(error)
-            await DiagnosticsCenter.shared.log(error: lemon, category: "auth")
+            await DiagnosticsCenter.shared.log(lemon, category: "auth")
             if let guangya = error as? GuangyaError, guangya.isAuthFailure {
                 state = .loggedOut
             } else {
@@ -243,7 +243,7 @@ final class SessionStore {
             }
             let status = guangya.statusCode ?? 401
             await DiagnosticsCenter.shared.log(
-                error: LemonError.unauthorized(
+                LemonError.unauthorized(
                     statusCode: status,
                     message: guangya.localizedDescription
                 ),

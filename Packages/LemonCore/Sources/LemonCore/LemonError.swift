@@ -95,7 +95,7 @@ public enum LemonError: Error, Equatable, Sendable, LocalizedError {
 
 extension DiagnosticsCenter {
     /// 记录一条错误，并附上统一后的诊断描述。
-    public func log(error: LemonError, category: String = "app") async {
-        await log(.error, category, error.diagnosticDescription)
+    public func log(_ lemonError: LemonError, category: String = "app") async {
+        await log(.error, category, lemonError.diagnosticDescription)
     }
 }

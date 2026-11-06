@@ -186,7 +186,7 @@ final class LibraryViewModel {
             statusMessage = nil
         } catch {
             let lemon = LemonError.wrap(error)
-            await DiagnosticsCenter.shared.log(error: lemon, category: "library")
+            await DiagnosticsCenter.shared.log(lemon, category: "library")
             phase = .failed(lemon.errorDescription ?? lemon.diagnosticDescription)
         }
     }
