@@ -210,6 +210,8 @@
 
 | 2026-11-08 02:45 | Step9 | 设置/诊断/稳定性：AppMetrics 启动耗时/内存、诊断概览与复制最近错误、网络缓存大小与清除；已发布 v1.8.0（IPA 17,582,059 B） | Release `v1.8.0` | ✅ |
 
-| 2026-11-08 03:10 | Step10 | 回归/发布：回归清单重写（自动 A-01~A-06 + 真机 J-01~J-06）、DELIVERY v2.0.0、回归发现记录；发布 v2.0.0 | Release `v2.0.0` | ✅ |
+| 2026-11-08 03:10 | Step10 | 回归/发布：回归清单重写（自动 A-01~A-06 + 真机 J-01~J-06）、DELIVERY v2.0.0、回归发现记录；已发布 v2.0.0（IPA 17,582,055 B） | Release `v2.0.0` | ✅ |
 
 | 2026-11-08 03:15 | Step10 | 最终测试：7 包 122 用例（1 skipped）全绿（Core 11 / Network 9 / Guangya 27 / Media 35 / Subtitle 27 / Playback 6 / Downloads 7） | — | ✅ |
+
+| 2026-11-08 03:40 | Step10 | **v2.0.0 Release 完成**：tag 已推送，Release 附 IPA 17,582,055 B + SHA256；Step 0–10 全部交付 | Release `v2.0.0` | ✅ |
