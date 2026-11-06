@@ -23,18 +23,18 @@ final class DemoPlayerUITests: XCTestCase {
         sleep(1)
         save(XCUIScreen.main.screenshot(), name: "ui-player-01")
 
+        // 底部「字幕设置」按钮直接打开字号/边距面板
+        if app.buttons["字幕设置"].firstMatch.waitForExistence(timeout: 2) {
+            app.buttons["字幕设置"].firstMatch.tap()
+            sleep(1)
+            save(XCUIScreen.main.screenshot(), name: "ui-player-03")
+        }
+
         // 打开右上角「更多」面板（右侧弹出样式）
         if app.buttons["更多"].waitForExistence(timeout: 3) {
             app.buttons["更多"].tap()
             sleep(1)
             save(XCUIScreen.main.screenshot(), name: "ui-player-02")
-        }
-
-        // 打开「字幕设置」面板（字号/底部边距）
-        if app.buttons["字幕设置"].waitForExistence(timeout: 2) {
-            app.buttons["字幕设置"].tap()
-            sleep(1)
-            save(XCUIScreen.main.screenshot(), name: "ui-player-03")
         }
 
         print("=== PLAYER_TREE ===")
