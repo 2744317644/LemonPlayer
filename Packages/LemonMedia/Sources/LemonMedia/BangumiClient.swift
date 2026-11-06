@@ -2,24 +2,23 @@ import Foundation
 import LemonNetwork
 
 /// Bangumi v0 公开接口客户端（无需登录）。
-/// 注意：Bangumi 要求可识别 User-Agent；没有官方限流数值，这里自律 ≥1 秒/请求。
+/// 注意：Bangumi 要求可识别 User-Agent；限流统一由 LemonNetwork 的 `RateLimiter` 负责。
 public actor BangumiClient {
     public static let baseURL = URL(string: "https://api.bgm.tv")!
-    public static let defaultUserAgent = "LemonPlayer/0.1.0 (https://github.com/2744317644/LemonPlayer)"
+    public static let defaultUserAgent = HTTPUserAgents.bangumi
 
     private let http: HTTPClient
     private let userAgent: String
-    private let minimumInterval: TimeInterval
-    private var lastRequestAt = Date.distantPast
+    private let limiter: RateLimiter
 
     public init(
-        http: HTTPClient = HTTPClient(),
-        userAgent: String = BangumiClient.defaultUserAgent,
+        http: HTTPClient = HTTPClient(configuration: .bangumi),
+        userAgent: String = HTTPUserAgents.bangumi,
         minimumInterval: TimeInterval = 1.0
     ) {
         self.http = http
         self.userAgent = userAgent
-        self.minimumInterval = minimumInterval
+        self.limiter = RateLimiter(minimumInterval: minimumInterval)
     }
 
     // MARK: - 搜索
@@ -101,16 +100,8 @@ public actor BangumiClient {
     }
 
     private func send(_ request: HTTPRequest) async throws -> HTTPResponse {
-        await throttle()
+        await limiter.wait()
         return try await http.send(request)
-    }
-
-    private func throttle() async {
-        let elapsed = Date().timeIntervalSince(lastRequestAt)
-        if elapsed < minimumInterval {
-            try? await Task.sleep(for: .seconds(minimumInterval - elapsed))
-        }
-        lastRequestAt = Date()
     }
 }
 

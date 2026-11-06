@@ -63,6 +63,14 @@ public struct HTTPResponse: Sendable {
     public func decode<T: Decodable>(_ type: T.Type) throws -> T {
         try JSONDecoder().decode(type, from: data)
     }
+
+    /// 把非 2xx 响应映射成统一的 `LemonError`（401/403 → unauthorized）。
+    public func asLemonError(message: String? = nil) -> LemonError {
+        if (401...403).contains(statusCode) {
+            return .unauthorized(statusCode: statusCode, message: message)
+        }
+        return .http(statusCode: statusCode, message: message)
+    }
 }
 
 public enum HTTPError: Error, Equatable, Sendable {
@@ -77,28 +85,58 @@ public enum HTTPError: Error, Equatable, Sendable {
     }
 }
 
-/// 轻量 URLSession 封装：只负责发送与收集响应，错误映射交给上层。
+/// 轻量 URLSession 封装：发送、重试、日志；业务错误映射交给上层。
 public struct HTTPClient: @unchecked Sendable {
+    public let configuration: HTTPClientConfiguration
     private let session: URLSession
 
-    public init(session: URLSession = HTTPClient.makeSession()) {
+    public init(
+        session: URLSession = HTTPClient.makeSession(),
+        configuration: HTTPClientConfiguration = .default
+    ) {
         self.session = session
+        self.configuration = configuration
     }
 
-    public static func makeSession() -> URLSession {
-        let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 30
-        configuration.timeoutIntervalForResource = 120
-        configuration.httpAdditionalHeaders = ["Accept": "application/json"]
+    public init(configuration: HTTPClientConfiguration) {
+        self.init(
+            session: HTTPClient.makeSession(configuration: configuration),
+            configuration: configuration
+        )
+    }
+
+    public static func makeSession(
+        configuration: HTTPClientConfiguration = .default
+    ) -> URLSession {
+        let sessionConfiguration = URLSessionConfiguration.default
+        sessionConfiguration.timeoutIntervalForRequest = configuration.requestTimeout
+        sessionConfiguration.timeoutIntervalForResource = configuration.resourceTimeout
+
+        var headers = configuration.defaultHeaders
+        if headers["Accept"] == nil {
+            headers["Accept"] = "application/json"
+        }
+        if let userAgent = configuration.userAgent, headers["User-Agent"] == nil {
+            headers["User-Agent"] = userAgent
+        }
+        sessionConfiguration.httpAdditionalHeaders = headers
+
         #if canImport(Darwin)
-        // 允许等待网络恢复：从「光鸭 App 扫码」切回来时，系统可能短暂判定无网络，
-        // 若为 false 会立刻失败，导致登录轮询中断。
-        configuration.waitsForConnectivity = true
+        // 允许等待网络恢复：从「光鸭 App 扫码」切回来时系统可能短暂判定无网络。
+        sessionConfiguration.waitsForConnectivity = true
         #endif
-        return URLSession(configuration: configuration)
+        return URLSession(configuration: sessionConfiguration)
     }
 
     public func send(_ request: HTTPRequest) async throws -> HTTPResponse {
+        try await send(request, retryPolicy: configuration.retryPolicy)
+    }
+
+    /// 带重试的请求：只重试 408/429/5xx 与传输层错误。
+    public func send(
+        _ request: HTTPRequest,
+        retryPolicy: HTTPRetryPolicy
+    ) async throws -> HTTPResponse {
         var urlRequest = URLRequest(url: request.url)
         urlRequest.httpMethod = request.method
         urlRequest.httpBody = request.body
@@ -107,32 +145,71 @@ public struct HTTPClient: @unchecked Sendable {
             urlRequest.setValue(value, forHTTPHeaderField: key)
         }
 
-        let startedAt = Date()
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await session.data(for: urlRequest)
-        } catch {
-            let message = "\(request.method) \(request.url.host ?? "")\(request.url.path) failed: \(error.localizedDescription)"
-            Task { await DiagnosticsCenter.shared.log(.error, "network", message) }
-            throw HTTPError.transport(error.localizedDescription)
-        }
+        let target = "\(request.method) \(request.url.host ?? "")\(request.url.path)"
+        var attempt = 0
 
-        guard let http = response as? HTTPURLResponse else {
-            throw HTTPError.invalidResponse
-        }
+        while true {
+            if Task.isCancelled { throw CancellationError() }
+            attempt += 1
+            let startedAt = Date()
 
-        let milliseconds = Int(Date().timeIntervalSince(startedAt) * 1000)
-        let logMessage = "\(request.method) \(request.url.host ?? "")\(request.url.path) -> \(http.statusCode) \(milliseconds)ms"
-        let logLevel: DiagnosticLevel = http.statusCode >= 400 ? .warning : .debug
-        Task { await DiagnosticsCenter.shared.log(logLevel, "network", logMessage) }
+            do {
+                let (data, response) = try await session.data(for: urlRequest)
+                guard let http = response as? HTTPURLResponse else {
+                    throw HTTPError.invalidResponse
+                }
 
-        var headers: [String: String] = [:]
-        for (key, value) in http.allHeaderFields {
-            if let key = key as? String, let value = value as? String {
-                headers[key] = value
+                let milliseconds = Int(Date().timeIntervalSince(startedAt) * 1000)
+                let level: DiagnosticLevel = http.statusCode >= 400 ? .warning : .debug
+                await DiagnosticsCenter.shared.log(
+                    level,
+                    "network",
+                    "\(target) -> \(http.statusCode) \(milliseconds)ms (attempt \(attempt))"
+                )
+
+                if retryPolicy.shouldRetry(statusCode: http.statusCode, attempt: attempt) {
+                    let delay = retryPolicy.delay(forAttempt: attempt)
+                    await DiagnosticsCenter.shared.log(
+                        .warning,
+                        "network",
+                        "\(target) 重试 \(attempt + 1)/\(retryPolicy.maxAttempts)，"
+                            + "\(delay)s 后（上次 HTTP \(http.statusCode)）"
+                    )
+                    try? await Task.sleep(for: .seconds(delay))
+                    continue
+                }
+
+                var headers: [String: String] = [:]
+                for (key, value) in http.allHeaderFields {
+                    if let key = key as? String, let value = value as? String {
+                        headers[key] = value
+                    }
+                }
+                return HTTPResponse(statusCode: http.statusCode, data: data, headers: headers)
+            } catch let error as HTTPError {
+                throw error
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                if retryPolicy.shouldRetry(transportError: error, attempt: attempt) {
+                    let delay = retryPolicy.delay(forAttempt: attempt)
+                    await DiagnosticsCenter.shared.log(
+                        .warning,
+                        "network",
+                        "\(target) 传输失败，重试 \(attempt + 1)/\(retryPolicy.maxAttempts)，"
+                            + "\(delay)s 后：\(error.localizedDescription)"
+                    )
+                    try? await Task.sleep(for: .seconds(delay))
+                    continue
+                }
+
+                await DiagnosticsCenter.shared.log(
+                    .error,
+                    "network",
+                    "\(target) failed: \(error.localizedDescription)"
+                )
+                throw HTTPError.transport(error.localizedDescription)
             }
         }
-        return HTTPResponse(statusCode: http.statusCode, data: data, headers: headers)
     }
 }

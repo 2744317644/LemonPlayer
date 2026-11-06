@@ -6,13 +6,38 @@ struct DiagnosticsView: View {
     @State private var entries: [DiagnosticEntry] = []
     @State private var exportURL: URL?
     @State private var showShare = false
+    @State private var filter: Filter = .all
+
+    enum Filter: String, CaseIterable, Identifiable {
+        case all = "全部"
+        case errors = "错误"
+        case warnings = "警告"
+
+        var id: String { rawValue }
+    }
+
+    private var filteredEntries: [DiagnosticEntry] {
+        switch filter {
+        case .all: return entries
+        case .errors: return entries.filter { $0.level.rawValue == "error" }
+        case .warnings: return entries.filter { $0.level.rawValue == "warning" }
+        }
+    }
 
     var body: some View {
         List {
-            if entries.isEmpty {
+            Picker("筛选", selection: $filter) {
+                ForEach(Filter.allCases) { option in
+                    Text(option.rawValue).tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
+            .listRowBackground(Color.clear)
+
+            if filteredEntries.isEmpty {
                 ContentUnavailableView("暂无日志", systemImage: "doc.text.magnifyingglass", description: Text("操作 App 后会在这里记录关键事件（已脱敏）。"))
             } else {
-                ForEach(entries) { entry in
+                ForEach(filteredEntries) { entry in
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
                             Text(entry.level.rawValue.uppercased())

@@ -191,3 +191,5 @@
 | 2026-11-06 01:20 | M3/M4 | 修复系统「竖屏锁定」下播放器无法横屏（AppDelegate supportedInterfaceOrientationsFor + 单一方向遮罩）；播放器动画/手势 review：单击/双击 ExclusiveGesture、控制层/面板/HUD 统一 ease 动画、面板打开暂停自动隐藏、移除死代码、seek 即时反馈、VLC 字幕选轨重试；发布 v1.0.9 | Release `v1.0.9` | ✅ |
 
 | 2026-11-06 22:05 | M4/M5 | 播放器对齐 VidHub（双击左/中/右、左右滑动、左侧锁屏/选集、暂停才显示中央按钮、标题居中）；刮削排除 NCOP/NCED/OP/ED/SP 文件、接入 Bangumi 中文分集标题（ep 优先）；真实网盘验证 17 部/141 集、附属文件 0；发布 v1.1.0 | Release `v1.1.0` | ✅ |
+
+| 2026-11-07 22:35 | Step1 | 地基 M1-M3：LemonError 统一错误、HTTP 重试/配置/限流/UA、Bangumi 接入 RateLimiter、诊断页筛选、错误日志落点；测试 109+（Core 6/Network 9）；CI 待验证 | — | 🔄 |

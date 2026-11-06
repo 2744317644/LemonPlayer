@@ -21,9 +21,9 @@
 
 | 编号 | 模块 | 职责 | 现状 | 依赖 | 关键文件 |
 |---|---|---|---|---|---|
-| M1 | LemonCore | 版本号、通用错误、格式化、时间/日志基础 | ✅ 稳定 | 无 | `Packages/LemonCore` |
-| M2 | LemonNetwork | HTTPClient、超时/重试、UA/Cookie、请求构造 | ✅ 稳定 | M1 | `Packages/LemonNetwork` |
-| M3 | LemonPersistence | Keychain（令牌）、UserDefaults、Codable 文件存储 | ⚠️ 部分 | M1 | `Packages/LemonPersistence` |
+| M1 | LemonCore | 版本号、统一错误、诊断日志、格式化 | ✅ Step1 完成 | 无 | `Packages/LemonCore` |
+| M2 | LemonNetwork | HTTPClient、重试策略、统一 UA、限流、请求构造 | ✅ Step1 完成 | M1 | `Packages/LemonNetwork` |
+| M3 | LemonPersistence | Keychain（令牌唯一入口）、UserDefaults、Codable 存储 | ✅ Step1 完成 | M1 | `Packages/LemonPersistence` |
 | M4 | LemonGuangya | 光鸭接入：登录态、文件列表、播放地址、字幕文件、开发者 API（可选） | ⚠️ 可用 | M1/M2 | `GuangyaFileService`、`PlaybackLink`、`GuangyaFile` |
 | M5 | LemonMedia | 文件名解析、目录→番剧规则、标题清洗、Bangumi/TMDB 匹配、分集标题、缓存 | ⚠️ 可用 | M1/M2 | `MediaNameParser`、`SeriesFolderResolver`、`TitleMatcher`、`LibraryScraper`、`BangumiClient` |
 | M6 | LemonSubtitle | SRT/VTT/ASS 解析、匹配、ASS 时间轴位移、样式、字体存储 | ⚠️ 部分 | M1 | `SubtitleParser`、`SubtitleMatcher`、`SubtitleStyle` |

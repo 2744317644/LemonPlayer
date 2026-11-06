@@ -17,9 +17,11 @@
 - 动作：检查现有 import 边界（Packages 不 import App；各包依赖符合图）；给新文件定归属规则
 - 验收：模块图/契约/Checklist 经你确认
 
-## Step 1：地基 M1-M3（1–2 天）
+## Step 1：地基 M1-M3（1–2 天）✅ 已完成（2026-11-07）
 
 **目标**：错误、日志、令牌存储三件套可诊断、可测试。
+
+**已完成**：`LemonError` 统一错误（状态码/可重试/诊断文案）、HTTP 重试策略 + `HTTPClientConfiguration` + `RateLimiter` + 统一 UA、Bangumi 客户端接入限流、诊断页错误/警告筛选、媒体库失败写诊断日志。测试 +9（Core 5 / Network 6）。
 
 - M1：统一 `LemonError`（网络/解析/鉴权/文件），格式化工具集中
 - M2：HTTPClient 超时/重试/状态码约定；Bangumi UA/限流从 M5 下沉到 M2 的配置

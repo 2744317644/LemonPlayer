@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import LemonCore
 import LemonGuangya
 import LemonMedia
 import LemonPersistence
@@ -183,7 +184,9 @@ final class LibraryViewModel {
             phase = .loaded
             statusMessage = nil
         } catch {
-            phase = .failed(error.localizedDescription)
+            let lemon = LemonError.wrap(error)
+            await DiagnosticsCenter.shared.log(error: lemon, category: "library")
+            phase = .failed(lemon.errorDescription ?? lemon.diagnosticDescription)
         }
     }
 
