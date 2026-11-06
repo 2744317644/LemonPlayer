@@ -14,7 +14,7 @@ final class DemoPlayerUITests: XCTestCase {
 
     func testDemoPlayerScreenshot() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-demoPlayer"]
+        app.launchArguments = ["-playerDemo"]
         app.launch()
 
         // 等演示流就绪；轻点画面唤出控制层

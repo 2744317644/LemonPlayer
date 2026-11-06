@@ -62,12 +62,15 @@ final class PlayerViewModel {
     @ObservationIgnored private var recoveryAttempts = 0
     @ObservationIgnored private var isRecovering = false
     @ObservationIgnored private var tickCount = 0
+    /// UI 测试/截图用：直接播放给定来源，跳过网盘取链与字幕网络请求。
+    @ObservationIgnored private let demoSource: PlaybackSource?
 
-    init(file: GuangyaFile, session: SessionStore) {
+    init(file: GuangyaFile, session: SessionStore, demoSource: PlaybackSource? = nil) {
         self.file = file
         self.session = session
         self.service = GuangyaFileService(identity: session.identity)
         self.engine = PlaybackEngineFactory.make(for: file.name)
+        self.demoSource = demoSource
     }
 
     // MARK: - 生命周期
@@ -77,6 +80,20 @@ final class PlayerViewModel {
         subtitleStyle = await subtitleStyleStore.load()
         configureAudioSession()
         configureRemoteCommands()
+
+        if let demoSource {
+            do {
+                try await engine.load(demoSource)
+                rate = engine.rate
+                phase = .ready
+                isPlaying = true
+                startProgressLoop()
+            } catch {
+                phase = .failed(message(for: error))
+            }
+            return
+        }
+
         do {
             let source: PlaybackSource
             if let localURL = await DownloadManager.shared.localURL(for: file.id) {

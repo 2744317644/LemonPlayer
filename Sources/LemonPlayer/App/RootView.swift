@@ -1,10 +1,21 @@
 import SwiftUI
+import LemonPlayback
 
 struct RootView: View {
     @Environment(SessionStore.self) private var session
 
     var body: some View {
-        if ProcessInfo.processInfo.arguments.contains("-demoPlayer") {
+        if ProcessInfo.processInfo.arguments.contains("-playerDemo") {
+            // UI 测试 / 截图：真实播放器界面（示例 HLS，不登录）
+            NavigationStack {
+                PlayerView(
+                    demoSource: PlaybackSource(
+                        url: URL(string: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_adv_example_hevc/master.m3u8")!,
+                        title: "演示视频"
+                    )
+                )
+            }
+        } else if ProcessInfo.processInfo.arguments.contains("-demoPlayer") {
             // UI 测试 / 截图用：直接进演示播放，不用登录
             NavigationStack {
                 DemoPlayerView()

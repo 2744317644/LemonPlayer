@@ -8,6 +8,7 @@ import LemonSubtitle
 
 struct PlayerView: View {
     private let files: [GuangyaFile]
+    private let demoSource: PlaybackSource?
     @State private var index: Int
 
     @Environment(SessionStore.self) private var session
@@ -15,11 +16,21 @@ struct PlayerView: View {
 
     init(file: GuangyaFile) {
         files = [file]
+        demoSource = nil
+        _index = State(initialValue: 0)
+    }
+
+    /// UI 测试/截图：直接进真实播放器界面（示例 HLS，不需要登录）。
+    init(demoSource: PlaybackSource) {
+        let displayName = demoSource.title.isEmpty ? "演示视频" : demoSource.title
+        files = [GuangyaFile(id: "demo", parentID: "", name: displayName, size: 0, kind: .video)]
+        self.demoSource = demoSource
         _index = State(initialValue: 0)
     }
 
     init(files: [GuangyaFile], startIndex: Int = 0) {
         self.files = files
+        self.demoSource = nil
         _index = State(initialValue: min(max(0, startIndex), max(0, files.count - 1)))
     }
 
@@ -55,7 +66,7 @@ struct PlayerView: View {
             model?.stop()
             model = nil
             guard let file = currentFile else { return }
-            let created = PlayerViewModel(file: file, session: session)
+            let created = PlayerViewModel(file: file, session: session, demoSource: demoSource)
             model = created
             await created.start()
         }
