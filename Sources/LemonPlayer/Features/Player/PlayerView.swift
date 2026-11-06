@@ -98,6 +98,7 @@ private struct PlayerContent: View {
         case speed
         case style
         case episodes
+        case more
 
         var id: String { rawValue }
     }
@@ -258,7 +259,11 @@ private struct PlayerContent: View {
             // 左侧双击快退 + 上下滑动亮度
             Color.clear
                 .contentShape(Rectangle())
-                .simultaneousGesture(tapZone { model.seek(to: max(0, model.currentTime - 10)); scheduleHide() })
+                .simultaneousGesture(tapZone {
+                    flashHUD("快退 10 秒")
+                    model.seek(to: max(0, model.currentTime - 10))
+                    scheduleHide()
+                })
                 .gesture(verticalDrag(side: .brightness))
             // 中间双击播放/暂停
             Color.clear
@@ -271,7 +276,11 @@ private struct PlayerContent: View {
             // 右侧双击快进 + 上下滑动音量
             Color.clear
                 .contentShape(Rectangle())
-                .simultaneousGesture(tapZone { model.seek(to: min(model.duration, model.currentTime + 10)); scheduleHide() })
+                .simultaneousGesture(tapZone {
+                    flashHUD("快进 10 秒")
+                    model.seek(to: min(model.duration, model.currentTime + 10))
+                    scheduleHide()
+                })
                 .gesture(verticalDrag(side: .volume))
         }
     }
@@ -413,6 +422,7 @@ private struct PlayerContent: View {
         )
         .opacity(showControls ? 1 : 0)
         .animation(.easeInOut(duration: 0.2), value: showControls)
+        .animation(.easeInOut(duration: 0.2), value: model.isPlaying)
     }
 
     /// 左侧竖排（VidHub）：锁屏、选集。
@@ -472,6 +482,15 @@ private struct PlayerContent: View {
                         .accessibilityLabel("画中画")
                     }
                 }
+
+                Button {
+                    openPanel(.more)
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.title3)
+                        .frame(width: 32, height: 32)
+                }
+                .accessibilityLabel("更多")
             }
 
             Text(title)
@@ -617,6 +636,8 @@ private struct PlayerContent: View {
                 stylePanel
             case .episodes:
                 episodesPanel
+            case .more:
+                morePanel
             }
         }
         .frame(width: 320, alignment: .leading)
@@ -624,6 +645,41 @@ private struct PlayerContent: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
         .environment(\.colorScheme, .dark)
         .shadow(color: .black.opacity(0.35), radius: 24, y: 8)
+    }
+
+    /// 右上角更多（VidHub 的「三个点」）。
+    private var morePanel: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("更多")
+                .font(.headline)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 4)
+
+            if episodes.count > 1 {
+                panelRowButton("选集（\(currentIndex + 1)/\(episodes.count)）") { openPanel(.episodes) }
+            }
+            panelRowButton("字幕") { openPanel(.subtitles) }
+            panelRowButton("音轨") { openPanel(.audio) }
+            panelRowButton("播放速度") { openPanel(.speed) }
+            panelRowButton("字幕设置") { openPanel(.style) }
+            Divider().padding(.vertical, 4)
+            panelRowButton("锁定屏幕") {
+                withAnimation {
+                    isLocked = true
+                    showControls = false
+                    activePanel = nil
+                }
+            }
+        }
+    }
+
+    /// 双击快进/快退时短暂显示提示。
+    private func flashHUD(_ text: String) {
+        hud = text
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(800))
+            if hud == text { hud = nil }
+        }
     }
 
     /// 同文件夹选集（VidHub 左侧选集）。
