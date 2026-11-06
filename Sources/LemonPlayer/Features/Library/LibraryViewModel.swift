@@ -21,6 +21,8 @@ final class LibraryViewModel {
     private(set) var recent: [PlaybackProgress] = []
     private(set) var phase: Phase = .idle
     private(set) var statusMessage: String?
+    /// 上次成功扫描时间（用于界面显示与缓存提示）。
+    private(set) var lastScanAt: Date?
 
     @ObservationIgnored private let session: SessionStore
     @ObservationIgnored private let store = LibraryStore()
@@ -30,9 +32,12 @@ final class LibraryViewModel {
     @ObservationIgnored private let fileService: GuangyaFileService
     @ObservationIgnored private var scanTask: Task<Void, Never>?
 
+    private static let lastScanKey = "lemonplayer.library.lastScan"
+
     init(session: SessionStore) {
         self.session = session
         self.fileService = GuangyaFileService(identity: session.identity)
+        self.lastScanAt = UserDefaults.standard.object(forKey: Self.lastScanKey) as? Date
     }
 
     func loadCached() async {
@@ -182,6 +187,8 @@ final class LibraryViewModel {
 
             series = built
             await store.save(built)
+            lastScanAt = Date()
+            UserDefaults.standard.set(lastScanAt, forKey: Self.lastScanKey)
             phase = .loaded
             statusMessage = nil
         } catch {
@@ -230,5 +237,16 @@ final class LibraryViewModel {
         await store.clear()
         series = []
         phase = .idle
+    }
+
+    /// 清除媒体库缓存 + Bangumi 匹配缓存（下次扫描重新匹配）。
+    func clearAllCaches() async {
+        await store.clear()
+        await matchCache.clear()
+        UserDefaults.standard.removeObject(forKey: Self.lastScanKey)
+        lastScanAt = nil
+        series = []
+        phase = .idle
+        statusMessage = nil
     }
 }

@@ -20,10 +20,19 @@ struct LibrarySplitView: View {
                 .navigationTitle("媒体库")
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            Task { await model?.scan() }
+                        Menu {
+                            Button {
+                                Task { await model?.scan() }
+                            } label: {
+                                Label("重新扫描", systemImage: "arrow.clockwise")
+                            }
+                            Button(role: .destructive) {
+                                Task { await model?.clearAllCaches() }
+                            } label: {
+                                Label("清除媒体库缓存", systemImage: "trash")
+                            }
                         } label: {
-                            Image(systemName: "arrow.clockwise")
+                            Image(systemName: "ellipsis.circle")
                         }
                         .disabled(model?.phase == .scanning)
                     }

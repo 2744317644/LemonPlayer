@@ -25,6 +25,23 @@ struct LibraryView: View {
                 }
                 .disabled(model?.phase == .scanning)
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        Task { await model?.scan() }
+                    } label: {
+                        Label("重新扫描", systemImage: "arrow.clockwise")
+                    }
+                    Button(role: .destructive) {
+                        Task { await model?.clearAllCaches() }
+                    } label: {
+                        Label("清除媒体库缓存", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .disabled(model?.phase == .scanning)
+            }
         }
         .task {
             guard model == nil else { return }
@@ -70,6 +87,15 @@ struct LibraryView: View {
 
     private func libraryContent(_ model: LibraryViewModel) -> some View {
         ScrollView {
+            if let last = model.lastScanAt {
+                Text("上次扫描：\(last.formatted(date: .abbreviated, time: .shortened))")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+            }
+
             if !model.recent.isEmpty {
                 recentSection(model)
             }

@@ -70,4 +70,22 @@ final class LibraryMatchCacheTests: XCTestCase {
         let count = await cache.count()
         XCTAssertLessThanOrEqual(count, 10)
     }
+
+    func testClearRemovesAllEntries() async {
+        let cache = LibraryMatchCache(directory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
+        await cache.store(
+            LibraryMatch(bangumiID: 1, title: "A", coverURL: nil, year: nil, score: nil),
+            for: "A"
+        )
+        let before = await cache.count()
+        XCTAssertEqual(before, 1)
+
+        await cache.clear()
+
+        let after = await cache.count()
+        XCTAssertEqual(after, 0)
+        let lookup = await cache.lookup(for: "A")
+        XCTAssertNil(lookup)
+    }
+
 }

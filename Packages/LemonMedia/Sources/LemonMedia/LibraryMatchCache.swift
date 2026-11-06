@@ -78,6 +78,12 @@ public actor LibraryMatchCache {
 
     public func count() -> Int { entries.count }
 
+    /// 清空匹配缓存（媒体库「清除缓存」用）。
+    public func clear() {
+        entries.removeAll()
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
     public static func normalize(_ title: String) -> String {
         title.lowercased()
             .replacingOccurrences(of: " ", with: "")
