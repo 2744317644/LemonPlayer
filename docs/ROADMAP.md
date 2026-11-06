@@ -6,10 +6,8 @@
 ## 当前基线
 
 - 最新版本：**v2.0.0**（Step 0–10 全部完成）
-
-- 版本：**v1.1.0**（播放器 VidHub 对齐、NCOP/NCED 排除、Bangumi 中文分集标题）
-- 测试：Packages 100 用例（Linux CI），UI 测试 3 条，构建/发布 CI 全绿
-- 已知待验收：播放器手势/面板/锁屏、字幕显示、媒体库扫描、竖屏锁定横屏
+- 测试：7 包 **122 用例**（Linux CI，1 skipped）+ UI 测试 6 张截图（登录 3 + 播放器 3），build/release/ui-preview 全绿
+- 已知待真机验收：见 `docs/qa/REGRESSION.md` 的 J-01~J-06
 
 ## Step 0：模块冻结（0.5 天）
 
