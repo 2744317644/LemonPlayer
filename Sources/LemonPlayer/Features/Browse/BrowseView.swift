@@ -97,7 +97,7 @@ private struct BrowseContent: View {
                     }
                 }
 
-                if model.phase == .failed(let message) {
+                if case .failed(let message) = model.phase {
                     VStack(spacing: 8) {
                         Text(message)
                             .font(.footnote)
