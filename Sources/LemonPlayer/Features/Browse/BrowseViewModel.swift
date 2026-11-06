@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import LemonCore
 import LemonDownloads
 import LemonGuangya
 
@@ -94,7 +95,9 @@ final class BrowseViewModel {
             hasMore = result.hasMore(pageSize: pageSize, accumulated: result.items.count)
             phase = .loaded
         } catch {
-            phase = .failed(message(for: error))
+            let lemon = LemonError.wrap(error)
+            await DiagnosticsCenter.shared.log(lemon, category: "browse")
+            phase = .failed(lemon.errorDescription ?? lemon.diagnosticDescription)
         }
     }
 
