@@ -1,8 +1,10 @@
 import SwiftUI
 import LemonDownloads
+import LemonGuangya
 
 struct DownloadsView: View {
     @State private var model: DownloadsViewModel?
+    @State private var playing: GuangyaFile?
 
     var body: some View {
         Group {
@@ -13,6 +15,9 @@ struct DownloadsView: View {
             }
         }
         .navigationTitle("下载")
+        .navigationDestination(item: $playing) { file in
+            PlayerView(file: file)
+        }
         .task {
             guard model == nil else { return }
             let created = DownloadsViewModel()
@@ -86,6 +91,16 @@ struct DownloadsView: View {
                     Button("继续") { model.resume(record) }
                 case .queued:
                     Button("取消") { model.cancel(record) }
+                case .completed:
+                    Button("播放") {
+                        playing = GuangyaFile(
+                            id: record.id,
+                            parentID: record.parentID,
+                            name: record.fileName,
+                            size: record.totalBytes,
+                            kind: .video
+                        )
+                    }
                 default:
                     EmptyView()
                 }

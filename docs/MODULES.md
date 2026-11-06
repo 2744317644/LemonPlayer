@@ -40,7 +40,7 @@
 | A4 | 播放器 | 播放 UI（VidHub 对齐）、手势、面板、锁屏、选集、进度/后台暂停 | ✅ Step5 完成 | `Features/Player`、`Playback/` |
 | A5 | 字幕体验 | 自动匹配/挂载、语言偏好、主副字幕、延迟、字号/边距、字体导入、诊断 | ✅ Step6 完成 | `Features/Player` + `Playback` + M6 |
 | A6 | 媒体库 | 扫描/取消、刮削展示、分集标题、继续观看、缓存清空与上次扫描 | ✅ Step7 完成 | `Features/Library` |
-| A7 | 下载 | 任务列表/进度/暂停/删除/离线播放 | ⚠️ 半成品 | `Features/Downloads`、M8 |
+| A7 | 下载 | 任务列表/进度/暂停/继续/删除/离线播放 | ✅ Step8 完成 | `Features/Downloads`、M8 |
 | A8 | 设置与诊断 | 网络自检、日志导出、令牌管理、演示播放、关于 | ✅ 基本可用 | `Features/Settings` |
 | A9 | 交付 | CI（测试/构建/UI 截图）、Release、安装文档、进度文档 | ✅ | `.github/workflows`、`scripts/`、`docs/` |
 

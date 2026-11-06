@@ -60,6 +60,8 @@ public actor DownloadManager {
     private var records: [String: DownloadRecord] = [:]
     private var tasks: [String: URLSessionDownloadTask] = [:]
     private var resumeData: [String: Data] = [:]
+    /// 用户主动取消的任务：忽略随后到达的 resumeData 回调，避免状态被改回 paused。
+    private var cancelledIDs: Set<String> = []
     private var continuations: [UUID: AsyncStream<[DownloadRecord]>.Continuation] = [:]
     private var session: URLSession!
     private let delegate: DownloadSessionDelegate
@@ -132,6 +134,7 @@ public actor DownloadManager {
         }
         records.removeAll()
         resumeData.removeAll()
+        cancelledIDs.removeAll()
         persist()
         emit()
     }
@@ -188,7 +191,15 @@ public actor DownloadManager {
         url: URL,
         headers: [String: String]
     ) async {
-        if let existing = records[fileID], existing.state == .completed { return }
+        if let existing = records[fileID] {
+            switch existing.state {
+            case .completed, .downloading, .paused:
+                return // 已完成/进行中/已暂停：不要重复起任务
+            default:
+                break
+            }
+        }
+        cancelledIDs.remove(fileID)
 
         let record = DownloadRecord(
             id: fileID,
@@ -222,6 +233,7 @@ public actor DownloadManager {
 
     public func resume(id: String) async {
         guard let record = records[id], record.state == .paused || record.state == .failed else { return }
+        cancelledIDs.remove(id)
         let data = resumeData[id] ?? store.resumeData(id: id)
         guard let data else {
             // 没有断点数据 → 明确失败，由用户重新添加
@@ -243,6 +255,7 @@ public actor DownloadManager {
     }
 
     public func cancel(id: String) {
+        cancelledIDs.insert(id)
         tasks[id]?.cancel()
         tasks[id] = nil
         resumeData[id] = nil
@@ -255,6 +268,7 @@ public actor DownloadManager {
     }
 
     public func remove(id: String) {
+        cancelledIDs.insert(id)
         tasks[id]?.cancel()
         tasks[id] = nil
         resumeData[id] = nil
@@ -278,6 +292,7 @@ public actor DownloadManager {
     }
 
     func handleFinish(id: String, temporaryURL: URL) {
+        cancelledIDs.remove(id)
         guard var record = records[id] else { return }
         let destination = store.downloadsDirectory
             .appendingPathComponent("\(id)-\(safeName(record.fileName))")
@@ -303,6 +318,11 @@ public actor DownloadManager {
     }
 
     func handleError(id: String, message: String, resumeData data: Data?) {
+        // 用户主动取消：丢弃 URLSession 带回的 resumeData，保持 cancelled 状态
+        if cancelledIDs.remove(id) != nil {
+            store.removeResumeData(id: id)
+            return
+        }
         guard var record = records[id] else { return }
         if let data {
             resumeData[id] = data
