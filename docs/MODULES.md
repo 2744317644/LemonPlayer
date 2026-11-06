@@ -37,7 +37,7 @@
 | A1 | App 壳 | 启动、AppDelegate、会话注入、根路由、Tab、方向锁定 | ✅ | `App/`、`RootView.swift`、`SessionStore.swift` |
 | A2 | 登录 | 扫码 / 网页登录 / 账号密码；token 刷新 + 401/117 自动重登 | ✅ Step2 完成 | `Features/Login`、`SessionStore` |
 | A3 | 网盘浏览 | 骨架/空态/重试、分页排序搜索、同目录队列进播放 | ✅ Step3 完成 | `Features/Browse` |
-| A4 | 播放器 | 播放 UI（VidHub 对齐）、手势、面板、锁屏、选集、进度/后台暂停 | ⚠️ 待验收 | `Features/Player`、`Playback/` |
+| A4 | 播放器 | 播放 UI（VidHub 对齐）、手势、面板、锁屏、选集、进度/后台暂停 | ✅ Step5 完成 | `Features/Player`、`Playback/` |
 | A5 | 字幕体验 | 自动匹配/挂载、主副字幕、延迟、字号/边距、字体导入、诊断 | ⚠️ 待验收 | `Features/Player` + `Playback` + M6 |
 | A6 | 媒体库 | 扫描、刮削展示、剧集列表、继续观看、缓存刷新 | ⚠️ 待验收 | `Features/Library` |
 | A7 | 下载 | 任务列表/进度/暂停/删除/离线播放 | ⚠️ 半成品 | `Features/Downloads`、M8 |
