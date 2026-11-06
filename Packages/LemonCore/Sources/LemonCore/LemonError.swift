@@ -86,10 +86,10 @@ public enum LemonError: Error, Equatable, Sendable, LocalizedError {
     }
 
     /// 把任意 Error 统一成 `LemonError`（已是则原样返回）。
-    public static func wrap(_ error: Error) -> LemonError {
-        if let lemon = error as? LemonError { return lemon }
-        if error is CancellationError { return .cancelled }
-        return .unknown(error.localizedDescription)
+    public static func wrap(_ wrapped: Error) -> LemonError {
+        if let lemon = wrapped as? LemonError { return lemon }
+        if wrapped is CancellationError { return .cancelled }
+        return .unknown(wrapped.localizedDescription)
     }
 }
 
