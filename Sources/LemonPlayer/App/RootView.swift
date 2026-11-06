@@ -35,6 +35,7 @@ struct RootView: View {
                 }
             }
         }
+        .onAppear { AppMetrics.markReady() }
     }
 }
 

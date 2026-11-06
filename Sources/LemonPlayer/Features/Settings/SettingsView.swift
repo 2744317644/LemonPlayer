@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var tokenCopyNotice: String?
     @State private var fileTestResult: String?
     @State private var isTestingFile = false
+    @State private var networkCacheBytes: Int64 = 0
 
     var body: some View {
         Form {
@@ -39,6 +40,11 @@ struct SettingsView: View {
             }
 
             Section("存储") {
+                LabeledContent("网络缓存", value: Formatters.fileSize(networkCacheBytes))
+                Button("清除网络缓存") {
+                    URLCache.shared.removeAllCachedResponses()
+                    networkCacheBytes = 0
+                }
                 LabeledContent("已下载", value: "\(completedCount) 个 · \(Formatters.fileSize(downloadedBytes))")
 
                 Picker("容量上限", selection: $storageLimitGB) {
@@ -209,6 +215,7 @@ struct SettingsView: View {
     private func refreshStorage() async {
         downloadedBytes = await DownloadManager.shared.totalDownloadedBytes()
         completedCount = await DownloadManager.shared.completedCount()
+        networkCacheBytes = Int64(URLCache.shared.currentDiskUsage)
     }
 
     /// 直接打文件接口，展示原始响应片段（排查解析/路径问题）。
