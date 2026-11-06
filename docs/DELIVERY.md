@@ -1,8 +1,8 @@
-# LemonPlayer 交付说明（v1.0.0）
+# LemonPlayer 交付说明（v2.0.0）
 
-> 更新：2026-11-05 · 状态：**v1.0.0 已发布**（功能冻结，真机验收中）
-> 仓库：https://github.com/2744317644/LemonPlayer（private）
-> 正式包：https://github.com/2744317644/LemonPlayer/releases/tag/v1.0.0
+> 更新：2026-11-08 · 状态：**v2.0.0 已发布**（Step 0–10 模块化完成）
+> 仓库：https://github.com/2744317644/LemonPlayer（public）
+> 正式包：https://github.com/2744317644/LemonPlayer/releases/tag/v2.0.0
 
 ---
 
@@ -27,7 +27,7 @@ Swift / SwiftUI 原生 iOS 播放器：登录**光鸭云盘**后直接浏览、�
 | 内核/CI 调研 | `docs/tech/PLAYER_KERNEL.md`、`docs/tech/CI_BUILD.md` |
 | 安装说明 | `docs/INSTALL.md` |
 | 回归清单 | `docs/qa/REGRESSION.md` |
-| 可安装包 | GitHub Releases（rc1~rc8），附件未签名 IPA + SHA256 |
+| 可安装包 | GitHub Releases（v1.2.0–v2.0.0），附件未签名 IPA + SHA256 |
 | CI | `.github/workflows/build.yml`（单测 + 构建 + artifact）；`release.yml`（tag → Release） |
 
 ---
@@ -84,7 +84,7 @@ Swift / SwiftUI 原生 iOS 播放器：登录**光鸭云盘**后直接浏览、�
 
 ### 已验证（CI + 自动化）
 - 7 个纯逻辑包 **75 个单测**（Linux 容器，每次 push）
-- macOS 构建 + 未签名 IPA 归档 + Release 发布（rc1~rc8）
+- macOS 构建 + 未签名 IPA 归档 + Release 发布（v1.2.0–v2.0.0）
 - 模拟器 UI 冒烟测试工程已就绪（手动触发 job）
 
 ### 待真机验证（需你操作）
@@ -138,3 +138,23 @@ Swift / SwiftUI 原生 iOS 播放器：登录**光鸭云盘**后直接浏览、�
 ## 10. 免责声明
 
 光鸭云盘未提供公开开发者 API，本项目使用社区逆向接口，存在失效/限流/风控风险；仅用于播放你有权访问的个人媒体内容，请勿传播侵权内容。第三方组件（VLCKit/FFmpeg/libass）按其各自许可分发。
+
+
+---
+
+## v2.0.0 模块化交付（2026-11-08）
+
+Step 0–10 全部完成，版本沿革：
+
+| 版本 | 内容 |
+|---|---|
+| v1.2.0 | Step 1 地基（统一错误/HTTP 重试/限流）+ Step 2 登录（401/117 自动重登） |
+| v1.3.0 | Step 3 网盘浏览（骨架/空态/队列）+ Step 4 播放内核（状态机/seekSafe/缓冲） |
+| v1.4.0 | Step 5 播放器 UI（VidHub 对齐、更多面板、真机 UI 截图） |
+| v1.5.0 | Step 6 字幕（语言偏好、面板、字体、样式截图） |
+| v1.6.0 | Step 7 刮削/媒体库（缓存清空、上次扫描、匹配缓存） |
+| v1.7.0 | Step 8 下载（完成项播放、取消竞态、持久化测试） |
+| v1.8.0 | Step 9 设置/诊断（启动耗时、内存、网络缓存、错误复制） |
+| v2.0.0 | Step 10 回归/发布（回归清单、UI 截图、发布） |
+
+回归清单见 `docs/qa/REGRESSION.md`；模块边界见 `docs/MODULES.md`；分步计划见 `docs/ROADMAP.md`。
