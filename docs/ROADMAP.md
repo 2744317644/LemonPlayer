@@ -5,7 +5,7 @@
 
 ## 当前基线
 
-- 最新版本：**v1.6.0**（Step 3 浏览 / Step 4 播放内核 / Step 5 播放器 UI / Step 6 字幕 / Step 7 刮削媒体库）
+- 最新版本：**v1.7.0**（Step 3–8 完成：浏览/播放内核/播放器 UI/字幕/刮削媒体库/下载）
 
 - 版本：**v1.1.0**（播放器 VidHub 对齐、NCOP/NCED 排除、Bangumi 中文分集标题）
 - 测试：Packages 100 用例（Linux CI），UI 测试 3 条，构建/发布 CI 全绿
