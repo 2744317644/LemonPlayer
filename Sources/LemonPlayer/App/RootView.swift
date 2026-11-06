@@ -5,6 +5,7 @@ struct RootView: View {
     @Environment(SessionStore.self) private var session
 
     var body: some View {
+        Group {
         if ProcessInfo.processInfo.arguments.contains("-playerDemo") {
             // UI 测试 / 截图：真实播放器界面（示例 HLS，不登录）
             NavigationStack {
@@ -34,6 +35,7 @@ struct RootView: View {
                     MainTabView()
                 }
             }
+        }
         }
         .onAppear { AppMetrics.markReady() }
     }
