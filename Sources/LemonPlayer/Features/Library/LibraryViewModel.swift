@@ -64,8 +64,9 @@ final class LibraryViewModel {
     private func performScan() async {
         statusMessage = "正在枚举网盘目录…"
         do {
-            let token = try await session.validAccessToken()
-            let media = try await fileService.listAllMedia(accessToken: token)
+            let media = try await session.authorized { token in
+                try await fileService.listAllMedia(accessToken: token)
+            }
             if Task.isCancelled {
                 phase = .idle
                 statusMessage = nil

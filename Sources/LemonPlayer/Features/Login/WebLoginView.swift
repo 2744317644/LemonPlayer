@@ -8,6 +8,8 @@ struct WebLoginView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var message = "在网页中登录（手机验证码 / 密码），成功后自动返回 App"
     @State private var isFinishing = false
+    /// 变了就重建 WKWebView，用于「重新加载」。
+    @State private var reloadID = UUID()
 
     let onTokens: @MainActor (String, String) async -> TokenLoginResult
 
@@ -25,7 +27,7 @@ struct WebLoginView: View {
                 .padding(.vertical, 8)
                 .background(Color.secondary.opacity(0.08))
 
-                WebLoginWebView { accessToken, refreshToken in
+                WebLoginWebView(onCredentials: { accessToken, refreshToken in
                     guard !isFinishing else { return }
                     isFinishing = true
                     message = "已获取登录凭据，正在验证…"
@@ -46,10 +48,20 @@ struct WebLoginView: View {
                         }
                     }
                 }
+                .id(reloadID)
             }
             .navigationTitle("网页登录")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        message = "正在重新加载网页…"
+                        reloadID = UUID()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .accessibilityLabel("重新加载")
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     Button("取消") { dismiss() }
                 }

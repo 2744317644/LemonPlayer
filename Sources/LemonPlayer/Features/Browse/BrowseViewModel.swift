@@ -145,8 +145,9 @@ final class BrowseViewModel {
     func download(_ file: GuangyaFile) async {
         guard file.isPlayable else { return }
         do {
-            let token = try await session.validAccessToken()
-            let link = try await service.playbackURL(fileID: file.id, accessToken: token)
+            let link = try await session.authorized { token in
+                try await service.playbackURL(fileID: file.id, accessToken: token)
+            }
             await DownloadManager.shared.enqueue(
                 fileID: file.id,
                 fileName: file.name,
@@ -160,15 +161,16 @@ final class BrowseViewModel {
     }
 
     private func fetch(page: Int) async throws -> FileListPage {
-        let token = try await session.validAccessToken()
-        return try await service.listFiles(
-            parentID: currentFolderID,
-            page: page,
-            pageSize: pageSize,
-            orderBy: sort.orderBy,
-            sortType: sort.sortType,
-            accessToken: token
-        )
+        return try await session.authorized { token in
+            try await service.listFiles(
+                parentID: currentFolderID,
+                page: page,
+                pageSize: pageSize,
+                orderBy: sort.orderBy,
+                sortType: sort.sortType,
+                accessToken: token
+            )
+        }
     }
 
     private func message(for error: Error) -> String {

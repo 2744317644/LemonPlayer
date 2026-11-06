@@ -15,13 +15,51 @@ struct RootView: View {
                 case .checking:
                     ProgressView("检查登录状态…")
                         .task { await session.restore() }
-                case .loggedOut, .failed:
+                case .loggedOut:
                     LoginView()
+                case .failed(let message):
+                    SessionFailureView(message: message)
                 case .loggedIn:
                     MainTabView()
                 }
             }
         }
+    }
+}
+
+struct SessionFailureView: View {
+    @Environment(SessionStore.self) private var session
+    let message: String
+
+    var body: some View {
+        VStack(spacing: 18) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 44))
+                .foregroundStyle(.secondary)
+
+            Text("登录状态恢复失败")
+                .font(.headline)
+
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Button {
+                Task { await session.restore() }
+            } label: {
+                Text("重试")
+                    .frame(maxWidth: 220)
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button("重新登录") {
+                Task { await session.logout() }
+            }
+            .font(.footnote)
+        }
+        .padding()
     }
 }
 

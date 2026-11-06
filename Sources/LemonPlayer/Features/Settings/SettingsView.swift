@@ -217,16 +217,17 @@ struct SettingsView: View {
         fileTestResult = nil
         defer { isTestingFile = false }
         do {
-            let token = try await session.validAccessToken()
             let service = GuangyaFileService(identity: session.identity)
-            let page = try await service.listFiles(
-                parentID: "",
-                page: 0,
-                pageSize: 20,
-                orderBy: 3,
-                sortType: 0,
-                accessToken: token
-            )
+            let page = try await session.authorized { token in
+                try await service.listFiles(
+                    parentID: "",
+                    page: 0,
+                    pageSize: 20,
+                    orderBy: 3,
+                    sortType: 0,
+                    accessToken: token
+                )
+            }
             fileTestResult = "✅ 根目录 \(page.items.count) 项，total=\(page.total)"
         } catch {
             fileTestResult = "❌ \(error.localizedDescription)"

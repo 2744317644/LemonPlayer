@@ -81,8 +81,9 @@ final class PlayerViewModel {
                 // 已下载：直接播本地文件（离线可用）
                 source = PlaybackSource(url: localURL, headers: [:], title: file.name)
             } else {
-                let token = try await session.validAccessToken()
-                let link = try await service.playbackURL(fileID: file.id, accessToken: token)
+                let link = try await session.authorized { token in
+                    try await service.playbackURL(fileID: file.id, accessToken: token)
+                }
                 source = PlaybackSource(url: link.url, headers: link.headers, title: file.name)
             }
             try await engine.load(source)
@@ -242,15 +243,16 @@ final class PlayerViewModel {
     func autoAttachSubtitle() async {
         guard file.isPlayable else { return }
         do {
-            let token = try await session.validAccessToken()
-            let page = try await service.listFiles(
-                parentID: file.parentID,
-                page: 0,
-                pageSize: 200,
-                orderBy: 3,
-                sortType: 0,
-                accessToken: token
-            )
+            let page = try await session.authorized { token in
+                try await service.listFiles(
+                    parentID: file.parentID,
+                    page: 0,
+                    pageSize: 200,
+                    orderBy: 3,
+                    sortType: 0,
+                    accessToken: token
+                )
+            }
             let subtitleFiles = page.items.filter { SubtitleMatcher.isSubtitleFile($0.name) }
             self.subtitleFiles = subtitleFiles
             let candidates = SubtitleMatcher.candidates(
@@ -302,8 +304,9 @@ final class PlayerViewModel {
     /// 下载字幕 → 识别编码 → SRT/VTT 走自绘 overlay，ASS 走内核 libass。
     func attach(_ subtitleFile: GuangyaFile, asSecondary: Bool) async {
         do {
-            let token = try await session.validAccessToken()
-            let link = try await service.playbackURL(fileID: subtitleFile.id, accessToken: token)
+            let link = try await session.authorized { token in
+                try await service.playbackURL(fileID: subtitleFile.id, accessToken: token)
+            }
 
             // CDN 对 Accept/Referer 敏感：先按 */* + Range 请求，失败再退普通 GET
             var headers = link.headers

@@ -67,8 +67,14 @@ final class SessionStore {
             }
             state = .loggedIn(subject: credentials.subject ?? "已登录")
         } catch {
-            // 刷新失败（refresh_token 失效）→ 回到登录页
-            state = .loggedOut
+            // 刷新失败：区分「登录态失效」与「网络异常」，后者保留 token 以便重试。
+            let lemon = LemonError.wrap(error)
+            await DiagnosticsCenter.shared.log(error: lemon, category: "auth")
+            if let guangya = error as? GuangyaError, guangya.isAuthFailure {
+                state = .loggedOut
+            } else {
+                state = .failed(lemon.errorDescription ?? "登录状态恢复失败，请检查网络后重试")
+            }
         }
     }
 
@@ -214,7 +220,7 @@ final class SessionStore {
         return credentials.accessToken
     }
 
-    /// 取一个可用的 access_token；过期时自动刷新（single-flight，避免并发互踢 refresh_token）。
+    /// 有效 access_token；过期时自动刷新（single-flight，避免并发互踢 refresh_token）。
     func validAccessToken() async throws -> String {
         guard let credentials = (try? await tokens.load()) ?? volatileCredentials else {
             throw GuangyaError.unauthorized
@@ -223,6 +229,35 @@ final class SessionStore {
             return credentials.accessToken
         }
         return try await refreshAccessToken()
+    }
+
+    /// 带「401/117 自动重登一次」的调用入口：业务只关心成功结果。
+    /// 刷新失败会置为登出并抛出未授权错误。
+    func authorized<T>(_ operation: (String) async throws -> T) async throws -> T {
+        let token = try await validAccessToken()
+        do {
+            return try await operation(token)
+        } catch {
+            guard let guangya = error as? GuangyaError, guangya.isAuthFailure else {
+                throw error
+            }
+            let status = guangya.statusCode ?? 401
+            await DiagnosticsCenter.shared.log(
+                error: LemonError.unauthorized(
+                    statusCode: status,
+                    message: guangya.localizedDescription
+                ),
+                category: "auth"
+            )
+            do {
+                _ = try await refreshAccessToken()
+            } catch {
+                state = .loggedOut
+                throw LemonError.unauthorized(statusCode: status, message: "登录已过期，请重新登录")
+            }
+            let refreshed = try await validAccessToken()
+            return try await operation(refreshed)
+        }
     }
 
     @discardableResult

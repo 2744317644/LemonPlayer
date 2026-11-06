@@ -35,7 +35,7 @@
 | 编号 | 模块 | 职责 | 现状 | 关键文件 |
 |---|---|---|---|---|
 | A1 | App 壳 | 启动、AppDelegate、会话注入、根路由、Tab、方向锁定 | ✅ | `App/`、`RootView.swift`、`SessionStore.swift` |
-| A2 | 登录 | 扫码 / 网页登录 / 账号密码；token 刷新与失效处理 | ✅ 基本可用 | `Features/Login`、`SessionStore` |
+| A2 | 登录 | 扫码 / 网页登录 / 账号密码；token 刷新 + 401/117 自动重登 | ✅ Step2 完成 | `Features/Login`、`SessionStore` |
 | A3 | 网盘浏览 | 目录/排序/搜索、进入播放、字幕同目录 | ✅ 基本可用 | `Features/Browse` |
 | A4 | 播放器 | 播放 UI（VidHub 对齐）、手势、面板、锁屏、选集、进度/后台暂停 | ⚠️ 待验收 | `Features/Player`、`Playback/` |
 | A5 | 字幕体验 | 自动匹配/挂载、主副字幕、延迟、字号/边距、字体导入、诊断 | ⚠️ 待验收 | `Features/Player` + `Playback` + M6 |
