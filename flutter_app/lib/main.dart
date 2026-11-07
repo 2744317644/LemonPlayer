@@ -18,7 +18,7 @@ void main() {
 }
 
 const hlsUrl =
-    'https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_adv_example_hevc/master.m3u8';
+    'https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8';
 const mkvUrl =
     'https://test-videos.co.uk/vids/bigbuckbunny/mkv/720/Big_Buck_Bunny_720_10s_1MB.mkv';
 
@@ -30,62 +30,99 @@ class Phase0App extends StatefulWidget {
 }
 
 class _Phase0AppState extends State<Phase0App> {
-  late final Player _player = Player();
+  late final Player _player = Player(
+    configuration: const PlayerConfiguration(libass: true),
+  );
   late final VideoController _controller = VideoController(_player);
   String _status = '初始化中…';
   String _current = 'HLS';
   bool _assAttached = false;
+  String _subtitleState = '-';
+  bool _playing = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
 
   @override
   void initState() {
     super.initState();
-    _prepareSubtitleAndPlayHls();
+    _play(mkvUrl, 'MKV');
     _player.stream.error.listen((error) {
       if (mounted) setState(() => _status = '播放错误：$error');
+    });
+    _player.stream.playing.listen((playing) {
+      if (mounted) setState(() => _playing = playing);
+    });
+    _player.stream.position.listen((position) {
+      if (mounted) setState(() => _position = position);
+    });
+    _player.stream.duration.listen((duration) {
+      if (mounted) setState(() => _duration = duration);
+    });
+    _player.stream.subtitle.listen((tracks) {
+      if (mounted) {
+        setState(() => _subtitleState = tracks.isEmpty ? '无' : tracks.join(', '));
+      }
     });
   }
 
   Future<File> _writeDemoAss() async {
     final text = await rootBundle.loadString('assets/demo.ass');
-    final file = File(
-      '${Directory.systemTemp.path}${Platform.pathSeparator}lemon_demo.ass',
-    );
+    final dir = Directory(r'C:\LemonPhase0');
+    await dir.create(recursive: true);
+    final file = File('${dir.path}${Platform.pathSeparator}demo.ass');
     await file.writeAsString(text);
     return file;
   }
 
-  Future<void> _prepareSubtitleAndPlayHls() async {
+  Future<void> _play(String url, String label) async {
     setState(() {
-      _status = '加载 HLS…';
-      _current = 'HLS';
+      _status = '加载 $label…';
+      _current = label;
+      _assAttached = false;
+      _subtitleState = '-';
+      _position = Duration.zero;
+      _duration = Duration.zero;
     });
     final ass = await _writeDemoAss();
-    await _player.open(Media(hlsUrl), play: true);
+    await _player.open(Media(url), play: true);
     await _player.setSubtitleTrack(
       SubtitleTrack.uri(ass.uri.toString(), title: 'Demo ASS'),
     );
+    final sub = _player.state.track.subtitle;
     if (mounted) {
       setState(() {
-        _status = 'HLS 播放中（ASS 已挂载）';
+        _status = '$label 播放中（ASS 已挂载）';
         _assAttached = true;
+        _subtitleState = sub.uri
+            ? 'uri:${sub.title ?? sub.id}'
+            : (sub.id == 'no' ? '关闭' : 'id:${sub.id}');
       });
+    }
+    _captureAfterDelay();
+  }
+
+  Future<void> _captureAfterDelay() async {
+    await Future<void>.delayed(const Duration(seconds: 5));
+    try {
+      final bytes = await _player.screenshot(
+        format: 'image/png',
+        includeLibassSubtitles: true,
+      );
+      if (bytes == null) {
+        if (mounted) setState(() => _status = '截图失败：bytes=null');
+        return;
+      }
+      final file = File(
+        '${Directory.systemTemp.path}${Platform.pathSeparator}lemon_phase0_shot.png',
+      );
+      await file.writeAsBytes(bytes);
+      if (mounted) setState(() => _status = '截图已保存：${file.path}');
+    } catch (error) {
+      if (mounted) setState(() => _status = '截图异常：$error');
     }
   }
 
-  Future<void> _playMkv() async {
-    setState(() {
-      _status = '加载 MKV…';
-      _current = 'MKV';
-    });
-    await _player.open(Media(mkvUrl), play: true);
-    final ass = await _writeDemoAss();
-    await _player.setSubtitleTrack(
-      SubtitleTrack.uri(ass.uri.toString(), title: 'Demo ASS'),
-    );
-    if (mounted) {
-      setState(() => _status = 'MKV 播放中（ASS 已挂载）');
-    }
-  }
+  Future<void> _playMkv() => _play(mkvUrl, 'MKV');
 
   @override
   void dispose() {
@@ -129,7 +166,11 @@ class _Phase0AppState extends State<Phase0App> {
                     style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                   Text(
-                    'ASS已挂载：$_assAttached',
+                    'ASS已挂载：$_assAttached  字幕轨：$_subtitleState',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  Text(
+                    '播放：$_playing  位置：${_position.inSeconds}s / ${_duration.inSeconds}s',
                     style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],
@@ -141,7 +182,7 @@ class _Phase0AppState extends State<Phase0App> {
               child: Row(
                 children: [
                   FilledButton(
-                    onPressed: _prepareSubtitleAndPlayHls,
+                    onPressed: () => _play(hlsUrl, 'HLS'),
                     child: const Text('播放 HLS + ASS'),
                   ),
                   const SizedBox(width: 12),

@@ -127,8 +127,26 @@ flutter_app/
 - [x] `flutter_app/` 骨架（Windows 平台，media_kit + media_kit_video + libs_windows_video）
 - [x] `flutter analyze` 无问题、`flutter test` 通过
 - [x] Dart 侧光鸭开发者 API：签名 + `/userres/v1/file/get_file_list` → **HTTP 200**，返回根目录 4 项
-- [ ] media_kit 播放 HLS + MKV + 外挂 ASS：**待 Windows 开发者模式开启后构建验证**
+- [x] media_kit 播放 MKV + 外挂 ASS：**通过**（H.264 MKV，H/W 渲染；`PlayerConfiguration(libass: true)` + ASCII 路径 `.ass` + `SubtitleTrack.uri`）
+- [x] media_kit 内置截图（含 libass 字幕）可用：`player.screenshot(includeLibassSubtitles: true)`，OCR 已识别到画面字幕
+- [ ] HLS 验证：Apple HLS 样例在 Windows 上位置一直 0/0（未播放），待排查（网络/TLS/HLS demux）
 - [ ] 包体积/许可证结论（构建后记录）
+
+### Windows 构建踩坑记录
+
+| 现象 | 解决 |
+|---|---|
+| `Building with plugins requires symlink support` | 打开 Windows 开发人员模式 |
+| CMake INSTALL 试图写 `C:\Program Files\lemon_player` | 显式设置 `CMAKE_INSTALL_PREFIX=build/windows/x64/runner/<Config>` |
+| media_kit 下载 mpv/ANGLE 7z 偶发 Integrity check failed | 预下载到 `build/windows/x64` 并校验 MD5（见 `scripts/build-flutter-windows.ps1`） |
+| 中文字体/字幕路径 | 字幕临时文件放 ASCII 路径（如 `C:\LemonPhase0\demo.ass`），中文用户名路径下 sub-add 可能失败 |
+| 桌面截图全黑（锁屏 session） | 用媒体层截图 `player.screenshot(includeLibassSubtitles: true)` + OCR；flutter-skill `inspect` 通过 ws VM URI |
+
+### Phase 0 结论
+
+- Flutter + media_kit 在 Windows 上**可播放 MKV（含 ASS 特效字幕）**，截图证据：`docs/screenshots/flutter/phase0-mkv-ass.png`
+- flutter-skill 可用（`inspect` 需显式 `ws://127.0.0.1:50000/.../ws`；native 截图仍用 media_kit 自带 screenshot 更稳）
+- HLS 样例暂未跑通，后续单独排查；光鸭网盘主要是直链 MP4/MKV，不阻塞 Phase 1
 
 ### flutter-skill 接入（AI 自动化验证）
 
