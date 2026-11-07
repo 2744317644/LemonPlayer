@@ -1,0 +1,14 @@
+name: lemon_guangya
+description: Guangya cloud drive API client (developer signing, files, playback URLs).
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: ^3.9.0
+dependencies:
+  crypto: ^3.0.5
+  lemon_core:
+    path: ../lemon_core
+  lemon_network:
+    path: ../lemon_network
+dev_dependencies:
+  test: ^1.25.0

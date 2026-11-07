@@ -148,6 +148,19 @@ flutter_app/
 - flutter-skill 可用（`inspect` 需显式 `ws://127.0.0.1:50000/.../ws`；native 截图仍用 media_kit 自带 screenshot 更稳）
 - HLS 样例暂未跑通，后续单独排查；光鸭网盘主要是直链 MP4/MKV，不阻塞 Phase 1
 
+## 八、Phase 1 进展（Dart 包）
+
+已完成首批纯 Dart 包（与 Swift Packages 分层对应）：
+
+| 包 | 内容 | 测试 |
+|---|---|---|
+| `packages/lemon_core` | 统一错误 LemonError、诊断日志、脱敏 | 3 |
+| `packages/lemon_network` | dart:io HTTP 客户端、重试策略、UA、限流 | 3 |
+| `packages/lemon_guangya` | 开发者签名、文件列表、递归扫描、播放地址 | 4 |
+
+- `dart test` 全部通过；`tool/guangya_probe.dart` 走包级 API 实测 **HTTP 200 / total=4**（Live、来自：云添加、番剧、来自：TOKEN订阅）
+- 下一步 Phase 1 UI：登录（扫码 + webview）、网盘浏览（骨架/排序/同目录队列）；随后接 media_kit 播放页
+
 ### flutter-skill 接入（AI 自动化验证）
 
 - 已安装 `flutter-skill` CLI **0.9.36**（npm），并修复 Windows 原生二进制命名 bug（见 `scripts/install-flutter-skill.ps1`）

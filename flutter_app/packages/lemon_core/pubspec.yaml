@@ -1,0 +1,8 @@
+name: lemon_core
+description: LemonPlayer shared errors, diagnostics and formatting.
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: ^3.9.0
+dev_dependencies:
+  test: ^1.25.0

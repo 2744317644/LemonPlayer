@@ -192,6 +192,27 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  lemon_core:
+    dependency: "direct main"
+    description:
+      path: "packages/lemon_core"
+      relative: true
+    source: path
+    version: "0.1.0"
+  lemon_guangya:
+    dependency: "direct main"
+    description:
+      path: "packages/lemon_guangya"
+      relative: true
+    source: path
+    version: "0.1.0"
+  lemon_network:
+    dependency: "direct main"
+    description:
+      path: "packages/lemon_network"
+      relative: true
+    source: path
+    version: "0.1.0"
   lints:
     dependency: transitive
     description:
