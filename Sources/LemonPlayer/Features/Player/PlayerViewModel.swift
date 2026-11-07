@@ -62,6 +62,8 @@ final class PlayerViewModel {
     @ObservationIgnored private var recoveryAttempts = 0
     @ObservationIgnored private var isRecovering = false
     @ObservationIgnored private var tickCount = 0
+    /// 上一次引擎时间，用于判断缓冲是否只是状态噪声（画面其实在走）。
+    @ObservationIgnored private var lastObservedEngineTime: TimeInterval = 0
     /// UI 测试/截图用：直接播放给定来源，跳过网盘取链与字幕网络请求。
     @ObservationIgnored private let demoSource: PlaybackSource?
 
@@ -160,6 +162,7 @@ final class PlayerViewModel {
         refreshOverlayLines()
         Task { [weak self] in
             guard let self else { return }
+            self.lastObservedEngineTime = value
             await self.engine.seekSafe(to: value)
             // seek 精度校验：偏差过大时记日志（VLC 在缓冲/关键帧附近可能跳不准）
             if self.duration > 0, abs(self.engine.currentTime - value) > 3 {
@@ -546,20 +549,27 @@ final class PlayerViewModel {
                 if let guardUntil = self.seekGuardUntil, Date() > guardUntil {
                     self.seekGuardUntil = nil
                 }
+                let engineTime = self.engine.currentTime
+                let progressed = engineTime > self.lastObservedEngineTime + 0.05
+                self.lastObservedEngineTime = engineTime
                 if self.seekGuardUntil == nil {
-                    self.currentTime = self.engine.currentTime
+                    self.currentTime = engineTime
                 }
                 if self.duration == 0 {
                     self.duration = self.engine.duration
                 }
-                self.isBuffering = self.engine.state.isBuffering
                 switch self.engine.state {
                 case .playing:
                     self.isPlaying = true
+                    self.isBuffering = false
                 case .paused, .ended:
                     self.isPlaying = false
+                    self.isBuffering = false
+                case .buffering:
+                    // 时间还在推进说明画面正常，不显示“无限转圈”
+                    self.isBuffering = !progressed
                 default:
-                    break // 缓冲/准备中保持原状态，避免播放中错误显示“播放”图标
+                    break // 准备中保持原状态
                 }
                 self.refreshOverlayLines()
 

@@ -139,6 +139,7 @@ private struct PlayerContent: View {
 
             surface
                 .ignoresSafeArea()
+                .transaction { $0.animation = nil }
 
             if model.phase == .loading {
                 ProgressView("获取播放地址…")
@@ -311,17 +312,18 @@ private struct PlayerContent: View {
 
     private func handleSurfaceTap() {
         if activePanel != nil {
-            withAnimation { activePanel = nil }
+            activePanel = nil
             scheduleHide()
             return
         }
-        withAnimation { showControls.toggle() }
+        showControls.toggle()
         if showControls { scheduleHide() }
     }
 
     private func openPanel(_ panel: PlayerPanel) {
         hideTask?.cancel()
-        withAnimation { activePanel = panel }
+        // 不包 withAnimation：避免视频层跟随布局动画出现“放大/缩放”
+        activePanel = panel
     }
 
     private func verticalDrag(side: GestureSide) -> some Gesture {

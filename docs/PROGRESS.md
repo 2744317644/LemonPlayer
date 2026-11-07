@@ -215,3 +215,5 @@
 | 2026-11-08 03:15 | Step10 | 最终测试：7 包 122 用例（1 skipped）全绿（Core 11 / Network 9 / Guangya 27 / Media 35 / Subtitle 27 / Playback 6 / Downloads 7） | — | ✅ |
 
 | 2026-11-08 03:40 | Step10 | **v2.0.0 Release 完成**：tag 已推送，Release 附 IPA 17,582,055 B + SHA256；Step 0–10 全部交付 | Release `v2.0.0` | ✅ |
+
+| 2026-11-07 17:25 | 修复 | 用户反馈三项：①文件页骨架黑块→浅灰骨架并去掉 redacted；②点底部按钮视频瞬间放大→视频层禁用隐式动画、面板开合不再 withAnimation；③播放中一直转圈→缓冲状态结合时间推进判断，画面在走就不显示 | Release `v2.0.1` | ✅ |

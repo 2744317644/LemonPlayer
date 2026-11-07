@@ -51,7 +51,6 @@ private struct BrowseContent: View {
                 ForEach(0..<8, id: \.self) { _ in
                     SkeletonRow()
                 }
-                .redacted(reason: .placeholder)
             } else {
                 if model.canGoUp {
                     Button {
@@ -206,10 +205,11 @@ private struct SkeletonRow: View {
     var body: some View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 6)
+                .fill(Color.secondary.opacity(0.18))
                 .frame(width: 28, height: 28)
             VStack(alignment: .leading, spacing: 6) {
-                Capsule().frame(width: 180, height: 12)
-                Capsule().frame(width: 90, height: 10)
+                Capsule().fill(Color.secondary.opacity(0.18)).frame(width: 180, height: 12)
+                Capsule().fill(Color.secondary.opacity(0.18)).frame(width: 90, height: 10)
             }
             Spacer()
         }
