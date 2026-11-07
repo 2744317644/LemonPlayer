@@ -159,7 +159,13 @@ flutter_app/
 | `packages/lemon_guangya` | 开发者签名、文件列表、递归扫描、播放地址 | 4 |
 
 - `dart test` 全部通过；`tool/guangya_probe.dart` 走包级 API 实测 **HTTP 200 / total=4**（Live、来自：云添加、番剧、来自：TOKEN订阅）
-- 下一步 Phase 1 UI：登录（扫码 + webview）、网盘浏览（骨架/排序/同目录队列）；随后接 media_kit 播放页
+### Phase 1 UI（第一版）
+
+- 登录：设备码扫码（真实请求 `account.guangyapan.com/v1/auth/device/code`）、二维码/授权码展示、轮询 pending/authorized/expired、自动刷新；另提供「粘贴 access_token」临时入口
+- 网盘浏览：用户态 API `/userres/v1/file/get_file_list`，文件夹进入/返回、刷新、加载骨架、空态、错误重试、退出登录
+- 播放：点视频取 `get_res_download_url`，media_kit 播放（libass 开启）
+- 已实测：登录页成功获取授权码（`AWrvLZzmqGogA1S_-g`，状态「等待扫码确认」），二维码与授权页 URL 正常显示
+- 待验证：扫码登录后的浏览/播放（需要真机扫码或粘贴 token）
 
 ### flutter-skill 接入（AI 自动化验证）
 

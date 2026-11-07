@@ -7,14 +7,50 @@ import 'package:flutter_skill/flutter_skill.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import 'app/session_store.dart';
+import 'features/browse/browse_page.dart';
+import 'features/login/login_page.dart';
+
 /// Phase 0：验证 Flutter + media_kit（libmpv）在 Windows 上的播放与 ASS 字幕。
 /// - 默认播放 HLS 示例并挂载 assets/demo.ass
 /// - 可切换播放 MKV 示例
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
   if (kDebugMode) FlutterSkillBinding.ensureInitialized();
-  runApp(const Phase0App());
+  final session = SessionStore();
+  await session.load();
+  runApp(LemonApp(session: session));
+}
+
+/// Phase 1 应用壳：未登录→登录页；已登录→网盘浏览。
+class LemonApp extends StatelessWidget {
+  const LemonApp({super.key, required this.session});
+
+  final SessionStore session;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: session,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'LemonPlayer',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFFFB7299),
+              brightness: Brightness.light,
+            ),
+            useMaterial3: true,
+          ),
+          home: session.isLoggedIn
+              ? BrowsePage(session: session)
+              : LoginPage(session: session),
+        );
+      },
+    );
+  }
 }
 
 const hlsUrl =
