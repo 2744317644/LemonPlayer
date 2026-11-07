@@ -130,6 +130,13 @@ flutter_app/
 - [ ] media_kit 播放 HLS + MKV + 外挂 ASS：**待 Windows 开发者模式开启后构建验证**
 - [ ] 包体积/许可证结论（构建后记录）
 
+### flutter-skill 接入（AI 自动化验证）
+
+- 已安装 `flutter-skill` CLI **0.9.36**（npm），并修复 Windows 原生二进制命名 bug（见 `scripts/install-flutter-skill.ps1`）
+- `flutter_app` 已加入 `flutter_skill` 依赖，入口在 `kDebugMode` 下初始化 `FlutterSkillBinding`
+- 用途：应用跑起来后，CLI/MCP 可执行 `launch / inspect / screenshot / tap`，让 AI 直接看 Flutter 画面并操作，无需写 XCUITest
+- 当前同样被 Windows 开发者模式阻塞（launch 需要先能 `flutter run`）
+
 ### 当前阻塞
 
 `flutter build windows` 提示：
