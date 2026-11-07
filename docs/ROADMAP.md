@@ -5,7 +5,7 @@
 
 ## 当前基线
 
-- 最新版本：**v2.0.0**（Step 0–10 全部完成）
+- 最新版本：**v2.0.1**（Step 0–10 完成 + 三项 UI 修复）
 - 测试：7 包 **122 用例**（Linux CI，1 skipped）+ UI 测试 6 张截图（登录 3 + 播放器 3），build/release/ui-preview 全绿
 - 已知待真机验收：见 `docs/qa/REGRESSION.md` 的 J-01~J-06
 
