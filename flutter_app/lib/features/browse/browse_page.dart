@@ -79,9 +79,16 @@ class _BrowsePageState extends State<BrowsePage> {
       return;
     }
     if (!file.isPlayable) return;
+    final queue = _items.where((item) => item.isPlayable).toList();
+    final startIndex = queue.indexWhere((item) => item.id == file.id);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => PlayerPage(session: widget.session, file: file),
+        builder: (_) => PlayerPage(
+          session: widget.session,
+          file: file,
+          videos: queue,
+          startIndex: startIndex < 0 ? 0 : startIndex,
+        ),
       ),
     );
   }
