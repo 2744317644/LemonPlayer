@@ -36,6 +36,8 @@ dependencies:
     path: packages/lemon_network
   lemon_guangya:
     path: packages/lemon_guangya
+  lemon_media:
+    path: packages/lemon_media
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

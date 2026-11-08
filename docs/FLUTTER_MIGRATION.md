@@ -148,7 +148,16 @@ flutter_app/
 - flutter-skill 可用（`inspect` 需显式 `ws://127.0.0.1:50000/.../ws`；native 截图仍用 media_kit 自带 screenshot 更稳）
 - HLS 样例暂未跑通，后续单独排查；光鸭网盘主要是直链 MP4/MKV，不阻塞 Phase 1
 
-## 八、Phase 2 进展（播放器 UI + 字幕）
+## 八、Phase 3 进展（媒体库刮削）
+
+- 新增 `packages/lemon_media`：文件名解析、目录规则（Fonts/OP/ED/SP 等向上取父目录）、季数识别、Levenshtein 标题匹配、Bangumi 搜索/分集标题
+- 媒体库 UI：扫描 → 分组 → Bangumi 富化 → 海报墙 → 番剧详情（分集标题）→ 播放
+- 应用壳：底部导航 网盘 / 媒体库 / 设置（退出登录、设备 ID、版本）
+- 实测扫描（限 400 目录/12000 文件）：**922 文件、395 个可播放视频、分组 179 部番剧**
+- 当前网络直连 `api.bgm.tv` 超时（需代理）；`lemon_network` 已支持 `HttpClientConfig.proxy`，BangumiClient 会读取 `HTTPS_PROXY/HTTP_PROXY` 环境变量；标题匹配与分集映射有单测覆盖
+- 待办：下载模块（离线播放）、缩略图缓存、Bangumi 超时降级提示
+
+## 九、Phase 2 进展（播放器 UI + 字幕）
 
 - 播放页升级为 VidHub 风格：顶栏标题/返回/选集，中央播放暂停，底部时间轴（点击/拖动 seek）+ 快退/快进/倍速/音轨/字幕/下一集
 - 手势：单击显隐控制层；双击左侧快退 10s、中间播放暂停、右侧快进 10s；控制层 3 秒自动隐藏

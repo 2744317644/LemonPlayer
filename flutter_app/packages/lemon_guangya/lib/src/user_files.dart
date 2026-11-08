@@ -97,6 +97,46 @@ class GuangyaUserApi {
     );
   }
 
+  /// 递归扫描全盘（目录 + 文件），用于媒体库刮削。
+  Future<({List<GuangyaFile> folders, List<GuangyaFile> files})> listAllMedia({
+    int pageSize = 100,
+    int maxFolders = 2000,
+    int maxFiles = 50000,
+  }) async {
+    final folders = <GuangyaFile>[];
+    final files = <GuangyaFile>[];
+    final queue = <String>[''];
+    final visited = <String>{};
+
+    while (queue.isNotEmpty &&
+        folders.length < maxFolders &&
+        files.length < maxFiles) {
+      final parent = queue.removeAt(0);
+      if (!visited.add(parent)) continue;
+      var page = 0;
+      while (page < 50) {
+        final result = await listFiles(
+          parentId: parent,
+          page: page,
+          pageSize: pageSize,
+        );
+        for (final item in result.items) {
+          if (item.isFolder) {
+            if (folders.length < maxFolders) {
+              folders.add(item);
+              queue.add(item.id);
+            }
+          } else if (files.length < maxFiles) {
+            files.add(item);
+          }
+        }
+        if (result.items.length < pageSize) break;
+        page++;
+      }
+    }
+    return (folders: folders, files: files);
+  }
+
   Future<PlaybackLink> playbackURL(String fileId) async {
     final response = await http.send(
       HttpRequestSpec(

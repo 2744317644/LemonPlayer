@@ -1,0 +1,15 @@
+name: lemon_media
+description: Filename parsing, folder-to-series rules, Bangumi matching for LemonPlayer.
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: ^3.9.0
+dependencies:
+  lemon_core:
+    path: ../lemon_core
+  lemon_guangya:
+    path: ../lemon_guangya
+  lemon_network:
+    path: ../lemon_network
+dev_dependencies:
+  test: ^1.25.0

@@ -230,6 +230,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  lemon_media:
+    dependency: "direct main"
+    description:
+      path: "packages/lemon_media"
+      relative: true
+    source: path
+    version: "0.1.0"
   lemon_network:
     dependency: "direct main"
     description:

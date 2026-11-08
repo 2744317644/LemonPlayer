@@ -34,12 +34,16 @@ class HttpClientConfig {
     this.timeout = const Duration(seconds: 30),
     this.retryPolicy = const RetryPolicy(),
     this.defaultHeaders = const {},
+    this.proxy,
   });
 
   final String userAgent;
   final Duration timeout;
   final RetryPolicy retryPolicy;
   final Map<String, String> defaultHeaders;
+
+  /// 可选 HTTP 代理（如 http://127.0.0.1:7890），用于访问被墙服务。
+  final String? proxy;
 }
 
 class HttpRequestSpec {
@@ -91,7 +95,19 @@ class LemonHttpClient {
 
   final HttpClientConfig config;
   final Diagnostics diagnostics;
-  final HttpClient _client = HttpClient();
+  late final HttpClient _client = _createClient();
+
+  HttpClient _createClient() {
+    final client = HttpClient();
+    final proxy = config.proxy;
+    if (proxy != null && proxy.isNotEmpty) {
+      final uri = Uri.tryParse(proxy);
+      if (uri != null && uri.host.isNotEmpty) {
+        client.findProxy = (_) => 'PROXY ${uri.host}:${uri.port}';
+      }
+    }
+    return client;
+  }
 
   Future<HttpResponseData> send(HttpRequestSpec spec) async {
     final target = '${spec.method} ${spec.uri.host}${spec.uri.path}';

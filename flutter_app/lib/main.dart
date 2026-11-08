@@ -8,8 +8,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import 'app/session_store.dart';
-import 'features/browse/browse_page.dart';
 import 'features/login/login_page.dart';
+import 'home_shell.dart';
 
 /// Phase 0：验证 Flutter + media_kit（libmpv）在 Windows 上的播放与 ASS 字幕。
 /// - 默认播放 HLS 示例并挂载 assets/demo.ass
@@ -45,7 +45,7 @@ class LemonApp extends StatelessWidget {
             useMaterial3: true,
           ),
           home: session.isLoggedIn
-              ? BrowsePage(session: session)
+              ? HomeShell(session: session)
               : LoginPage(session: session),
         );
       },
