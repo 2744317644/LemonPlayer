@@ -24,6 +24,8 @@ class _PlayerPageState extends State<PlayerPage> {
   bool _loading = true;
   String? _error;
   bool _playing = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
 
   @override
   void initState() {
@@ -41,6 +43,12 @@ class _PlayerPageState extends State<PlayerPage> {
       );
       _player.stream.playing.listen((playing) {
         if (mounted) setState(() => _playing = playing);
+      });
+      _player.stream.position.listen((position) {
+        if (mounted) setState(() => _position = position);
+      });
+      _player.stream.duration.listen((duration) {
+        if (mounted) setState(() => _duration = duration);
       });
       if (mounted) setState(() => _loading = false);
     } on LemonError catch (error) {
@@ -108,6 +116,14 @@ class _PlayerPageState extends State<PlayerPage> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            Positioned(
+              left: 16,
+              bottom: 16,
+              child: Text(
+                '播放：$_playing  ${_position.inSeconds}s / ${_duration.inSeconds}s',
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
             ),
             if (_loading)

@@ -165,7 +165,10 @@ flutter_app/
 - 网盘浏览：用户态 API `/userres/v1/file/get_file_list`，文件夹进入/返回、刷新、加载骨架、空态、错误重试、退出登录
 - 播放：点视频取 `get_res_download_url`，media_kit 播放（libass 开启）
 - 已实测：登录页成功获取授权码（`AWrvLZzmqGogA1S_-g`，状态「等待扫码确认」），二维码与授权页 URL 正常显示
-- 待验证：扫码登录后的浏览/播放（需要真机扫码或粘贴 token）
+- ✅ 扫码登录成功并持久化（SharedPreferences，重启自动登录）
+- ✅ 网盘浏览实测：根目录 4 个目录 → 番剧 → 孤独摇滚！ → 剧集列表（08/06/11/04/12…）
+- ✅ 播放实测：点 `[DBD-Raws][孤独摇滚!][08][1080P][BDRip][HEVC-10bit][FLAC].mkv` 成功播放（状态「播放：true 13s / …」，窗口截图 `docs/screenshots/flutter/phase1-play-mkv.png`）
+- 验证方式：`PrintWindow` 抓窗口 + Windows OCR；DPR-aware 坐标点击（见 `.tmp/click_flutter_text.py`，仅开发脚本）
 
 ### flutter-skill 接入（AI 自动化验证）
 
